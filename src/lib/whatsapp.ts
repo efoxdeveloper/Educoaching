@@ -1,5 +1,5 @@
-export { toE164, toWhatsAppAddress, getWhatsAppWebUrl } from "./whatsapp-link";
-import { getWhatsAppWebUrl } from "./whatsapp-link";
+import { toE164, toWhatsAppAddress, getWhatsAppWebUrl } from "./whatsapp-link";
+export { toE164, toWhatsAppAddress, getWhatsAppWebUrl };
 
 // Strict Safety Guard:
 // Automated Twilio sandbox messages trigger Meta / WhatsApp spam detectors,

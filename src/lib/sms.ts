@@ -278,6 +278,7 @@ export async function sendInstituteSms(
   // Strict audit trail: records which institute's BYOK credentials were used
   await logAudit({
     instituteId,
+    actor: { name: "SMS Gateway", role: "SYSTEM" },
     action: "SMS_DISPATCHED",
     entityType: "SmsGateway",
     entityId: smsConfig.provider,

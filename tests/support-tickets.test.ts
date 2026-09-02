@@ -96,12 +96,12 @@ describe("Help & Support and Support Tickets Test Suite", () => {
         },
       ];
 
-      const findManySpy = vi.spyOn(prisma.supportTicket, "findMany").mockImplementation(async (args: any) => {
-        if (args.where?.instituteId === instituteAId) {
+      const findManySpy = vi.spyOn(prisma.supportTicket, "findMany").mockImplementation((async (args: any) => {
+        if (args?.where?.instituteId === instituteAId) {
           return mockTicketsInstituteA as any;
         }
         return [];
-      });
+      }) as any);
 
       // Query as Institute A
       const ticketsA = await prisma.supportTicket.findMany({

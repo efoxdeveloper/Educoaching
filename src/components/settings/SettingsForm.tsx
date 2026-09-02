@@ -8,6 +8,7 @@ import { Field, inputClass } from "@/components/ui/Field";
 import { BranchesSection } from "@/components/settings/BranchesSection";
 import { SecurityCredentialsSection } from "@/components/settings/SecurityCredentialsSection";
 import { SmsGatewaySection } from "@/components/settings/SmsGatewaySection";
+import { type InstituteSettings } from "@/lib/institute-settings";
 
 type InstituteProfile = {
   id: string;
