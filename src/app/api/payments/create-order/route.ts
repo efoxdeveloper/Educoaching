@@ -5,7 +5,7 @@ import { getRazorpay } from "@/lib/razorpay";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { amount, studentId, purpose } = body as { amount: number; studentId: string; purpose: "fee" | "renewal" };
@@ -16,11 +16,40 @@ export async function POST(req: Request) {
 
   const student = await prisma.student.findUnique({
     where: { id: studentId },
-    select: { id: true, instituteId: true },
+    select: { id: true, email: true, instituteId: true },
   });
 
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+
+  // Authorization enforcement
+  const role = (session.user as { role?: string })?.role;
+  const userEmail = session.user.email;
+  const userId = (session.user as { id?: string })?.id;
+
+  if (role === "STUDENT") {
+    const isSelf = student.id === userId || (student.email && student.email.toLowerCase() === userEmail?.toLowerCase());
+    if (!isSelf) {
+      return NextResponse.json({ error: "Forbidden: You cannot pay fees for another student." }, { status: 403 });
+    }
+  } else if (role === "PARENT") {
+    if (!userId) {
+      return NextResponse.json({ error: "Forbidden: Missing parent identity" }, { status: 403 });
+    }
+    const link = await prisma.parentStudentLink.findFirst({
+      where: { parentUserId: userId, studentId },
+    });
+    if (!link) {
+      return NextResponse.json({ error: "Forbidden: You are not authorized to pay fees for this student." }, { status: 403 });
+    }
+  } else if (role === "OWNER" || role === "ADMIN" || role === "STAFF" || role === "ACCOUNTANT") {
+    const instituteId = (session.user as { instituteId?: string | null })?.instituteId;
+    if (instituteId && student.instituteId !== instituteId) {
+      return NextResponse.json({ error: "Forbidden: Student does not belong to your institute." }, { status: 403 });
+    }
+  } else if (role !== "PLATFORM_ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Unauthorized role." }, { status: 403 });
   }
 
   try {

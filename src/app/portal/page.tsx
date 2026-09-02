@@ -32,7 +32,22 @@ export default async function StudentPortalPage({
       redirect("/login");
     }
     studentFilter = { email: userEmail };
-  } else if (userRole === "OWNER" || userRole === "ADMIN" || userRole === "STAFF") {
+  } else if (userRole === "PARENT") {
+    const userId = (session.user as { id?: string })?.id;
+    const links = await prisma.parentStudentLink.findMany({
+      where: { parentUserId: userId },
+      select: { studentId: true },
+    });
+    const linkedIds = links.map((l) => l.studentId);
+    if (linkedIds.length === 0 && userEmail) {
+      const matchingStudents = await prisma.student.findMany({
+        where: { instituteId, parentEmail: userEmail },
+        select: { id: true },
+      });
+      linkedIds.push(...matchingStudents.map((s) => s.id));
+    }
+    studentFilter = { id: { in: linkedIds } as any };
+  } else if (userRole === "OWNER" || userRole === "ADMIN" || userRole === "STAFF" || userRole === "PLATFORM_ADMIN") {
     // Admins and staff can preview a specific student's portal within their institute
     if (searchParams?.studentId) {
       studentFilter = { id: searchParams.studentId };

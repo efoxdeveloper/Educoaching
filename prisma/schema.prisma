@@ -19,6 +19,7 @@ enum Role {
   ACCOUNTANT
   TECHNICIAN
   STUDENT
+  PARENT
 }
 
 enum InstituteStatus {
@@ -199,6 +200,7 @@ model User {
   uploadedStudyMaterials StudyMaterial[]
   facultyProfiles        Faculty[]
   supportTickets         SupportTicket[]
+  parentLinks            ParentStudentLink[]
 
   @@index([instituteId])
   @@index([branchId])
@@ -451,6 +453,7 @@ model Student {
   mobile        String
   email         String?
   parentMobile  String?
+  parentEmail   String?
   courseId      String
   batchId       String?
   branchId      String?
@@ -493,9 +496,24 @@ model Student {
   assignmentSubmissions AssignmentSubmission[]
   discountRequests    DiscountRequest[]
   issuedCertificates  CertificateIssued[]
+  parentLinks         ParentStudentLink[]
 
   @@index([instituteId])
   @@index([branchId])
+}
+
+model ParentStudentLink {
+  id           String   @id @default(cuid())
+  parentUserId String
+  studentId    String
+  createdAt    DateTime @default(now())
+
+  parentUser   User     @relation(fields: [parentUserId], references: [id], onDelete: Cascade)
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentUserId, studentId])
+  @@index([parentUserId])
+  @@index([studentId])
 }
 
 enum DiscountRequestStatus {

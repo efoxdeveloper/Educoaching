@@ -21,7 +21,6 @@ function isWhatsAppConfigured() {
 }
 
 function getClient() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const twilio = require("twilio");
   return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 }

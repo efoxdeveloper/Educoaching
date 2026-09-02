@@ -125,6 +125,20 @@ export async function processPaymentSuccess({
       gstAmount = Number((total - baseAmount).toFixed(2));
     }
 
+    // Apply payment to student's installment schedule if configured
+    let updatedInstallmentJson = student.installmentPlan;
+    let nextDueDate: Date | null | undefined = undefined;
+
+    if (student.installmentPlan && Array.isArray(student.installmentPlan)) {
+      const { applyPaymentToInstallments } = await import("@/lib/installments");
+      const installments = student.installmentPlan as any;
+      const result = applyPaymentToInstallments(installments, Number(amount));
+      updatedInstallmentJson = result.updatedInstallments as any;
+      if (result.nextDueDate) {
+        nextDueDate = new Date(result.nextDueDate);
+      }
+    }
+
     const [payment] = await prisma.$transaction([
       prisma.payment.create({
         data: {
@@ -143,7 +157,11 @@ export async function processPaymentSuccess({
       }),
       prisma.student.update({
         where: { id: studentId },
-        data: { paidFee: { increment: Number(amount) } },
+        data: {
+          paidFee: { increment: Number(amount) },
+          ...(updatedInstallmentJson ? { installmentPlan: updatedInstallmentJson as any } : {}),
+          ...(nextDueDate !== undefined ? { dueDate: nextDueDate } : {}),
+        },
       }),
       prisma.paymentTransaction.upsert({
         where: { orderId },

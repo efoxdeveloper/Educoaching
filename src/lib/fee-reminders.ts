@@ -9,6 +9,7 @@ export type ReminderCandidate = {
   mobile: string;
   parentMobile: string | null;
   email: string | null;
+  parentEmail: string | null;
   courseName: string;
   totalFee: number;
   paidFee: number;
@@ -68,6 +69,7 @@ export async function getFeeReminderCandidates(instituteId: string): Promise<Rem
       mobile: s.mobile,
       parentMobile: s.parentMobile,
       email: s.email,
+      parentEmail: s.parentEmail,
       courseName: s.course.name,
       totalFee: total,
       paidFee: paid,
@@ -158,10 +160,11 @@ export async function dispatchFeeReminders(params: {
 
     // Email Dispatch
     if (channel === "EMAIL" || channel === "ALL") {
-      if (item.email) {
+      const targetEmail = item.parentEmail || item.email;
+      if (targetEmail) {
         try {
           const res = await sendFeeReminderEmail({
-            to: item.email,
+            to: targetEmail,
             studentName: item.name,
             courseName: item.courseName,
             dueAmount: item.dueAmount,
@@ -173,11 +176,11 @@ export async function dispatchFeeReminders(params: {
               instituteId,
               studentId: item.id,
               channel: "EMAIL",
-              recipient: item.email,
+              recipient: targetEmail,
               amountDue: item.dueAmount,
               dueDate: item.dueDate ? new Date(item.dueDate) : null,
               status: res.sent ? "SENT" : "FAILED",
-              message: `Email reminder of Rs.${item.dueAmount}`,
+              message: `Email reminder for ${item.name} (${item.courseName}) of Rs.${item.dueAmount}`,
             },
           });
           if (res.sent) {
@@ -194,7 +197,7 @@ export async function dispatchFeeReminders(params: {
 
     if (didSend) {
       sentCount++;
-    } else if (!item.parentMobile && !item.mobile && !item.email) {
+    } else if (!item.parentMobile && !item.mobile && !item.parentEmail && !item.email) {
       skippedCount++;
     } else {
       failedCount++;

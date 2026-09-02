@@ -35,6 +35,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { OnlineExamModal } from "@/components/tests/OnlineExamModal";
 import { formatDate, formatCurrency, initials } from "@/lib/utils";
+import { useRazorpayCheckout } from "@/lib/useRazorpayCheckout";
 
 export type StudentData = {
   id: string;
@@ -176,11 +177,11 @@ export function StudentPortalView({
   const [isSubmittingWork, setIsSubmittingWork] = useState(false);
 
   // Online Fee Payment Modal state
+  const { pay: rzpPay, processing: rzpProcessing, payError: rzpPayError } = useRazorpayCheckout();
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("UPI");
   const [payNote, setPayNote] = useState("");
-  const [isPaying, setIsPaying] = useState(false);
   const [payError, setPayError] = useState("");
   const [paySuccessMsg, setPaySuccessMsg] = useState("");
 
@@ -408,39 +409,27 @@ export function StudentPortalView({
       return;
     }
 
-    setIsPaying(true);
     try {
-      const res = await fetch("/api/portal/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: student.id,
-          amount: amountNum,
-          method: payMethod,
-          note: payNote.trim() || undefined,
-        }),
+      await rzpPay({
+        studentId: student.id,
+        studentName: student.name,
+        amount: amountNum,
+        purpose: "fee",
+        onSuccess: () => {
+          setPaySuccessMsg(`Payment of ${formatCurrency(amountNum)} verified & recorded! Receipt generated.`);
+          student.paidFee = (student.paidFee || 0) + amountNum;
+          student.pendingFee = Math.max(0, student.totalFee - student.paidFee);
+          setTimeout(() => {
+            setPayModalOpen(false);
+            setPaySuccessMsg("");
+            setPayAmount("");
+            setPayNote("");
+            window.location.reload();
+          }, 1500);
+        },
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to process payment");
-      }
-
-      setPaySuccessMsg(`Payment of ${formatCurrency(amountNum)} successful! Receipt generated.`);
-      student.paidFee = data.newPaidFee;
-      student.pendingFee = data.newPending;
-      student.payments.unshift(data.payment);
-
-      setTimeout(() => {
-        setPayModalOpen(false);
-        setPaySuccessMsg("");
-        setPayAmount("");
-        setPayNote("");
-      }, 2000);
     } catch (err: unknown) {
       setPayError(err instanceof Error ? err.message : "Payment could not be processed. Please try again.");
-    } finally {
-      setIsPaying(false);
     }
   };
 
@@ -1511,10 +1500,10 @@ export function StudentPortalView({
               </div>
             ) : (
               <form onSubmit={handlePayFee} className="space-y-4">
-                {payError && (
+                {(payError || rzpPayError) && (
                   <div className="rounded-xl bg-danger-50 border border-danger-200 p-3 text-xs text-danger-700 flex items-center gap-2">
                     <AlertCircle size={15} className="shrink-0" />
-                    <span>{payError}</span>
+                    <span>{payError || rzpPayError}</span>
                   </div>
                 )}
 
@@ -1630,10 +1619,10 @@ export function StudentPortalView({
                   </button>
                   <button
                     type="submit"
-                    disabled={isPaying || !payAmount}
+                    disabled={rzpProcessing || !payAmount}
                     className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 shadow-xs"
                   >
-                    {isPaying ? "Processing..." : `Pay ${formatCurrency(Number(payAmount) || 0)}`}
+                    {rzpProcessing ? "Opening Razorpay..." : `Pay ${formatCurrency(Number(payAmount) || 0)}`}
                   </button>
                 </div>
               </form>
