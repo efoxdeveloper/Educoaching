@@ -33,7 +33,9 @@ export function UploadMaterialDrawer({
   const [subject, setSubject] = useState("Physics");
   const [topic, setTopic] = useState("");
   const [courseId, setCourseId] = useState(courses[0]?.id || "");
-  const [batchId, setBatchId] = useState("");
+  // "" means "All Batches", otherwise an array of selected batchIds
+  const [batchIds, setBatchIds] = useState<string[]>([]);
+  const [allBatches, setAllBatches] = useState(true); // "All Batches" toggle
 
   const availableBatches = useMemo(() => {
     if (!courseId) return batches;
@@ -57,24 +59,50 @@ export function UploadMaterialDrawer({
     setError(null);
 
     try {
-      const res = await fetch("/api/study-materials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          subject: subject.trim(),
-          topic: topic.trim() || null,
-          courseId: courseId || null,
-          batchId: batchId || null,
-          fileType,
-          fileUrl: fileUrl.trim(),
-          description: description.trim() || null,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to upload study material");
+      if (allBatches || batchIds.length === 0) {
+        // Upload once with no specific batch (global to course/all)
+        const res = await fetch("/api/study-materials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title.trim(),
+            subject: subject.trim(),
+            topic: topic.trim() || null,
+            courseId: courseId || null,
+            batchId: null,
+            fileType,
+            fileUrl: fileUrl.trim(),
+            description: description.trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to upload study material");
+        }
+      } else {
+        // Upload one record per selected batch
+        await Promise.all(
+          batchIds.map(async (bid) => {
+            const res = await fetch("/api/study-materials", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: title.trim(),
+                subject: subject.trim(),
+                topic: topic.trim() || null,
+                courseId: courseId || null,
+                batchId: bid,
+                fileType,
+                fileUrl: fileUrl.trim(),
+                description: description.trim() || null,
+              }),
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              throw new Error(data.error || "Failed to upload study material");
+            }
+          })
+        );
       }
 
       // Reset
@@ -82,6 +110,8 @@ export function UploadMaterialDrawer({
       setTopic("");
       setFileUrl("");
       setDescription("");
+      setBatchIds([]);
+      setAllBatches(true);
       onUploaded();
       onClose();
     } catch (err: unknown) {
@@ -134,58 +164,82 @@ export function UploadMaterialDrawer({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Course Program">
-            <select
-              value={courseId}
-              onChange={(e) => {
-                const newCourse = e.target.value;
-                setCourseId(newCourse);
-                if (newCourse) {
-                  const matching = batches.filter((b) => b.course?.id === newCourse);
-                  if (!matching.some((b) => b.id === batchId)) {
-                    setBatchId("");
-                  }
-                } else {
-                  setBatchId("");
-                }
-              }}
-              className={inputClass}
-            >
-              <option value="">All Courses (Global Program)</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+        <Field label="Course Program">
+          <select
+            value={courseId}
+            onChange={(e) => {
+              const newCourse = e.target.value;
+              setCourseId(newCourse);
+              setBatchIds([]);
+              setAllBatches(true);
+            }}
+            className={inputClass}
+          >
+            <option value="">All Courses (Global Program)</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
 
-          <Field label="Target Batch">
-            <select
-              value={batchId}
-              onChange={(e) => setBatchId(e.target.value)}
-              className={inputClass}
-              disabled={!courseId || availableBatches.length === 0}
-            >
-              {!courseId ? (
-                <option value="">All Batches (Global)</option>
-              ) : availableBatches.length === 0 ? (
-                <option value="" disabled>
-                  No batches in this course
-                </option>
-              ) : (
-                <>
-                  <option value="">All Batches in this Course</option>
-                  {availableBatches.map((b) => (
+        {/* Batch targeting section */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-scholar-700">
+              Target Batches
+            </span>
+            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allBatches}
+                onChange={(e) => {
+                  setAllBatches(e.target.checked);
+                  if (e.target.checked) setBatchIds([]);
+                }}
+                className="rounded"
+              />
+              <span className="text-xs text-scholar-600">All batches in this course</span>
+            </label>
+          </div>
+
+          {!allBatches && courseId && (
+            <>
+              <select
+                multiple
+                value={batchIds}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+                  setBatchIds(selected);
+                }}
+                className={inputClass}
+                style={{ minHeight: "90px" }}
+              >
+                {availableBatches.length === 0 ? (
+                  <option value="" disabled>No batches in this course</option>
+                ) : (
+                  availableBatches.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name}
+                      {b.name} ({b.course?.name})
                     </option>
-                  ))}
-                </>
-              )}
-            </select>
-          </Field>
+                  ))
+                )}
+              </select>
+              <p className="text-[11px] text-scholar-500">
+                Hold <kbd className="rounded border border-scholar-200 bg-scholar-100 px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd> (or <kbd className="rounded border border-scholar-200 bg-scholar-100 px-1 py-0.5 font-mono text-[10px]">⌘</kbd> on Mac) to select multiple batches.
+                {batchIds.length > 0 && (
+                  <span className="ml-1 font-semibold text-scholar-700">
+                    {batchIds.length} batch{batchIds.length > 1 ? "es" : ""} selected — material will be uploaded separately for each.
+                  </span>
+                )}
+              </p>
+            </>
+          )}
+
+          {!allBatches && !courseId && (
+            <p className="text-xs text-scholar-500 italic">Select a course first to pick specific batches.</p>
+          )}
         </div>
 
         <Field label="Content Format">
