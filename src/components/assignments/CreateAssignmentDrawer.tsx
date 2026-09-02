@@ -171,49 +171,79 @@ export function CreateAssignmentDrawer({
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Target Course *">
-            <select
-              value={courseId}
-              onChange={(e) => {
-                const newCourse = e.target.value;
-                setCourseId(newCourse);
-                const matching = batches.filter((b) => b.course.id === newCourse);
-                setBatchIds(matching.length > 0 ? [matching[0].id] : []);
-              }}
-              className={inputClass}
-              required
-            >
-              {courses.length === 0 ? (
-                <option value="">No courses available</option>
-              ) : (
-                courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </Field>
-
-          <Field label="Target Batches * (Ctrl+Click for multiple)">
-            <select
-              multiple
-              value={batchIds}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                setBatchIds(selected);
-              }}
-              className={inputClass}
-              required
-            >
-              {availableBatches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} ({b.course?.name})
+        <Field label="Target Course *">
+          <select
+            value={courseId}
+            onChange={(e) => {
+              const newCourse = e.target.value;
+              setCourseId(newCourse);
+              const matching = batches.filter((b) => b.course.id === newCourse);
+              setBatchIds(matching.map((b) => b.id));
+            }}
+            className={inputClass}
+            required
+          >
+            {courses.length === 0 ? (
+              <option value="">No courses available</option>
+            ) : (
+              courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
-              ))}
-            </select>
-          </Field>
+              ))
+            )}
+          </select>
+        </Field>
+
+        <div className="space-y-2 rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-ink">
+              Target Batches * ({batchIds.length} of {availableBatches.length} selected)
+            </label>
+            {availableBatches.length > 0 && batchIds.length < availableBatches.length && (
+              <button
+                type="button"
+                onClick={() => setBatchIds(availableBatches.map((b) => b.id))}
+                className="text-[11px] font-semibold text-scholar-700 hover:text-scholar-900 underline cursor-pointer"
+              >
+                {`Select All (${availableBatches.length})`}
+              </button>
+            )}
+          </div>
+
+          {availableBatches.length === 0 ? (
+            <p className="text-xs text-scholar-400 py-1">No batches found under this course program.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              {availableBatches.map((b) => {
+                const isChecked = batchIds.includes(b.id);
+                return (
+                  <label
+                    key={b.id}
+                    className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-xs font-medium cursor-pointer transition-all ${
+                      isChecked
+                        ? "border-scholar-500 bg-white text-scholar-900 shadow-2xs font-semibold"
+                        : "border-scholar-200 bg-white/70 text-scholar-600 hover:bg-white"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        if (isChecked) {
+                          setBatchIds(batchIds.filter((id) => id !== b.id));
+                        } else {
+                          setBatchIds([...batchIds, b.id]);
+                        }
+                      }}
+                      className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
+                    />
+                    <span className="truncate">{b.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

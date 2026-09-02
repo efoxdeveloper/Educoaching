@@ -33,9 +33,7 @@ export function UploadMaterialDrawer({
   const [subject, setSubject] = useState("Physics");
   const [topic, setTopic] = useState("");
   const [courseId, setCourseId] = useState(courses[0]?.id || "");
-  // "" means "All Batches", otherwise an array of selected batchIds
   const [batchIds, setBatchIds] = useState<string[]>([]);
-  const [allBatches, setAllBatches] = useState(true); // "All Batches" toggle
 
   const availableBatches = useMemo(() => {
     if (!courseId) return batches;
@@ -59,7 +57,7 @@ export function UploadMaterialDrawer({
     setError(null);
 
     try {
-      if (allBatches || batchIds.length === 0) {
+      if (batchIds.length === 0) {
         // Upload once with no specific batch (global to course/all)
         const res = await fetch("/api/study-materials", {
           method: "POST",
@@ -111,7 +109,6 @@ export function UploadMaterialDrawer({
       setFileUrl("");
       setDescription("");
       setBatchIds([]);
-      setAllBatches(true);
       onUploaded();
       onClose();
     } catch (err: unknown) {
@@ -171,7 +168,6 @@ export function UploadMaterialDrawer({
               const newCourse = e.target.value;
               setCourseId(newCourse);
               setBatchIds([]);
-              setAllBatches(true);
             }}
             className={inputClass}
           >
@@ -184,61 +180,70 @@ export function UploadMaterialDrawer({
           </select>
         </Field>
 
-        {/* Batch targeting section */}
-        <div className="flex flex-col gap-2">
+        <div className="space-y-2 rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-scholar-700">
-              Target Batches
-            </span>
-            <label className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={allBatches}
-                onChange={(e) => {
-                  setAllBatches(e.target.checked);
-                  if (e.target.checked) setBatchIds([]);
-                }}
-                className="rounded"
-              />
-              <span className="text-xs text-scholar-600">All batches in this course</span>
+            <label className="text-xs font-bold text-ink">
+              Target Batches ({batchIds.length === 0 ? "All" : `${batchIds.length} of ${availableBatches.length}`} selected)
             </label>
+            {availableBatches.length > 0 && batchIds.length > 0 && batchIds.length < availableBatches.length && (
+              <button
+                type="button"
+                onClick={() => setBatchIds(availableBatches.map((b) => b.id))}
+                className="text-[11px] font-semibold text-scholar-700 hover:text-scholar-900 underline cursor-pointer"
+              >
+                {`Select All (${availableBatches.length})`}
+              </button>
+            )}
+            {batchIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setBatchIds([])}
+                className="text-[11px] font-semibold text-scholar-500 hover:text-scholar-700 underline cursor-pointer ml-2"
+              >
+                Clear (All Batches)
+              </button>
+            )}
           </div>
 
-          {!allBatches && courseId && (
+          {!courseId ? (
+            <p className="text-xs text-scholar-400 py-1">Select a course above to target specific batches, or leave as-is to publish globally.</p>
+          ) : availableBatches.length === 0 ? (
+            <p className="text-xs text-scholar-400 py-1">No batches found under this course program.</p>
+          ) : (
             <>
-              <select
-                multiple
-                value={batchIds}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                  setBatchIds(selected);
-                }}
-                className={inputClass}
-                style={{ minHeight: "90px" }}
-              >
-                {availableBatches.length === 0 ? (
-                  <option value="" disabled>No batches in this course</option>
-                ) : (
-                  availableBatches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} ({b.course?.name})
-                    </option>
-                  ))
-                )}
-              </select>
-              <p className="text-[11px] text-scholar-500">
-                Hold <kbd className="rounded border border-scholar-200 bg-scholar-100 px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd> (or <kbd className="rounded border border-scholar-200 bg-scholar-100 px-1 py-0.5 font-mono text-[10px]">⌘</kbd> on Mac) to select multiple batches.
-                {batchIds.length > 0 && (
-                  <span className="ml-1 font-semibold text-scholar-700">
-                    {batchIds.length} batch{batchIds.length > 1 ? "es" : ""} selected — material will be uploaded separately for each.
-                  </span>
-                )}
+              <p className="text-[11px] text-scholar-500 pb-1">
+                No selection = visible to all batches in this course. Check specific batches to restrict access.
               </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {availableBatches.map((b) => {
+                  const isChecked = batchIds.includes(b.id);
+                  return (
+                    <label
+                      key={b.id}
+                      className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-xs font-medium cursor-pointer transition-all ${
+                        isChecked
+                          ? "border-scholar-500 bg-white text-scholar-900 shadow-2xs font-semibold"
+                          : "border-scholar-200 bg-white/70 text-scholar-600 hover:bg-white"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          if (isChecked) {
+                            setBatchIds(batchIds.filter((id) => id !== b.id));
+                          } else {
+                            setBatchIds([...batchIds, b.id]);
+                          }
+                        }}
+                        className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
+                      />
+                      <span className="truncate">{b.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </>
-          )}
-
-          {!allBatches && !courseId && (
-            <p className="text-xs text-scholar-500 italic">Select a course first to pick specific batches.</p>
           )}
         </div>
 
