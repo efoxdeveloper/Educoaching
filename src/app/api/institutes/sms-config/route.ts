@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireInstitute, requirePermission } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 import {
@@ -98,7 +99,7 @@ export async function POST(req: Request) {
   await prisma.institute.update({
     where: { id: ctx.instituteId },
     data: {
-      settings: updatedSettings as object,
+      settings: updatedSettings as unknown as Prisma.InputJsonValue,
     },
   });
 

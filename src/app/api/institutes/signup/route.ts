@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { TRIAL_DAYS } from "@/lib/pricing";
 import {
   sendRegistrationProcessingEmail,
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
       state: state?.trim() || null,
       academicYearLabel: academicYearLabel?.trim() || null,
       guidePhone: guidePhone?.trim() || null,
-      settings: initialSettings,
+      settings: initialSettings as unknown as Prisma.InputJsonValue,
       status: "PENDING_APPROVAL",
       emailVerified: false,
       trialStartedAt: now,
