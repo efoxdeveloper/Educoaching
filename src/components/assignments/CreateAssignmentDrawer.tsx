@@ -41,28 +41,29 @@ export function CreateAssignmentDrawer({
   }, [batches, passedCourses]);
 
   const [courseId, setCourseId] = useState(() => batches[0]?.course?.id || "");
-  const [batchId, setBatchId] = useState(() => batches[0]?.id || "");
-
-  useEffect(() => {
-    if (open) {
-      const activeCourse = (courseId && courses.some((c) => c.id === courseId))
-        ? courseId
-        : courses[0]?.id || "";
-      if (activeCourse !== courseId) {
-        setCourseId(activeCourse);
-      }
-
-      const matchingBatches = activeCourse ? batches.filter((b) => b.course?.id === activeCourse) : batches;
-      if (!batchId || !matchingBatches.some((b) => b.id === batchId)) {
-        setBatchId(matchingBatches[0]?.id || "");
-      }
-    }
-  }, [open, courses, batches, courseId, batchId]);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
 
   const availableBatches = useMemo(() => {
     if (!courseId) return batches;
     return batches.filter((b) => b.course?.id === courseId);
   }, [batches, courseId]);
+
+  // Initialize batch selection when drawer opens
+  useEffect(() => {
+    if (open) {
+      // default to first batch of selected course if available
+      const defaultBatches = availableBatches.map((b) => b.id);
+      setBatchIds(defaultBatches.length > 0 ? [defaultBatches[0]] : []);
+    }
+  }, [open, availableBatches]);
+
+  // Update batchIds when course changes
+  useEffect(() => {
+    if (courseId) {
+      const matching = batches.filter((b) => b.course?.id === courseId);
+      setBatchIds(matching.length > 0 ? [matching[0].id] : []);
+    }
+  }, [courseId, batches]);
 
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("Physics");
@@ -80,36 +81,39 @@ export function CreateAssignmentDrawer({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !subject.trim() || !batchId || !dueDate) {
+    if (!title.trim() || !subject.trim() || batchIds.length === 0 || !dueDate) {
       setError("Please fill in all required fields.");
       return;
     }
 
     setLoading(true);
     setError(null);
-
     try {
-      const res = await fetch("/api/assignments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          subject: subject.trim(),
-          batchId,
-          type,
-          dueDate,
-          totalMarks: Number(totalMarks) || 50,
-          attachmentUrl: attachmentUrl.trim() || null,
-          description: description.trim() || null,
-        }),
-      });
+      // Create assignment for each selected batch
+      await Promise.all(
+        batchIds.map(async (bid) => {
+          const res = await fetch("/api/assignments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: title.trim(),
+              subject: subject.trim(),
+              batchId: bid,
+              type,
+              dueDate,
+              totalMarks: Number(totalMarks) || 50,
+              attachmentUrl: attachmentUrl.trim() || null,
+              description: description.trim() || null,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to create assignment");
+          }
+        })
+      );
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create assignment");
-      }
-
-      // Reset
+      // Reset form after successful creation
       setTitle("");
       setAttachmentUrl("");
       setDescription("");
@@ -175,7 +179,7 @@ export function CreateAssignmentDrawer({
                 const newCourse = e.target.value;
                 setCourseId(newCourse);
                 const matching = batches.filter((b) => b.course.id === newCourse);
-                setBatchId(matching[0]?.id || "");
+                setBatchIds(matching.length > 0 ? [matching[0].id] : []);
               }}
               className={inputClass}
               required
@@ -192,31 +196,28 @@ export function CreateAssignmentDrawer({
             </select>
           </Field>
 
-          <Field label="Target Batch *">
+          <Field label="Target Batches * (Ctrl+Click for multiple)">
             <select
-              value={batchId}
-              onChange={(e) => setBatchId(e.target.value)}
+              multiple
+              value={batchIds}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+                setBatchIds(selected);
+              }}
               className={inputClass}
               required
-              disabled={availableBatches.length === 0}
             >
-              {availableBatches.length === 0 ? (
-                <option value="" disabled>
-                  No batches in this course
+              {availableBatches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.course?.name})
                 </option>
-              ) : (
-                availableBatches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))
-              )}
+              ))}
             </select>
           </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Submission Due Date *">
+          <Field label="Due Date *">
             <input
               type="date"
               required
@@ -225,11 +226,10 @@ export function CreateAssignmentDrawer({
               className={inputClass}
             />
           </Field>
-
-          <Field label="Maximum Marks">
+          <Field label="Total Marks (optional)">
             <input
               type="number"
-              min="1"
+              min="0"
               value={totalMarks}
               onChange={(e) => setTotalMarks(e.target.value)}
               className={inputClass}
@@ -237,27 +237,27 @@ export function CreateAssignmentDrawer({
           </Field>
         </div>
 
-        <Field label="Question Sheet / Resource Link (Optional)">
+        <Field label="Attachment URL (optional)">
           <input
             type="url"
+            placeholder="https://..."
             value={attachmentUrl}
             onChange={(e) => setAttachmentUrl(e.target.value)}
-            placeholder="https://drive.google.com/... (PDF link)"
             className={inputClass}
           />
         </Field>
 
-        <Field label="Instructions / Problem Statements">
+        <Field label="Description (optional)">
           <textarea
             rows={3}
+            placeholder="Additional details..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Solve questions 1-15 from Chapter 3. Show all working steps clearly..."
             className={inputClass}
           />
         </Field>
 
-        <div className="mt-4 flex gap-2 border-t border-scholar-100 pt-3">
+        <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
             onClick={onClose}
