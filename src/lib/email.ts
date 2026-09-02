@@ -58,6 +58,76 @@ function emailShell(title: string, bodyHtml: string) {
   </div>`;
 }
 
+function renderCredentialsBlock(params: {
+  title: string;
+  description?: string;
+  emailLabel: string;
+  email: string;
+  initialPassword?: string;
+  portalUrl?: string;
+  buttonLabel?: string;
+  securityNotice?: string;
+  note?: string;
+}) {
+  const {
+    title,
+    description,
+    emailLabel,
+    email,
+    initialPassword,
+    portalUrl,
+    buttonLabel = "Open Portal &rarr;",
+    securityNotice,
+    note,
+  } = params;
+
+  return `
+    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 16px; margin: 20px 0;">
+      <h3 style="color: #166534; font-size: 15px; margin: 0 0 8px; font-weight: 600;">
+        ${title}
+      </h3>
+      ${description ? `<p style="color: #15803D; font-size: 13px; margin: 0 0 12px;">${description}</p>` : ""}
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <tr>
+          <td style="padding: 4px 0; color: #166534; font-weight: 600;">${emailLabel}</td>
+          <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: 700; color: #14532D;">${email}</td>
+        </tr>
+        ${
+          initialPassword
+            ? `
+        <tr>
+          <td style="padding: 4px 0; color: #166534; font-weight: 600;">Initial Password:</td>
+          <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: 700; color: #14532D; background: #DCFCE7; padding: 2px 8px; border-radius: 4px; display: inline-block;">${initialPassword}</td>
+        </tr>
+        `
+            : ""
+        }
+      </table>
+      ${
+        securityNotice
+          ? `<p style="color: #15803D; font-size: 12px; margin: 10px 0 0; line-height: 1.5; font-style: italic;">${securityNotice}</p>`
+          : ""
+      }
+      ${
+        note
+          ? `<p style="color: #15803D; font-size: 12px; margin: 8px 0 0; line-height: 1.5;">${note}</p>`
+          : ""
+      }
+      ${
+        portalUrl
+          ? `
+      <div style="margin-top: 14px; text-align: center;">
+        <a href="${portalUrl}" style="display: inline-block; background: #15803D; color: #ffffff; text-decoration: none; padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+          ${buttonLabel}
+        </a>
+      </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
+
 export async function sendEnrollmentEmail(params: {
   to: string;
   studentName: string;
@@ -83,37 +153,15 @@ export async function sendEnrollmentEmail(params: {
        <tr><td style="padding: 6px 0; color: #4E6E93;">Paid</td><td style="padding: 6px 0; text-align: right; font-weight: 600; color: #1F9D66;">₹${paidFee.toLocaleString("en-IN")}</td></tr>`;
 
   const credentialsBlock = initialPassword
-    ? `
-    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 16px; margin: 20px 0;">
-      <h3 style="color: #166534; font-size: 15px; margin: 0 0 8px; font-weight: 600;">
-        🔑 Your Student Profile Login Credentials
-      </h3>
-      <p style="color: #15803D; font-size: 13px; margin: 0 0 12px;">
-        Use these credentials to sign in to your student portal, take CBT exams, view timetable, and access learning materials:
-      </p>
-      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-        <tr>
-          <td style="padding: 4px 0; color: #166534; font-weight: 600;">Portal Email:</td>
-          <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: 700; color: #14532D;">${to}</td>
-        </tr>
-        <tr>
-          <td style="padding: 4px 0; color: #166534; font-weight: 600;">Initial Password:</td>
-          <td style="padding: 4px 0; text-align: right; font-family: monospace; font-weight: 700; color: #14532D; background: #DCFCE7; padding: 2px 8px; border-radius: 4px; display: inline-block;">${initialPassword}</td>
-        </tr>
-      </table>
-      ${
-        portalUrl
-          ? `
-      <div style="margin-top: 14px; text-align: center;">
-        <a href="${portalUrl}" style="display: inline-block; background: #15803D; color: #ffffff; text-decoration: none; padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;">
-          Open Student Portal &rarr;
-        </a>
-      </div>
-      `
-          : ""
-      }
-    </div>
-    `
+    ? renderCredentialsBlock({
+        title: "🔑 Your Student Profile Login Credentials",
+        description: "Use these credentials to sign in to your student portal, take CBT exams, view timetable, and access learning materials:",
+        emailLabel: "Portal Email:",
+        email: to,
+        initialPassword,
+        portalUrl,
+        buttonLabel: "Open Student Portal &rarr;",
+      })
     : "";
 
   const html = emailShell(
@@ -135,6 +183,88 @@ export async function sendEnrollmentEmail(params: {
   );
 
   return sendMail(to, `Welcome to ${courseName} — Enrollment Confirmed`, html);
+}
+
+export async function sendParentWelcomeEmail(params: {
+  to: string;
+  studentName: string;
+  courseName: string;
+  parentName?: string | null;
+  initialPassword?: string;
+  portalUrl?: string;
+  isExistingAccount?: boolean;
+  linkedChildrenCount?: number;
+  instituteName?: string;
+}) {
+  const {
+    to,
+    studentName,
+    courseName,
+    parentName,
+    initialPassword,
+    portalUrl,
+    isExistingAccount = false,
+    linkedChildrenCount = 1,
+    instituteName = "Vidyalaya Institute",
+  } = params;
+
+  const isSiblingCase = isExistingAccount || !initialPassword || linkedChildrenCount > 1;
+
+  const headerTitle = isSiblingCase
+    ? `${studentName} added to your Parent Portal 🎓`
+    : `Welcome! You've been given portal access for ${studentName} 🎓`;
+
+  const subject = isSiblingCase
+    ? `${studentName} has been added to your Parent Portal account — ${instituteName}`
+    : `Welcome to Parent Portal — Access for ${studentName} at ${instituteName}`;
+
+  const greeting = parentName ? `Dear ${parentName},` : `Dear Parent,`;
+
+  const introParagraph = isSiblingCase
+    ? `<p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+        ${greeting}<br/>
+        <strong>${studentName}</strong> (enrolled in <strong>${courseName}</strong>) has been added to your existing parent portal account. You can track fees, attendance, exam results, and study material for all your enrolled children from this single login.
+      </p>`
+    : `<p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+        ${greeting}<br/>
+        You have been granted online portal access for <strong>${studentName}</strong> (enrolled in <strong>${courseName}</strong>) at ${instituteName}. Through your Parent Portal, you can conveniently monitor your child's attendance, view exam results and report cards, access study materials, and make online fee payments.
+      </p>`;
+
+  const credentialsBlock = initialPassword
+    ? renderCredentialsBlock({
+        title: "🔑 Your Parent Portal Login Credentials",
+        description: "Use these credentials to sign in to your parent portal:",
+        emailLabel: "Portal Email:",
+        email: to,
+        initialPassword,
+        securityNotice: "For security, you'll be asked to set a new password the first time you log in.",
+        portalUrl,
+        buttonLabel: "Open Parent Portal &rarr;",
+      })
+    : isSiblingCase && portalUrl
+    ? renderCredentialsBlock({
+        title: "🔑 Your Parent Portal Access",
+        description: "Log in with your existing parent credentials to access records for all your linked children:",
+        emailLabel: "Portal Email:",
+        email: to,
+        note: "This one login covers all your linked children at Vidyalaya Institute.",
+        portalUrl,
+        buttonLabel: "Open Parent Portal &rarr;",
+      })
+    : "";
+
+  const html = emailShell(
+    headerTitle,
+    `
+    ${introParagraph}
+    ${credentialsBlock}
+    <p style="color: #4E6E93; font-size: 13px; line-height: 1.6;">
+      If you have any questions or need assistance accessing your parent portal, please feel free to contact the institute administration.
+    </p>
+    `
+  );
+
+  return sendMail(to, subject, html);
 }
 
 export async function sendBatchAssignedEmail(params: {

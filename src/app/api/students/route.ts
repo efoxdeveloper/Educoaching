@@ -5,7 +5,7 @@ import { requireInstitute } from "@/lib/tenant";
 import { DEMO_PERIOD_DAYS, RENEWAL_PERIOD_DAYS, QUARTERLY_RENEWAL_PERIOD_DAYS } from "@/lib/subscription";
 import { calculateCourseEndDate } from "@/lib/course-duration";
 import { applyPaymentToInstallments, type FeeInstallment } from "@/lib/installments";
-import { sendEnrollmentEmail } from "@/lib/email";
+import { sendEnrollmentEmail, sendParentWelcomeEmail } from "@/lib/email";
 import type { SubscriptionPlan } from "@prisma/client";
 
 export async function GET() {
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     mobile,
     email,
     parentMobile,
+    parentEmail,
     courseId,
     batchId,
     branchId,
@@ -135,13 +136,16 @@ export async function POST(req: Request) {
     approvalStatus = numDiscount > 30 ? "PENDING_OWNER_APPROVAL" : "AUTO_APPROVED";
   }
 
+  const cleanParentEmail = parentEmail ? String(parentEmail).trim().toLowerCase() : null;
+
   const student = await prisma.student.create({
     data: {
       instituteId: ctx.instituteId,
       name: String(name).trim(),
       mobile: String(mobile).trim(),
-      email: email ? String(email).trim() : null,
+      email: cleanEmail,
       parentMobile: parentMobile ? String(parentMobile).trim() : null,
+      parentEmail: cleanParentEmail,
       courseId,
       batchId: batchId || null,
       branchId: branchId || null,
@@ -261,6 +265,55 @@ export async function POST(req: Request) {
     console.error("[students] Failed to create or update student User credentials:", err);
   }
 
+  // Create or link a User account for the parent & ParentStudentLink
+  let isNewParentUser = false;
+  let priorParentLinkCount = 0;
+
+  if (cleanParentEmail && cleanParentEmail.includes("@")) {
+    try {
+      let parentUser = await prisma.user.findUnique({
+        where: { email: cleanParentEmail },
+        select: { id: true, role: true },
+      });
+
+      const parentInitialPassword = "password123";
+      if (!parentUser) {
+        const hashedParentPassword = await bcrypt.hash(parentInitialPassword, 10);
+        parentUser = await prisma.user.create({
+          data: {
+            name: parentMobile ? `Parent of ${student.name}` : `Parent`,
+            email: cleanParentEmail,
+            password: hashedParentPassword,
+            role: "PARENT",
+            instituteId: ctx.instituteId,
+            branchId: branchId || null,
+          },
+        });
+        isNewParentUser = true;
+      } else {
+        priorParentLinkCount = await prisma.parentStudentLink.count({
+          where: { parentUserId: parentUser.id },
+        });
+      }
+
+      // Link parent to student
+      const existingLink = await prisma.parentStudentLink.findFirst({
+        where: { parentUserId: parentUser.id, studentId: student.id },
+      });
+
+      if (!existingLink) {
+        await prisma.parentStudentLink.create({
+          data: {
+            parentUserId: parentUser.id,
+            studentId: student.id,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("[students] Failed to create or link parent User credentials:", err);
+    }
+  }
+
   const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const portalUrl = `${appUrl}/login`;
 
@@ -278,6 +331,19 @@ export async function POST(req: Request) {
       initialPassword,
       portalUrl,
     }).catch((err) => console.error("[students] enrollment email failed:", err));
+  }
+
+  if (cleanParentEmail) {
+    sendParentWelcomeEmail({
+      to: cleanParentEmail,
+      studentName: student.name,
+      courseName: student.course.name,
+      initialPassword: isNewParentUser ? "password123" : undefined,
+      isExistingAccount: !isNewParentUser || priorParentLinkCount > 0,
+      linkedChildrenCount: priorParentLinkCount + 1,
+      portalUrl,
+      instituteName: ctx.session?.user?.name || "Vidyalaya Institute",
+    }).catch((err) => console.error("[students] parent welcome email failed:", err));
   }
 
   return NextResponse.json(student, { status: 201 });

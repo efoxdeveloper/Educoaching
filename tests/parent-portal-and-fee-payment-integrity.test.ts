@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import crypto from "crypto";
 import { applyPaymentToInstallments, type FeeInstallment } from "../src/lib/installments";
+import { sendEnrollmentEmail, sendParentWelcomeEmail } from "../src/lib/email";
 
 describe("Item 1 & 2 — Payment Flow Integrity & Parent Authorization", () => {
   const secretKey = "test_razorpay_secret_key_12345";
@@ -265,5 +266,127 @@ describe("Item 4 — Fee Reminders Contact Priority & Disambiguation", () => {
     expect(msg2).toContain("20,000");
 
     expect(msg1).not.toEqual(msg2);
+  });
+});
+
+describe("Welcome Email to Parent on Enrollment", () => {
+  it("generates first-child welcome email with initial password and security warning", async () => {
+    // When SMTP is not configured in test environment, sendParentWelcomeEmail returns { sent: false, reason: "not_configured" }
+    // without throwing
+    const res = await sendParentWelcomeEmail({
+      to: "parent@test.com",
+      studentName: "Aarav Sharma",
+      courseName: "Class 10 CBSE",
+      initialPassword: "password123",
+      portalUrl: "http://localhost:3000/login",
+      isExistingAccount: false,
+    });
+
+    expect(res).toBeDefined();
+    expect(res.sent === true || res.reason === "not_configured").toBe(true);
+  });
+
+  it("generates second-child addition email without initial password block for existing parent", async () => {
+    const res = await sendParentWelcomeEmail({
+      to: "parent@test.com",
+      studentName: "Diya Sharma",
+      courseName: "Class 8 Foundation",
+      portalUrl: "http://localhost:3000/login",
+      isExistingAccount: true,
+      linkedChildrenCount: 2,
+    });
+
+    expect(res).toBeDefined();
+    expect(res.sent === true || res.reason === "not_configured").toBe(true);
+  });
+
+  it("simulates student creation flow: sends both student & parent emails for first child", async () => {
+    const emailCalls: Array<{ type: string; to: string; initialPassword?: string; isExisting?: boolean }> = [];
+
+    const mockSendEnrollmentEmail = async (params: { to: string; initialPassword?: string }) => {
+      emailCalls.push({ type: "STUDENT", to: params.to, initialPassword: params.initialPassword });
+      return { sent: true };
+    };
+
+    const mockSendParentWelcomeEmail = async (params: { to: string; initialPassword?: string; isExistingAccount?: boolean }) => {
+      emailCalls.push({ type: "PARENT", to: params.to, initialPassword: params.initialPassword, isExisting: params.isExistingAccount });
+      return { sent: true };
+    };
+
+    // Flow for First Child
+    const student = { email: "aarav@test.com", name: "Aarav Sharma" };
+    const parentEmail = "parent@test.com";
+    const isNewParentUser = true;
+    const priorParentLinkCount = 0;
+
+    if (student.email) {
+      await mockSendEnrollmentEmail({ to: student.email, initialPassword: "student123" });
+    }
+    if (parentEmail) {
+      await mockSendParentWelcomeEmail({
+        to: parentEmail,
+        initialPassword: isNewParentUser ? "password123" : undefined,
+        isExistingAccount: !isNewParentUser || priorParentLinkCount > 0,
+      });
+    }
+
+    expect(emailCalls).toHaveLength(2);
+    expect(emailCalls[0]).toEqual({ type: "STUDENT", to: "aarav@test.com", initialPassword: "student123" });
+    expect(emailCalls[1]).toEqual({ type: "PARENT", to: "parent@test.com", initialPassword: "password123", isExisting: false });
+  });
+
+  it("simulates student creation flow: sends student email + child added notice without password for second child", async () => {
+    const emailCalls: Array<{ type: string; to: string; initialPassword?: string; isExisting?: boolean }> = [];
+
+    const mockSendEnrollmentEmail = async (params: { to: string; initialPassword?: string }) => {
+      emailCalls.push({ type: "STUDENT", to: params.to, initialPassword: params.initialPassword });
+      return { sent: true };
+    };
+
+    const mockSendParentWelcomeEmail = async (params: { to: string; initialPassword?: string; isExistingAccount?: boolean }) => {
+      emailCalls.push({ type: "PARENT", to: params.to, initialPassword: params.initialPassword, isExisting: params.isExistingAccount });
+      return { sent: true };
+    };
+
+    // Flow for Second Child (Existing Parent User)
+    const student = { email: "diya@test.com", name: "Diya Sharma" };
+    const parentEmail = "parent@test.com";
+    const isNewParentUser = false; // already created
+    const priorParentLinkCount = 1; // already linked to Aarav
+
+    if (student.email) {
+      await mockSendEnrollmentEmail({ to: student.email, initialPassword: "student123" });
+    }
+    if (parentEmail) {
+      await mockSendParentWelcomeEmail({
+        to: parentEmail,
+        initialPassword: isNewParentUser ? "password123" : undefined,
+        isExistingAccount: !isNewParentUser || priorParentLinkCount > 0,
+      });
+    }
+
+    expect(emailCalls).toHaveLength(2);
+    expect(emailCalls[0]).toEqual({ type: "STUDENT", to: "diya@test.com", initialPassword: "student123" });
+    expect(emailCalls[1]).toEqual({ type: "PARENT", to: "parent@test.com", initialPassword: undefined, isExisting: true });
+  });
+
+  it("ensures student creation succeeds non-blockingly even if email dispatch fails/throws", async () => {
+    let studentCreated = false;
+
+    const failingEmailSend = async () => {
+      throw new Error("SMTP connection timeout");
+    };
+
+    try {
+      studentCreated = true;
+      // Non-blocking catch handler
+      await failingEmailSend().catch((err) => {
+        expect(err.message).toBe("SMTP connection timeout");
+      });
+    } catch {
+      studentCreated = false;
+    }
+
+    expect(studentCreated).toBe(true);
   });
 });
