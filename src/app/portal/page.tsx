@@ -15,13 +15,33 @@ export default async function StudentPortalPage({
     redirect("/login");
   }
 
-  const instituteId = await getInstituteId();
+  let instituteId = await getInstituteId();
+  const userRole = String((session.user as { role?: string })?.role || "").toUpperCase();
+  const userEmail = session.user.email;
+  const userId = (session.user as { id?: string })?.id;
+
+  if (!instituteId) {
+    if (userRole === "PARENT" && userId) {
+      const link = await (prisma as any).parentStudentLink.findFirst({
+        where: { parentUserId: userId },
+        include: { student: true },
+      });
+      if (link?.student?.instituteId) {
+        instituteId = link.student.instituteId;
+      }
+    } else if (userRole === "STUDENT" && userEmail) {
+      const st = await prisma.student.findFirst({
+        where: { email: { equals: userEmail, mode: "insensitive" } },
+      });
+      if (st?.instituteId) {
+        instituteId = st.instituteId;
+      }
+    }
+  }
+
   if (!instituteId) {
     redirect("/login");
   }
-
-  const userRole = String((session.user as { role?: string })?.role || "").toUpperCase();
-  const userEmail = session.user.email;
 
   // Build secure student filter based on session role
   let studentFilter: { id?: string; email?: string } = {};

@@ -41,6 +41,9 @@ export default async function DashboardPage() {
   if (!instituteId) redirect("/login");
 
   const userRole = String((session?.user as { role?: string })?.role || "").toUpperCase();
+  if (userRole === "STUDENT" || userRole === "PARENT") {
+    redirect("/portal");
+  }
 
   // If user is FACULTY, render dedicated academic-only dashboard
   // Faculty MUST NOT see fee collection, expenses, or Lead CRM

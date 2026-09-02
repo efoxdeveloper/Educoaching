@@ -117,7 +117,7 @@ export function LoginForm() {
 
     const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
-    router.push(role === "PLATFORM_ADMIN" ? "/admin" : role === "STUDENT" ? "/portal" : "/dashboard");
+    router.push(role === "PLATFORM_ADMIN" ? "/admin" : (role === "STUDENT" || role === "PARENT") ? "/portal" : "/dashboard");
     router.refresh();
   };
 
@@ -131,7 +131,7 @@ export function LoginForm() {
     const emailToUse = studentEmail.trim();
 
     if (!emailToUse || !studentPassword) {
-      setError("Please enter both your registered student email and password.");
+      setError("Please enter your registered student or parent email and password.");
       setLoading(false);
       return;
     }
@@ -147,19 +147,25 @@ export function LoginForm() {
 
     if (res?.error) {
       setError(
-        "Invalid student email or password. Please check your credentials and try again."
+        "Invalid email or password. Please check your credentials and try again."
       );
       return;
     }
 
     const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
-    router.push(role === "STUDENT" ? "/portal" : "/dashboard");
+    router.push((role === "STUDENT" || role === "PARENT") ? "/portal" : "/dashboard");
     router.refresh();
   };
 
   const handleFillDemoStudent = () => {
     setStudentEmail("student@vidyalaya.test");
+    setStudentPassword("password123");
+    setError("");
+  };
+
+  const handleFillDemoParent = () => {
+    setStudentEmail("parent@vidyalaya.test");
     setStudentPassword("password123");
     setError("");
   };
@@ -342,13 +348,13 @@ export function LoginForm() {
               <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 text-xs text-scholar-700">
                 <p className="font-semibold text-scholar-900">Student & Parent Portal Access</p>
                 <p className="mt-0.5 text-scholar-600">
-                  Sign in with your registered student email and password to access CBT exams, test series, study materials, and fee receipts.
+                  Sign in with your registered student or parent email to access academics, attendance, study materials, and fee records.
                 </p>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink">
-                  Student Email
+                  Registered Email Address
                 </label>
                 <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
                   <Mail size={16} className="text-scholar-300" />
@@ -358,7 +364,7 @@ export function LoginForm() {
                     value={studentEmail}
                     onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="student@vidyalaya.test"
+                    placeholder="student@vidyalaya.test / parent@vidyalaya.test"
                   />
                 </div>
               </div>
@@ -401,16 +407,24 @@ export function LoginForm() {
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-scholar-700 disabled:opacity-60"
               >
-                {loading ? "Signing in..." : "Sign in to Student Portal"} <ArrowRight size={15} />
+                {loading ? "Signing in..." : "Sign in to Portal"} <ArrowRight size={15} />
               </button>
 
-              <div className="pt-2 text-center">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
                 <button
                   type="button"
                   onClick={handleFillDemoStudent}
-                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  ⚡ Auto-fill Demo Student (Aarav Sharma)
+                  ⚡ Auto-fill Student
+                </button>
+                <span className="hidden sm:inline text-scholar-300">•</span>
+                <button
+                  type="button"
+                  onClick={handleFillDemoParent}
+                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  ⚡ Auto-fill Parent
                 </button>
               </div>
             </form>
