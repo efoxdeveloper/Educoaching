@@ -4,6 +4,32 @@ import bcrypt from "bcryptjs";
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 10);
 
+  // Ensure Platform Super Admin ecommerseinventiveteam@gmail.com exists
+  const existingPlatformAdmin = await prisma.user.findUnique({
+    where: { email: "ecommerseinventiveteam@gmail.com" },
+  });
+  if (!existingPlatformAdmin) {
+    await prisma.user.create({
+      data: {
+        name: "Platform Super Admin",
+        email: "ecommerseinventiveteam@gmail.com",
+        password: passwordHash,
+        role: "PLATFORM_ADMIN",
+        instituteId: null,
+      },
+    });
+    console.log("Created Platform Super Admin user: ecommerseinventiveteam@gmail.com");
+  } else {
+    await prisma.user.update({
+      where: { email: "ecommerseinventiveteam@gmail.com" },
+      data: {
+        role: "PLATFORM_ADMIN",
+        password: passwordHash,
+      },
+    });
+    console.log("Updated Platform Super Admin user: ecommerseinventiveteam@gmail.com");
+  }
+
   // Ensure student@vidyalaya.test exists and is active
   const vidyalayaInstitute = await prisma.institute.findFirst({
     where: { email: "owner@vidyalaya.test" },
