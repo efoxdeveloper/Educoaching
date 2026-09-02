@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireInstitute } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 import { parseInstituteSettings } from "@/lib/institute-settings";
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
       state: state !== undefined ? (state.trim() || null) : institute.state,
       guidePhone: guidePhone !== undefined ? (guidePhone.trim() || null) : institute.guidePhone,
       academicYearLabel: academicYearLabel !== undefined ? (academicYearLabel.trim() || null) : institute.academicYearLabel,
-      settings: updatedSettings,
+      settings: updatedSettings as unknown as Prisma.InputJsonValue,
     },
   });
 
