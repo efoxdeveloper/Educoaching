@@ -291,18 +291,18 @@ export async function POST(req: Request) {
         });
         isNewParentUser = true;
       } else {
-        priorParentLinkCount = await prisma.parentStudentLink.count({
+        priorParentLinkCount = await (prisma as any).parentStudentLink.count({
           where: { parentUserId: parentUser.id },
         });
       }
 
       // Link parent to student
-      const existingLink = await prisma.parentStudentLink.findFirst({
+      const existingLink = await (prisma as any).parentStudentLink.findFirst({
         where: { parentUserId: parentUser.id, studentId: student.id },
       });
 
       if (!existingLink) {
-        await prisma.parentStudentLink.create({
+        await (prisma as any).parentStudentLink.create({
           data: {
             parentUserId: parentUser.id,
             studentId: student.id,

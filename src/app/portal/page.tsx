@@ -34,11 +34,11 @@ export default async function StudentPortalPage({
     studentFilter = { email: userEmail };
   } else if (userRole === "PARENT") {
     const userId = (session.user as { id?: string })?.id;
-    const links = await prisma.parentStudentLink.findMany({
+    const links = await (prisma as any).parentStudentLink.findMany({
       where: { parentUserId: userId },
       select: { studentId: true },
     });
-    const linkedIds = links.map((l) => l.studentId);
+    const linkedIds: string[] = Array.isArray(links) ? links.map((l: { studentId: string }) => l.studentId) : [];
     if (linkedIds.length === 0 && userEmail) {
       const matchingStudents = await prisma.student.findMany({
         where: { instituteId, parentEmail: userEmail },

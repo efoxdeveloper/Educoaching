@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json({ error: "Forbidden: Missing parent identity" }, { status: 403 });
     }
-    const link = await prisma.parentStudentLink.findFirst({
+    const link = await (prisma as any).parentStudentLink.findFirst({
       where: { parentUserId: userId, studentId },
     });
     if (!link) {
