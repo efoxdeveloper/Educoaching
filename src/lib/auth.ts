@@ -103,7 +103,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         // Check if this is a student mobile or student email login
-        let student = await prisma.student.findFirst({
+        const student = await prisma.student.findFirst({
           where: {
             OR: [
               { mobile: input },
@@ -113,30 +113,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           include: { branch: true },
         });
 
-        // 1. Student Quick Access via Mobile Number (without traditional password)
-        if (password === "student-portal" && student) {
-          return {
-            id: user?.id || student.id,
-            name: student.name,
-            email: student.email || `${student.mobile}@student.portal`,
-            role: "STUDENT",
-            instituteId: student.instituteId,
-            branchId: student.branchId,
-            isMainBranch: true,
-          };
-        }
-
-        if (!user && student) {
-          if (student.email) {
+        if (student) {
+          if (!user && student.email) {
             user = await prisma.user.findFirst({
-              where: { email: student.email },
+              where: { email: { equals: student.email, mode: "insensitive" } },
               include: { branch: true },
             });
           }
-          // If student has no User row yet, create/allow if password is password123
-          if (!user && (password === "password123" || password === "student-portal")) {
+
+          // Passwordless mobile access
+          if (password === "student-portal") {
             return {
-              id: student.id,
+              id: user?.id || student.id,
               name: student.name,
               email: student.email || `${student.mobile}@student.portal`,
               role: "STUDENT",
@@ -145,14 +133,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               isMainBranch: true,
             };
           }
+
+          // Allow default student password or compare hash
+          if (password === "password123") {
+            return {
+              id: user?.id || student.id,
+              name: student.name,
+              email: student.email || `${student.mobile}@student.portal`,
+              role: "STUDENT",
+              instituteId: student.instituteId,
+              branchId: student.branchId,
+              isMainBranch: true,
+            };
+          }
+
+          if (user) {
+            const valid = await bcrypt.compare(password, user.password);
+            if (valid) {
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                instituteId: user.instituteId,
+                branchId: user.branchId,
+                isMainBranch: true,
+              };
+            }
+          }
+
+          return null;
         }
 
         if (!user) return null;
 
         const valid = await bcrypt.compare(password, user.password);
-        if (!valid && !(user.role === "STUDENT" && password === "password123")) {
-          return null;
-        }
+        if (!valid) return null;
 
 
 

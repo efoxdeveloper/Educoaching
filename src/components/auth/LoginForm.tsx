@@ -124,24 +124,22 @@ export function LoginForm() {
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Sync the mobile input into studentInput so handleSubmit picks it up
-    setStudentInput(studentMobile);
-    // handleSubmit reads from state synchronously via a closure; call it directly
-    // by re-invoking the same logic with the mobile as the identifier.
     setError("");
     setPendingNotice(null);
     setNeedsVerification(false);
     setLoading(true);
 
-    if (!studentMobile) {
-      setError("Please enter your registered mobile number.");
+    const identifier = (studentInput || studentMobile).trim();
+
+    if (!identifier) {
+      setError("Please enter your registered mobile number or email address.");
       setLoading(false);
       return;
     }
 
     const res = await signIn("credentials", {
-      email: studentMobile,
-      password: studentPassword || "student-portal",
+      email: identifier,
+      password: studentPassword.trim() || "student-portal",
       portal: portal ?? "",
       redirect: false,
     });
@@ -150,19 +148,20 @@ export function LoginForm() {
 
     if (res?.error) {
       setError(
-        "No student record found for this mobile number. Please check and try again, or contact your institute."
+        "No matching student record found. Please verify your mobile number / email or enter your password."
       );
       return;
     }
 
-    const session = await (await import("next-auth/react")).getSession();
+    const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
     router.push(role === "STUDENT" ? "/portal" : "/dashboard");
     router.refresh();
   };
 
   const handleFillDemoStudent = () => {
-    setStudentInput("student@vidyalaya.test");
+    setStudentInput("9876543210");
+    setStudentMobile("9876543210");
     setStudentPassword("password123");
     setError("");
   };
@@ -340,38 +339,85 @@ export function LoginForm() {
               </button>
             </form>
           ) : (
-            /* Student / Parent Quick Access Form */
+            /* Student / Parent Access Form (Supports Mobile & Email + Password) */
             <form onSubmit={handleStudentSubmit} className="mt-6 space-y-4">
               <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 text-xs text-scholar-700">
                 <p className="font-semibold text-scholar-900">Student & Parent Portal Access</p>
                 <p className="mt-0.5 text-scholar-600">
-                  Enter your registered 10-digit mobile number to view test series, CBT exams, study material, fee receipts, and AI doubt solver.
+                  Sign in using your registered 10-digit mobile number or student email.
                 </p>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Registered Mobile Number</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">
+                  Registered Mobile Number or Email
+                </label>
                 <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
                   <Phone size={16} className="text-scholar-300" />
                   <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
+                    type="text"
                     required
-                    value={studentMobile}
-                    onChange={(e) => setStudentMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    value={studentInput || studentMobile}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStudentInput(val);
+                      setStudentMobile(val);
+                    }}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="e.g. 9876543210"
+                    placeholder="e.g. 9876543210 or student@institute.com"
                   />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-sm font-medium text-ink">
+                    Password <span className="text-xs font-normal text-scholar-400">(Optional for mobile)</span>
+                  </label>
+                  <Link
+                    href={`/forgot-password${portal ? `?portal=${portal}` : ""}`}
+                    className="text-xs font-medium text-scholar-600 hover:text-scholar-700 hover:underline"
+                  >
+                    Forgot?
+                  </Link>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
+                  <Lock size={16} className="text-scholar-300" />
+                  <input
+                    type={showStudentPassword ? "text" : "password"}
+                    value={studentPassword}
+                    onChange={(e) => setStudentPassword(e.target.value)}
+                    className="w-full bg-transparent text-sm outline-none"
+                    placeholder="Enter password or leave blank for mobile access"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentPassword(!showStudentPassword)}
+                    className="text-scholar-400 hover:text-scholar-700 transition shrink-0 p-0.5 focus:outline-none"
+                    aria-label={showStudentPassword ? "Hide password" : "Show password"}
+                  >
+                    {showStudentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-scholar-700"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-scholar-700 disabled:opacity-60"
               >
-                Access Student Portal <ArrowRight size={15} />
+                {loading ? "Signing in..." : "Access Student Portal"} <ArrowRight size={15} />
               </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleFillDemoStudent}
+                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1"
+                >
+                  ⚡ Auto-fill Demo Student (Aarav Sharma)
+                </button>
+              </div>
             </form>
           )}
 
