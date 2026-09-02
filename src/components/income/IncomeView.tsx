@@ -374,10 +374,11 @@ export function IncomeView() {
         message={`Are you sure you want to delete "${incomeToDelete?.title}" (${formatCurrency(
           Number(incomeToDelete?.amount || 0)
         )})? This will remove it from all P&L accounting summaries.`}
-        confirmLabel={deleteLoading ? "Deleting..." : "Delete Record"}
-        variant="danger"
+        confirmLabel="Delete Record"
+        tone="danger"
+        loading={deleteLoading}
         onConfirm={handleDelete}
-        onCancel={() => setIncomeToDelete(null)}
+        onClose={() => setIncomeToDelete(null)}
       />
     </div>
   );
