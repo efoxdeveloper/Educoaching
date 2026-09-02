@@ -40,20 +40,24 @@ async function main() {
     if (!existingStudent) {
       const course = await prisma.course.findFirst({ where: { instituteId: vidyalayaInstitute.id } });
       const batch = await prisma.batch.findFirst({ where: { instituteId: vidyalayaInstitute.id } });
-      await prisma.student.create({
-        data: {
-          instituteId: vidyalayaInstitute.id,
-          name: "Aarav Sharma",
-          mobile: "9876543210",
-          email: "student@vidyalaya.test",
-          courseId: course?.id,
-          batchId: batch?.id,
-          status: "ACTIVE",
-          totalFee: 50000,
-          paidFee: 30000,
-        },
-      });
-      console.log("Created student record for Aarav Sharma");
+      if (course) {
+        await prisma.student.create({
+          data: {
+            instituteId: vidyalayaInstitute.id,
+            name: "Aarav Sharma",
+            mobile: "9876543210",
+            email: "student@vidyalaya.test",
+            courseId: course.id,
+            batchId: batch?.id ?? undefined,
+            status: "ACTIVE",
+            totalFee: 50000,
+            paidFee: 30000,
+          },
+        });
+        console.log("Created student record for Aarav Sharma");
+      } else {
+        console.log("No course found — skipped creating student record for Aarav Sharma");
+      }
     }
   }
 
@@ -82,19 +86,21 @@ async function main() {
     if (!sarthakStudent) {
       const course = await prisma.course.findFirst({ where: { instituteId: sarthakInstitute.id } });
       const batch = await prisma.batch.findFirst({ where: { instituteId: sarthakInstitute.id } });
-      await prisma.student.create({
-        data: {
-          instituteId: sarthakInstitute.id,
-          name: "Rohit Verma",
-          mobile: "9812345678",
-          email: "student.sarthak@vidyalaya.test",
-          courseId: course?.id,
-          batchId: batch?.id,
-          status: "ACTIVE",
-          totalFee: 45000,
-          paidFee: 45000,
-        },
-      });
+      if (course) {
+        await prisma.student.create({
+          data: {
+            instituteId: sarthakInstitute.id,
+            name: "Rohit Verma",
+            mobile: "9812345678",
+            email: "student.sarthak@vidyalaya.test",
+            courseId: course.id,
+            batchId: batch?.id ?? undefined,
+            status: "ACTIVE",
+            totalFee: 45000,
+            paidFee: 45000,
+          },
+        });
+      }
     }
   }
 }
