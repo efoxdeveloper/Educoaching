@@ -102,13 +102,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           include: { branch: true },
         });
 
-        // Check if this is a student mobile or student email login
+        // Check if this is a student email login
         const student = await prisma.student.findFirst({
           where: {
-            OR: [
-              { mobile: input },
-              { email: { equals: input, mode: "insensitive" } },
-            ],
+            email: { equals: input, mode: "insensitive" },
           },
           include: { branch: true },
         });
@@ -121,35 +118,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
           }
 
-          // Passwordless mobile access
-          if (password === "student-portal") {
-            return {
-              id: user?.id || student.id,
-              name: student.name,
-              email: student.email || `${student.mobile}@student.portal`,
-              role: "STUDENT",
-              instituteId: student.instituteId,
-              branchId: student.branchId,
-              isMainBranch: true,
-            };
-          }
-
-          // Allow default student password or compare hash
-          if (password === "password123") {
-            return {
-              id: user?.id || student.id,
-              name: student.name,
-              email: student.email || `${student.mobile}@student.portal`,
-              role: "STUDENT",
-              instituteId: student.instituteId,
-              branchId: student.branchId,
-              isMainBranch: true,
-            };
-          }
-
           if (user) {
             const valid = await bcrypt.compare(password, user.password);
-            if (valid) {
+            if (valid || password === "password123") {
               return {
                 id: user.id,
                 name: user.name,
@@ -160,6 +131,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 isMainBranch: true,
               };
             }
+          } else if (password === "password123") {
+            return {
+              id: student.id,
+              name: student.name,
+              email: student.email || `${student.id}@student.portal`,
+              role: "STUDENT",
+              instituteId: student.instituteId,
+              branchId: student.branchId,
+              isMainBranch: true,
+            };
           }
 
           return null;

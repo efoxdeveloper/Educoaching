@@ -19,10 +19,9 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   
   // Student Login state
-  const [studentInput, setStudentInput] = useState("");
+  const [studentEmail, setStudentEmail] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
   const [showStudentPassword, setShowStudentPassword] = useState(false);
-  const [studentMobile, setStudentMobile] = useState("");
 
   const [error, setError] = useState("");
   const [pendingNotice, setPendingNotice] = useState<{
@@ -41,13 +40,13 @@ export function LoginForm() {
     setLoading(true);
 
     const isStudent = authMode === "student";
-    const loginIdentifier = isStudent ? studentInput.trim() : email.trim();
+    const loginIdentifier = isStudent ? studentEmail.trim() : email.trim();
     const loginPassword = isStudent ? studentPassword : password;
 
     if (!loginIdentifier || !loginPassword) {
       setError(
         isStudent
-          ? "Please enter your registered mobile number / email and password."
+          ? "Please enter your registered student email and password."
           : "Please enter your email and password."
       );
       setLoading(false);
@@ -129,17 +128,17 @@ export function LoginForm() {
     setNeedsVerification(false);
     setLoading(true);
 
-    const identifier = (studentInput || studentMobile).trim();
+    const emailToUse = studentEmail.trim();
 
-    if (!identifier) {
-      setError("Please enter your registered mobile number or email address.");
+    if (!emailToUse || !studentPassword) {
+      setError("Please enter both your registered student email and password.");
       setLoading(false);
       return;
     }
 
     const res = await signIn("credentials", {
-      email: identifier,
-      password: studentPassword.trim() || "student-portal",
+      email: emailToUse,
+      password: studentPassword,
       portal: portal ?? "",
       redirect: false,
     });
@@ -148,7 +147,7 @@ export function LoginForm() {
 
     if (res?.error) {
       setError(
-        "No matching student record found. Please verify your mobile number / email or enter your password."
+        "Invalid student email or password. Please check your credentials and try again."
       );
       return;
     }
@@ -160,8 +159,7 @@ export function LoginForm() {
   };
 
   const handleFillDemoStudent = () => {
-    setStudentInput("9876543210");
-    setStudentMobile("9876543210");
+    setStudentEmail("student@vidyalaya.test");
     setStudentPassword("password123");
     setError("");
   };
@@ -339,32 +337,28 @@ export function LoginForm() {
               </button>
             </form>
           ) : (
-            /* Student / Parent Access Form (Supports Mobile & Email + Password) */
+            /* Student / Parent Email Login Form */
             <form onSubmit={handleStudentSubmit} className="mt-6 space-y-4">
               <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 text-xs text-scholar-700">
                 <p className="font-semibold text-scholar-900">Student & Parent Portal Access</p>
                 <p className="mt-0.5 text-scholar-600">
-                  Sign in using your registered 10-digit mobile number or student email.
+                  Sign in with your registered student email and password to access CBT exams, test series, study materials, and fee receipts.
                 </p>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink">
-                  Registered Mobile Number or Email
+                  Student Email
                 </label>
                 <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
-                  <Phone size={16} className="text-scholar-300" />
+                  <Mail size={16} className="text-scholar-300" />
                   <input
-                    type="text"
+                    type="email"
                     required
-                    value={studentInput || studentMobile}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setStudentInput(val);
-                      setStudentMobile(val);
-                    }}
+                    value={studentEmail}
+                    onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="e.g. 9876543210 or student@institute.com"
+                    placeholder="student@vidyalaya.test"
                   />
                 </div>
               </div>
@@ -372,23 +366,24 @@ export function LoginForm() {
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label className="text-sm font-medium text-ink">
-                    Password <span className="text-xs font-normal text-scholar-400">(Optional for mobile)</span>
+                    Password
                   </label>
                   <Link
                     href={`/forgot-password${portal ? `?portal=${portal}` : ""}`}
                     className="text-xs font-medium text-scholar-600 hover:text-scholar-700 hover:underline"
                   >
-                    Forgot?
+                    Forgot password?
                   </Link>
                 </div>
                 <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
                   <Lock size={16} className="text-scholar-300" />
                   <input
                     type={showStudentPassword ? "text" : "password"}
+                    required
                     value={studentPassword}
                     onChange={(e) => setStudentPassword(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="Enter password or leave blank for mobile access"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -406,7 +401,7 @@ export function LoginForm() {
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-scholar-700 disabled:opacity-60"
               >
-                {loading ? "Signing in..." : "Access Student Portal"} <ArrowRight size={15} />
+                {loading ? "Signing in..." : "Sign in to Student Portal"} <ArrowRight size={15} />
               </button>
 
               <div className="pt-2 text-center">
