@@ -1,0 +1,266 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import { requireInstitute, requirePermission } from "@/lib/tenant";
+import { logAudit, actorFromSession } from "@/lib/audit";
+import {
+  sendBranchProcessingEmail,
+  sendAdminBranchAlertEmail,
+} from "@/lib/email";
+
+// Reading branches is available to any logged-in Institute user (Owner,
+// Admin, Staff) - same convention as courses.
+export async function GET() {
+  const ctx = await requireInstitute();
+  if ("error" in ctx) return ctx.error;
+
+  const branches = await prisma.branch.findMany({
+    where: { instituteId: ctx.instituteId },
+    include: {
+      users: {
+        where: { role: { in: ["ADMIN", "STAFF"] } },
+        select: { id: true, email: true, name: true, role: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return NextResponse.json(branches);
+}
+
+export async function POST(req: Request) {
+  const ctx = await requirePermission("branches:write");
+  if ("error" in ctx) return ctx.error;
+
+  try {
+    const body = await req.json();
+    const { name, city, state, address, contact, guidePhone, isMainBranch, email, password } = body;
+
+    if (!name || !String(name).trim()) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+
+    // Optional credentials for sub-branch sign-in
+    const trimmedEmail = email ? String(email).trim().toLowerCase() : null;
+    const trimmedPassword = password ? String(password).trim() : null;
+
+    if (trimmedEmail) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        return NextResponse.json({ error: "Please enter a valid email address for the branch login" }, { status: 400 });
+      }
+
+      // Check if email already in use
+      const existingUser = await prisma.user.findUnique({
+        where: { email: trimmedEmail },
+      });
+      if (existingUser) {
+        return NextResponse.json(
+          { error: `The email "${trimmedEmail}" is already registered. Please provide a different email.` },
+          { status: 409 }
+        );
+      }
+
+      if (!trimmedPassword || trimmedPassword.length < 6) {
+        return NextResponse.json(
+          { error: "Password must be at least 6 characters long when setting branch login credentials" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Branch has no DB-level unique constraint on (instituteId, name) -
+    // application-level check to keep the list sane, not a hard schema guarantee.
+    const existing = await prisma.branch.findFirst({
+      where: { instituteId: ctx.instituteId, name: String(name).trim() },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "A branch with this name already exists" }, { status: 409 });
+    }
+
+    // Fetch the institute with its owner & main campus info
+    const institute = await prisma.institute.findUnique({
+      where: { id: ctx.instituteId },
+      include: {
+        users: {
+          where: { role: { in: ["OWNER", "ADMIN"] } },
+          select: { id: true, name: true, email: true, role: true, branchId: true },
+        },
+        branches: {
+          where: { isMainBranch: true },
+          select: { id: true, name: true, contact: true },
+        },
+      },
+    });
+
+    if (!institute) {
+      return NextResponse.json({ error: "Institute not found" }, { status: 404 });
+    }
+
+  if (isMainBranch) {
+    // Only one primary Main Branch (Head Office)
+    await prisma.branch.updateMany({
+      where: { instituteId: ctx.instituteId },
+      data: { isMainBranch: false },
+    });
+  }
+
+  // Sub-branches require platform admin approval before they can be accessed.
+  // Main branches created during initial setup or explicitly designated remain ACTIVE.
+  const initialStatus = isMainBranch ? "ACTIVE" : "PENDING_APPROVAL";
+
+  const branch = await prisma.branch.create({
+    data: {
+      instituteId: ctx.instituteId,
+      name: String(name).trim(),
+      city: city ? String(city).trim() : null,
+      state: state ? String(state).trim() : null,
+      address: address ? String(address).trim() : null,
+      contact: contact ? String(contact).trim() : null,
+      guidePhone: guidePhone ? String(guidePhone).trim() : null,
+      isMainBranch: Boolean(isMainBranch),
+      status: initialStatus,
+    },
+  });
+
+  // If email and password provided, create sub-branch user
+  let createdUser = null;
+  if (trimmedEmail && trimmedPassword) {
+    const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
+    createdUser = await prisma.user.create({
+      data: {
+        name: `${branch.name} Admin`,
+        email: trimmedEmail,
+        password: hashedPassword,
+        role: "ADMIN",
+        instituteId: ctx.instituteId,
+        branchId: branch.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        branchId: true,
+      },
+    });
+  }
+
+  await logAudit({
+    instituteId: ctx.instituteId,
+    actor: actorFromSession(ctx.session),
+    action: initialStatus === "PENDING_APPROVAL" ? "BRANCH_REQUESTED" : "BRANCH_CREATED",
+    entityType: "Branch",
+    entityId: branch.id,
+    metadata: {
+      name: branch.name,
+      city: branch.city,
+      state: branch.state,
+      status: branch.status,
+      branchUserEmail: createdUser?.email ?? null,
+    },
+  });
+
+  // If sub-branch requires approval, dispatch emails
+  if (initialStatus === "PENDING_APPROVAL") {
+    const appUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    // 1. Send processing email to Institute Owner & Main Campus Owner / Admins
+    try {
+      const recipients = new Map<string, string>(); // email -> name
+      // Institute Owner email
+      if (institute.email) {
+        recipients.set(institute.email.toLowerCase(), institute.ownerName);
+      }
+      // Main campus users / Institute Admins
+      for (const u of institute.users) {
+        if (u.email && (u.role === "OWNER" || u.role === "ADMIN")) {
+          recipients.set(u.email.toLowerCase(), u.name || "Administrator");
+        }
+      }
+      // Sub-branch admin user (if registered during creation)
+      if (createdUser?.email) {
+        recipients.set(createdUser.email.toLowerCase(), createdUser.name || `${branch.name} Admin`);
+      }
+
+      for (const [email, recipientName] of Array.from(recipients.entries())) {
+        const isBranchUser = createdUser?.email && email === createdUser.email.toLowerCase();
+        await sendBranchProcessingEmail({
+          to: email,
+          recipientName,
+          branchName: branch.name,
+          instituteName: institute.name,
+          city: branch.city,
+          loginEmail: isBranchUser ? email : undefined,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send branch processing email:", err);
+    }
+
+    // 2. Send alert email to Platform Admin(s)
+    try {
+      const platformAdmins = await prisma.user.findMany({
+        where: { role: "PLATFORM_ADMIN" },
+        select: { email: true },
+      });
+
+      const adminEmails = platformAdmins.map((a) => a.email);
+      if (adminEmails.length === 0 && process.env.SMTP_USER) {
+        adminEmails.push(process.env.SMTP_USER);
+      }
+
+      const adminPortalUrl = `${appUrl}/admin/branches`;
+
+      for (const adminEmail of adminEmails) {
+        await sendAdminBranchAlertEmail({
+          to: adminEmail,
+          branchName: branch.name,
+          instituteName: institute.name,
+          ownerName: institute.ownerName,
+          city: branch.city,
+          state: branch.state,
+          contact: branch.contact,
+          adminPortalUrl,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send admin branch alert email:", err);
+    }
+
+    // 3. Record platform notification for admin
+    try {
+      await prisma.platformNotification.create({
+        data: {
+          instituteId: institute.id,
+          type: "BRANCH_REGISTRATION",
+          message: `${institute.name} requested to add sub-branch "${branch.name}" (${branch.city || "N/A"}). Awaiting Platform Admin approval.`,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to record branch platform notification:", err);
+    }
+  }
+
+  return NextResponse.json(
+    {
+      ...branch,
+      message:
+        initialStatus === "PENDING_APPROVAL"
+          ? "Branch access request submitted. Your request is in processing and platform admin has been notified."
+          : "Branch created successfully.",
+    },
+    { status: 201 }
+  );
+  } catch (error: unknown) {
+    console.error("POST /api/branches error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to save branch" },
+      { status: 500 }
+    );
+  }
+}
