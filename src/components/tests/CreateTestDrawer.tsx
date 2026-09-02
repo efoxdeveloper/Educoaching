@@ -217,21 +217,13 @@ export function CreateTestDrawer({
             <label className="text-xs font-bold text-ink">
               Target Batches * ({selectedBatchIds.length} of {availableBatches.length} selected)
             </label>
-            {availableBatches.length > 0 && (
+            {availableBatches.length > 0 && selectedBatchIds.length < availableBatches.length && (
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedBatchIds.length === availableBatches.length) {
-                    setSelectedBatchIds([]);
-                  } else {
-                    setSelectedBatchIds(availableBatches.map((b) => b.id));
-                  }
-                }}
+                onClick={() => setSelectedBatchIds(availableBatches.map((b) => b.id))}
                 className="text-[11px] font-semibold text-scholar-700 hover:text-scholar-900 underline cursor-pointer"
               >
-                {selectedBatchIds.length === availableBatches.length
-                  ? "Deselect All"
-                  : `Select All (${availableBatches.length})`}
+                {`Select All (${availableBatches.length})`}
               </button>
             )}
           </div>
