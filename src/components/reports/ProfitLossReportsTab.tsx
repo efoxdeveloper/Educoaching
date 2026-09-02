@@ -256,7 +256,7 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                     tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                   />
                   <Tooltip
-                    formatter={(val: number | string | undefined) => [formatCurrency(Number(val || 0)), ""]}
+                    formatter={(val: unknown) => [formatCurrency(Number(val || 0)), ""]}
                     contentStyle={{
                       backgroundColor: "#FFFFFF",
                       borderRadius: "12px",
