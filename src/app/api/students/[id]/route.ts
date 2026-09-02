@@ -96,6 +96,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     name: student.name,
     mobile: student.mobile,
     email: student.email,
+    parentEmail: student.parentEmail,
     photoUrl: student.photoUrl,
     parentMobile: student.parentMobile,
     admissionDate: student.admissionDate.toISOString(),
@@ -228,6 +229,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     mobile?: string;
     email?: string | null;
     parentMobile?: string | null;
+    parentEmail?: string | null;
     courseId?: string;
     batchId?: string | null;
     branchId?: string | null;
@@ -253,6 +255,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     mobile,
     email,
     parentMobile,
+    parentEmail,
     photoUrl,
     courseId,
     batchId,
@@ -277,6 +280,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (mobile !== undefined) updateData.mobile = String(mobile).trim();
   if (email !== undefined) updateData.email = email ? String(email).trim() : null;
   if (parentMobile !== undefined) updateData.parentMobile = parentMobile ? String(parentMobile).trim() : null;
+  if (parentEmail !== undefined) updateData.parentEmail = parentEmail ? String(parentEmail).trim().toLowerCase() : null;
   if (photoUrl !== undefined) updateData.photoUrl = photoUrl ? String(photoUrl).trim() : null;
 
   if (courseId !== undefined) {

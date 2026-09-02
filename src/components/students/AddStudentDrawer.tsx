@@ -57,6 +57,7 @@ export function AddStudentDrawer({
     mobile: "",
     email: "",
     parentMobile: "",
+    parentEmail: "",
     courseId: courses[0]?.id || "",
     branchId: "",
     batchId: "",
@@ -332,6 +333,7 @@ export function AddStudentDrawer({
         mobile: "",
         email: "",
         parentMobile: "",
+        parentEmail: "",
         courseId: courses[0]?.id || "",
         branchId: "",
         batchId: "",
@@ -457,16 +459,28 @@ export function AddStudentDrawer({
           </Field>
         </div>
 
-        <Field label="Email Address *">
-          <input
-            type="email"
-            required
-            className={inputClass}
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="student@example.com"
-          />
-        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Student Email Address *">
+            <input
+              type="email"
+              required
+              className={inputClass}
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="student@example.com"
+            />
+          </Field>
+
+          <Field label="Parent Email (For Portal Access)">
+            <input
+              type="email"
+              className={inputClass}
+              value={form.parentEmail}
+              onChange={(e) => setForm({ ...form, parentEmail: e.target.value })}
+              placeholder="parent@example.com"
+            />
+          </Field>
+        </div>
 
         {/* Branch & Batch Allocation */}
         <div className="rounded-xl border border-scholar-200 bg-scholar-50/40 p-3 space-y-3">

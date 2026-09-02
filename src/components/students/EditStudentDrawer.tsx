@@ -13,6 +13,7 @@ export interface EditableStudent {
   name: string;
   mobile: string;
   email?: string | null;
+  parentEmail?: string | null;
   photoUrl?: string | null;
   parentMobile?: string | null;
   courseId: string;
@@ -46,6 +47,7 @@ export function EditStudentDrawer({
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
   const [parentMobile, setParentMobile] = useState("");
   const [courseId, setCourseId] = useState("");
   const [batchId, setBatchId] = useState("");
@@ -88,6 +90,7 @@ export function EditStudentDrawer({
       setName(student.name || "");
       setMobile(student.mobile || "");
       setEmail(student.email || "");
+      setParentEmail(student.parentEmail || "");
       setParentMobile(student.parentMobile || "");
       setCourseId(student.courseId || "");
       setBatchId(student.batchId || "");
@@ -125,6 +128,7 @@ export function EditStudentDrawer({
           mobile: mobile.trim(),
           email: email.trim() || null,
           parentMobile: parentMobile.trim() || null,
+          parentEmail: parentEmail.trim() || null,
           photoUrl: photoUrl || null,
           courseId,
           batchId: batchId || null,
@@ -254,15 +258,27 @@ export function EditStudentDrawer({
           </Field>
         </div>
 
-        <Field label="Email Address">
-          <input
-            type="email"
-            className={inputClass}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="student@example.com"
-          />
-        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Student Email Address">
+            <input
+              type="email"
+              className={inputClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="student@example.com"
+            />
+          </Field>
+
+          <Field label="Parent Email (For Portal Access)">
+            <input
+              type="email"
+              className={inputClass}
+              value={parentEmail}
+              onChange={(e) => setParentEmail(e.target.value)}
+              placeholder="parent@example.com"
+            />
+          </Field>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Course *">
