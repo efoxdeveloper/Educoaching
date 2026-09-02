@@ -60,19 +60,21 @@ async function main() {
     }
 
     // Ensure student record exists with mobile 9876543210 and email student@vidyalaya.test
-    const existingStudent = await prisma.student.findFirst({
+    let studentAarav = await prisma.student.findFirst({
       where: { email: "student@vidyalaya.test" },
     });
-    if (!existingStudent) {
+    if (!studentAarav) {
       const course = await prisma.course.findFirst({ where: { instituteId: vidyalayaInstitute.id } });
       const batch = await prisma.batch.findFirst({ where: { instituteId: vidyalayaInstitute.id } });
       if (course) {
-        await prisma.student.create({
+        studentAarav = await prisma.student.create({
           data: {
             instituteId: vidyalayaInstitute.id,
             name: "Aarav Sharma",
             mobile: "9876543210",
             email: "student@vidyalaya.test",
+            parentEmail: "parent@vidyalaya.test",
+            parentMobile: "9876543211",
             courseId: course.id,
             batchId: batch?.id ?? undefined,
             status: "ACTIVE",
@@ -81,8 +83,57 @@ async function main() {
           },
         });
         console.log("Created student record for Aarav Sharma");
-      } else {
-        console.log("No course found — skipped creating student record for Aarav Sharma");
+      }
+    } else {
+      await prisma.student.update({
+        where: { id: studentAarav.id },
+        data: {
+          parentEmail: "parent@vidyalaya.test",
+          parentMobile: "9876543211",
+        },
+      });
+      console.log("Updated parentEmail for Aarav Sharma");
+    }
+
+    // Ensure parent user parent@vidyalaya.test exists with PARENT role
+    let parentUser = await prisma.user.findUnique({
+      where: { email: "parent@vidyalaya.test" },
+    });
+    if (!parentUser) {
+      parentUser = await prisma.user.create({
+        data: {
+          instituteId: vidyalayaInstitute.id,
+          name: "Rajesh Sharma (Parent)",
+          email: "parent@vidyalaya.test",
+          password: passwordHash,
+          role: "PARENT" as any,
+        },
+      });
+      console.log("Created parent user: parent@vidyalaya.test");
+    } else {
+      await prisma.user.update({
+        where: { email: "parent@vidyalaya.test" },
+        data: {
+          role: "PARENT" as any,
+          password: passwordHash,
+        },
+      });
+      console.log("Updated parent user: parent@vidyalaya.test");
+    }
+
+    // Ensure ParentStudentLink exists between parentUser and studentAarav
+    if (parentUser && studentAarav) {
+      const existingLink = await (prisma as any).parentStudentLink.findFirst({
+        where: { parentUserId: parentUser.id, studentId: studentAarav.id },
+      });
+      if (!existingLink) {
+        await (prisma as any).parentStudentLink.create({
+          data: {
+            parentUserId: parentUser.id,
+            studentId: studentAarav.id,
+          },
+        });
+        console.log("Linked Rajesh Sharma (parent) to Aarav Sharma (student)");
       }
     }
   }
