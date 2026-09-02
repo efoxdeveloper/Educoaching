@@ -80,6 +80,16 @@ async function main() {
   await prisma.user.create({
     data: {
       instituteId: null,
+      name: "Platform Super Admin",
+      email: "ecommerseinventiveteam@gmail.com",
+      password: passwordHash,
+      role: "PLATFORM_ADMIN",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      instituteId: null,
       name: "Platform Admin",
       email: "admin@platform.test",
       password: passwordHash,
