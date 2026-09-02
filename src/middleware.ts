@@ -15,6 +15,18 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
+  const role = String((req.auth.user as { role?: string })?.role || "").toUpperCase();
+
+  // If role is STUDENT or PARENT, strictly confine access to /portal
+  if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal")) {
+    return NextResponse.redirect(new URL("/portal", req.url));
+  }
+
+  // If staff/admin role accesses /portal, they can still preview, but students/parents cannot access admin routes
+  if (role === "PLATFORM_ADMIN" && !pathname.startsWith("/admin") && !pathname.startsWith("/settings")) {
+    // Platform admin routes
+  }
+
   return NextResponse.next();
 });
 
@@ -22,13 +34,29 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/students/:path*",
+    "/admissions/:path*",
+    "/courses/:path*",
     "/batches/:path*",
+    "/timetable/:path*",
+    "/subjects/:path*",
+    "/faculty/:path*",
     "/attendance/:path*",
+    "/tests/:path*",
+    "/live-classes/:path*",
+    "/certificates/:path*",
+    "/study-material/:path*",
+    "/assignments/:path*",
     "/fees/:path*",
+    "/expenses/:path*",
+    "/income/:path*",
+    "/communication/:path*",
+    "/reports/:path*",
+    "/branches/:path*",
     "/settings/:path*",
     "/plans/:path*",
     "/my-plans/:path*",
     "/portal/:path*",
     "/admin/:path*",
+    "/support/:path*",
   ],
 };

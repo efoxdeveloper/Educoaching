@@ -10,7 +10,8 @@ export type InstituteRole =
   | "COUNSELLOR"
   | "ACCOUNTANT"
   | "TECHNICIAN"
-  | "STUDENT";
+  | "STUDENT"
+  | "PARENT";
 
 export type Permission =
   | "students:write" // enroll new students
@@ -222,6 +223,7 @@ const ROLE_PERMISSIONS: Record<InstituteRole, Set<Permission>> = {
     "files:write",
   ]),
   STUDENT: new Set<Permission>([]),
+  PARENT: new Set<Permission>([]),
 };
 
 export function hasPermission(role: string | undefined | null, permission: Permission): boolean {

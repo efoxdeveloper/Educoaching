@@ -72,10 +72,10 @@ export function Topbar({
   const isSubBranchUser = Boolean(userBranchId && !isMainBranch);
 
   // Main Branch users, Owners, and Platform Admins can switch between campuses.
-  // Sub-branch users, Students, and Faculty are strictly scoped to their assigned branch.
-  const isStudentOrFaculty = userRole === "STUDENT" || userRole === "FACULTY";
+  // Sub-branch users, Students, Parents, and Faculty are strictly scoped to their assigned branch.
+  const isStudentOrParentOrFaculty = userRole === "STUDENT" || userRole === "PARENT" || userRole === "FACULTY";
   const canSwitchCampus =
-    !isStudentOrFaculty &&
+    !isStudentOrParentOrFaculty &&
     !isSubBranchUser &&
     (userRole === "OWNER" || (userRole === "ADMIN" && isMainBranch) || userRole === "PLATFORM_ADMIN");
 

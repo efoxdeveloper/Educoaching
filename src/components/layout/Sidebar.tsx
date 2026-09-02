@@ -130,6 +130,9 @@ const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
   STUDENT: [
     "/portal", // Dedicated student portal
   ],
+  PARENT: [
+    "/portal", // Dedicated parent portal
+  ],
 };
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -149,13 +152,21 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       .catch(() => {});
   }, []);
 
-  const allowedList = ROLE_ALLOWED_ROUTES[userRole] || ROLE_ALLOWED_ROUTES["STAFF"];
+  const allowedList = ROLE_ALLOWED_ROUTES[userRole] || (userRole === "PARENT" ? ["/portal"] : ROLE_ALLOWED_ROUTES["STAFF"]);
 
-  const visibleNav = nav.filter((item) => {
-    if (item.featureKey && !features[item.featureKey]) return false;
-    if (allowedList.includes("*")) return true;
-    return allowedList.includes(item.href);
-  });
+  const visibleNav = nav
+    .filter((item) => {
+      if (item.featureKey && !features[item.featureKey]) return false;
+      if (allowedList.includes("*")) return true;
+      return allowedList.includes(item.href);
+    })
+    .map((item) => {
+      if (item.href === "/portal") {
+        if (userRole === "PARENT") return { ...item, label: "Parent Portal" };
+        if (userRole === "STUDENT") return { ...item, label: "Student Portal" };
+      }
+      return item;
+    });
 
   return (
     <>
@@ -176,7 +187,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             <div>
               <p className="font-display text-base font-semibold leading-none text-white">Vidyalaya</p>
               <p className="text-[11px] text-scholar-300 capitalize">
-                {userRole.toLowerCase()} Portal
+                {userRole === "PARENT" ? "Parent Portal" : userRole === "STUDENT" ? "Student Portal" : `${userRole.toLowerCase()} Panel`}
               </p>
             </div>
           </div>
