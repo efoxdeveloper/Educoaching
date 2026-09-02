@@ -199,34 +199,34 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
       {/* KPI Cards Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title="Total Gross Revenue"
+          label="Total Gross Revenue"
           value={formatCurrency(kpis.totalRevenue)}
           icon={IndianRupee}
-          description={`Fees (${formatCurrency(kpis.feeRevenue)}) + Extra (${formatCurrency(
+          trend={`Fees (${formatCurrency(kpis.feeRevenue)}) + Extra (${formatCurrency(
             kpis.extraIncome
           )})`}
         />
         <KpiCard
-          title="Total Operating Expenses"
+          label="Total Operating Expenses"
           value={formatCurrency(kpis.totalExpenses)}
           icon={TrendingDown}
-          description={`${kpis.expenseTransactionsCount} total expense transactions`}
+          trend={`${kpis.expenseTransactionsCount} total expense transactions`}
         />
         <KpiCard
-          title="Net Profit / (Loss)"
+          label="Net Profit / (Loss)"
           value={formatCurrency(kpis.netProfit)}
           icon={isNetProfitPositive ? TrendingUp : TrendingDown}
-          description={
+          trend={
             isNetProfitPositive
               ? "Profitable operations (Revenue > Expenses)"
               : "Net loss incurred during this timeframe"
           }
         />
         <KpiCard
-          title="Operating Profit Margin"
+          label="Operating Profit Margin"
           value={`${kpis.profitMargin}%`}
           icon={Percent}
-          description="Net margin on total gross revenue"
+          trend="Net margin on total gross revenue"
         />
       </div>
 

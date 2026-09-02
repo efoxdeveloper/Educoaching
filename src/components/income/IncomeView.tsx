@@ -192,7 +192,7 @@ export function IncomeView() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title={
+          label={
             datePreset === "THIS_MONTH"
               ? "This Month's Extra Revenue"
               : datePreset === "LAST_MONTH"
@@ -201,25 +201,25 @@ export function IncomeView() {
           }
           value={formatCurrency(summary?.filteredTotal || 0)}
           icon={TrendingUp}
-          description={`${incomes.length} transaction entries logged`}
+          trend={`${incomes.length} transaction entries logged`}
         />
         <KpiCard
-          title="All-Time Extra Income"
+          label="All-Time Extra Income"
           value={formatCurrency(summary?.allTimeTotal || 0)}
           icon={PieChart}
-          description="Cumulative non-fee revenue"
+          trend="Cumulative non-fee revenue"
         />
         <KpiCard
-          title="Cash Inflow"
+          label="Cash Inflow"
           value={formatCurrency(summary?.cashInflow || 0)}
           icon={Banknote}
-          description="Received via physical cash"
+          trend="Received via physical cash"
         />
         <KpiCard
-          title="Digital / Bank Inflow"
+          label="Digital / Bank Inflow"
           value={formatCurrency(summary?.digitalInflow || 0)}
           icon={CreditCard}
-          description="UPI, Cheque, Bank Transfer"
+          trend="UPI, Cheque, Bank Transfer"
         />
       </div>
 
