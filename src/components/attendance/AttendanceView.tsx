@@ -61,7 +61,6 @@ export function AttendanceView({
       .then((r) => r.json())
       .then((records: { studentId: string; status: Status }[]) => {
         const map: Record<string, Status> = {};
-        for (const s of batchStudents) map[s.id] = "PRESENT";
         for (const r of records) map[r.studentId] = r.status;
         setMarks(map);
       })
@@ -86,7 +85,9 @@ export function AttendanceView({
         body: JSON.stringify({
           batchId,
           date,
-          records: batchStudents.map((s) => ({ studentId: s.id, status: marks[s.id] ?? "PRESENT" })),
+          records: batchStudents
+            .filter((s) => marks[s.id] !== undefined)
+            .map((s) => ({ studentId: s.id, status: marks[s.id] })),
         }),
       });
       setSaved(true);
