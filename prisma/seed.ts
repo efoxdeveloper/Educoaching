@@ -97,6 +97,17 @@ async function main() {
     },
   });
 
+  // Student login
+  await prisma.user.create({
+    data: {
+      instituteId: institute.id,
+      name: "Aarav Sharma (Student)",
+      email: "student@vidyalaya.test",
+      password: passwordHash,
+      role: "STUDENT",
+    },
+  });
+
   // Courses
   const courseNames = [
     { name: "JEE Main + Advanced", fee: 85000 },
@@ -163,12 +174,17 @@ async function main() {
     const periodAnchor = subDays(new Date(), Math.floor(Math.random() * 40)); // some already lapsed, some still active
     const currentPeriodEnd = !isDemo ? addDays(periodAnchor, 30) : null;
 
+    const isFirstStudent = i === 0;
+    const studentName = isFirstStudent ? "Aarav Sharma" : randomName();
+    const studentMobile = isFirstStudent ? "9876543210" : randomMobile();
+    const studentEmail = isFirstStudent ? "student@vidyalaya.test" : null;
+
     const student = await prisma.student.create({
       data: {
         instituteId: institute.id,
-        name: randomName(),
-        mobile: randomMobile(),
-        email: null,
+        name: studentName,
+        mobile: studentMobile,
+        email: studentEmail,
         parentMobile: randomMobile(),
         courseId: course.id,
         batchId: batch?.id ?? null,
