@@ -10,10 +10,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!batchId) return NextResponse.json({ error: "Missing batchId" }, { status: 400 });
 
   const [faculty, batch] = await Promise.all([
-    prisma.faculty.findFirst({ where: { id: params.id, instituteId: ctx.instituteId } }),
-    prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } }),
+    prisma.faculty.findFirst({ where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId } }),
+    prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId } }),
   ]);
-  if (!faculty || !batch) return NextResponse.json({ error: "Faculty or batch not found" }, { status: 404 });
+  if (!faculty || !batch) return NextResponse.json({ error: "Faculty or batch not found for this branch" }, { status: 404 });
 
   const link = await prisma.batchFaculty.upsert({
     where: { batchId_facultyId: { batchId, facultyId: params.id } },

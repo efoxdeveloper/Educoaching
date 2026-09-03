@@ -15,8 +15,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const student = await prisma.student.findFirst({ where: { id: studentId, instituteId: ctx.instituteId } });
-  if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  const student = await prisma.student.findFirst({ where: { id: studentId, instituteId: ctx.instituteId, branchId: ctx.branchId } });
+  if (!student) return NextResponse.json({ error: "Student not found for this branch" }, { status: 404 });
 
   const instNum = installmentNumber !== undefined && installmentNumber !== null && installmentNumber !== ""
     ? Number(installmentNumber)

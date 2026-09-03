@@ -8,7 +8,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.subject.findFirst({
-    where: { id: params.id, course: { instituteId: ctx.instituteId } },
+    where: { id: params.id, branchId: ctx.branchId, course: { instituteId: ctx.instituteId } },
   });
   if (!existing) return NextResponse.json({ error: "Subject not found" }, { status: 404 });
 
@@ -43,7 +43,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.subject.findFirst({
-    where: { id: params.id, course: { instituteId: ctx.instituteId } },
+    where: { id: params.id, branchId: ctx.branchId, course: { instituteId: ctx.instituteId } },
   });
   if (!existing) return NextResponse.json({ error: "Subject not found" }, { status: 404 });
 

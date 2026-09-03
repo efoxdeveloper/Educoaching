@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   }
 
   const records = await prisma.attendance.findMany({
-    where: { batchId, date: new Date(date), instituteId: ctx.instituteId },
+    where: { batchId, date: new Date(date), instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
 
   return NextResponse.json(records);
@@ -51,10 +51,18 @@ export async function POST(req: Request) {
   }
 
   const day = new Date(date);
+  // Future-dated attendance check (server-side)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  if (dayStart > today) {
+    return NextResponse.json({ error: "Attendance cannot be marked for a future date" }, { status: 400 });
+  }
 
   // Check if attendance for this batch + date has already been locked
   const lockedRecord = await prisma.attendance.findFirst({
-    where: { batchId, date: day, instituteId: ctx.instituteId, locked: true },
+    where: { batchId, date: day, instituteId: ctx.instituteId, branchId: ctx.branchId, locked: true },
   });
   if (lockedRecord) {
     return NextResponse.json(
@@ -65,15 +73,15 @@ export async function POST(req: Request) {
 
   // Snapshot what attendance looked like before this save, so we only notify parents
   // when a student is newly marked Absent/Late - not every time attendance is re-saved.
-  const existing = await prisma.attendance.findMany({ where: { batchId, date: day, instituteId: ctx.instituteId } });
+  const existing = await prisma.attendance.findMany({ where: { batchId, date: day, instituteId: ctx.instituteId, branchId: ctx.branchId } });
   const previousStatus = new Map(existing.map((r) => [r.studentId, r.status]));
 
   await Promise.all(
     records.map((r) =>
       prisma.attendance.upsert({
         where: { studentId_date: { studentId: r.studentId, date: day } },
-        update: { status: r.status, batchId, locked: true },
-        create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId, locked: true },
+        update: { status: r.status, batchId, locked: true, branchId: ctx.branchId },
+        create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId, branchId: ctx.branchId, locked: true },
       })
     )
   );

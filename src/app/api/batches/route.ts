@@ -44,41 +44,91 @@ export async function POST(req: Request) {
   const course = await prisma.course.findFirst({ where: { id: courseId, instituteId: ctx.instituteId } });
   if (!course) return NextResponse.json({ error: "Invalid course" }, { status: 400 });
 
-  // Branch isolation: batches are always created for the caller's active branch
+  // Multi-branch creation: create SEPARATE Batch rows per selected branch (copy-on-create, then independent)
+  if (Array.isArray(branchIds) && branchIds.length > 0) {
+    const verified = await prisma.branch.findMany({
+      where: { id: { in: branchIds }, instituteId: ctx.instituteId },
+      select: { id: true },
+    });
+    const verifiedIds = verified.map((b) => b.id);
+    if (verifiedIds.length !== branchIds.length) {
+      return NextResponse.json({ error: "One or more branches are invalid" }, { status: 400 });
+    }
+    // Only OWNER/ADMIN at Main Branch may create for multiple branches; others must target their own branch only
+    const roleUpper = String((ctx as any).role || "").toUpperCase();
+    const isPrivileged = roleUpper === "OWNER" || roleUpper === "ADMIN" || roleUpper === "PLATFORM_ADMIN";
+    if (!isPrivileged && (verifiedIds.length !== 1 || verifiedIds[0] !== ctx.branchId)) {
+      return NextResponse.json({ error: "Branch mismatch: cannot create batch for a different branch" }, { status: 403 });
+    }
+    // Create independent batch per branch (no shared BatchBranches join)
+    const batches = await Promise.all(
+      verifiedIds.map((bid) => {
+        const perBranchCapacity =
+          branchCapacities && typeof branchCapacities === "object" && (branchCapacities as any)[bid] != null
+            ? Number((branchCapacities as any)[bid])
+            : capacity ? Number(capacity) : 40;
+        const perBranchTiming =
+          branchTimings && typeof branchTimings === "object" && (branchTimings as any)[bid] != null
+            ? String((branchTimings as any)[bid])
+            : String(timing);
+        return prisma.batch.create({
+          data: {
+            instituteId: ctx.instituteId,
+            name: String(name).trim(),
+            courseId,
+            branchId: bid,
+            timing: perBranchTiming,
+            capacity: perBranchCapacity,
+            status: status || "Active",
+            isAllBranches: false,
+          },
+          include: { course: true, branch: true, branches: true },
+        });
+      })
+    );
+    return NextResponse.json(batches.length === 1 ? batches[0] : batches, { status: 201 });
+  }
+
+  // Single-branch path: always scoped to resolved branchId, never trust client branchId alone
   if (branchId && branchId !== ctx.branchId) {
-    return NextResponse.json({ error: "Branch mismatch: cannot create batch for a different branch" }, { status: 403 });
+    const roleUpper = String((ctx as any).role || "").toUpperCase();
+    const isPrivileged = roleUpper === "OWNER" || roleUpper === "ADMIN" || roleUpper === "PLATFORM_ADMIN";
+    if (!isPrivileged) {
+      return NextResponse.json({ error: "Branch mismatch: cannot create batch for a different branch" }, { status: 403 });
+    }
+    // For privileged, verify requested branch belongs to institute
+    const target = await prisma.branch.findFirst({ where: { id: branchId, instituteId: ctx.instituteId } });
+    if (!target) return NextResponse.json({ error: "Invalid branch" }, { status: 400 });
+    const perBranchCapacity = capacity ? Number(capacity) : 40;
+    const batch = await prisma.batch.create({
+      data: {
+        instituteId: ctx.instituteId,
+        name: String(name).trim(),
+        courseId,
+        branchId,
+        timing: String(timing),
+        capacity: perBranchCapacity,
+        status: status || "Active",
+        isAllBranches: false,
+      },
+      include: { course: true, branch: true, branches: true },
+    });
+    return NextResponse.json(batch, { status: 201 });
   }
-  if (Array.isArray(branchIds) && branchIds.length > 0 && !branchIds.includes(ctx.branchId as string)) {
-    return NextResponse.json({ error: "Branch mismatch: batch must include your active branch" }, { status: 403 });
-  }
-  let validBranchIds: string[] = [ctx.branchId as string];
-  // Verify the active branch exists
+
+  // Default: create for the caller's active branch (never use client's branchId)
   const activeBranch = await prisma.branch.findFirst({ where: { id: ctx.branchId as string, instituteId: ctx.instituteId } });
   if (!activeBranch) return NextResponse.json({ error: "Branch not found" }, { status: 400 });
-  const primaryBranchId = ctx.branchId;
-
-  // Calculate total capacity from branchCapacities if present and multiple branches allocated
-  let totalCapacity = capacity ? Number(capacity) : 40;
-  if (branchCapacities && typeof branchCapacities === "object") {
-    const sum = Object.values(branchCapacities).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
-    if (sum > 0) {
-      totalCapacity = sum;
-    }
-  }
-
   const batch = await prisma.batch.create({
     data: {
       instituteId: ctx.instituteId,
-      name,
+      name: String(name).trim(),
       courseId,
-      branchId: primaryBranchId,
-      isAllBranches: Boolean(isAllBranches),
-      timing,
-      capacity: totalCapacity,
-      branchCapacities: branchCapacities && typeof branchCapacities === "object" ? branchCapacities : undefined,
-      branchTimings: branchTimings && typeof branchTimings === "object" ? branchTimings : undefined,
+      branchId: ctx.branchId,
+      timing: String(timing),
+      capacity: capacity ? Number(capacity) : 40,
       status: status || "Active",
-      branches: validBranchIds.length > 0 ? { connect: validBranchIds.map((id) => ({ id })) } : undefined,
+      isAllBranches: false,
     },
     include: { course: true, branch: true, branches: true },
   });

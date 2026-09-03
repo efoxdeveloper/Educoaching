@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const recipients: Recipient[] = [];
 
   if (targetAudience === "ADMISSION_LEADS") {
-    const where: Prisma.AdmissionWhereInput = { instituteId: ctx.instituteId };
+    const where: Prisma.AdmissionWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId };
     if (leadStage) where.stage = leadStage;
     if (courseId) where.courseId = courseId;
 
@@ -53,7 +53,8 @@ export async function GET(req: Request) {
     }
   } else {
     const where: Prisma.StudentWhereInput = {
-      instituteId: ctx.instituteId,
+    instituteId: ctx.instituteId,
+    branchId: ctx.branchId,
       status: "ACTIVE",
     };
 

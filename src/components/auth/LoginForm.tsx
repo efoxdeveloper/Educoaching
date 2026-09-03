@@ -170,23 +170,7 @@ export function LoginForm() {
     router.refresh();
   };
 
-  const handleFillDemoStudent = () => {
-    setStudentEmail("student@vidyalaya.test");
-    setStudentPassword("password123");
-    setError("");
-  };
 
-  const handleFillDemoParent = () => {
-    setStudentEmail("parent@vidyalaya.test");
-    setStudentPassword("password123");
-    setError("");
-  };
-
-  const handleFillDemoStaff = () => {
-    setEmail("owner@vidyalaya.test");
-    setPassword("password123");
-    setError("");
-  };
 
   return (
     <div className="flex min-h-screen">
@@ -428,24 +412,6 @@ export function LoginForm() {
               >
                 {loading ? "Signing in..." : "Sign in to Portal"} <ArrowRight size={15} />
               </button>
-
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
-                <button
-                  type="button"
-                  onClick={handleFillDemoStudent}
-                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
-                >
-                  ⚡ Auto-fill Student
-                </button>
-                <span className="hidden sm:inline text-scholar-300">•</span>
-                <button
-                  type="button"
-                  onClick={handleFillDemoParent}
-                  className="text-xs font-medium text-scholar-600 hover:text-scholar-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
-                >
-                  ⚡ Auto-fill Parent
-                </button>
-              </div>
             </form>
           )}
 
