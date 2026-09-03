@@ -15,6 +15,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "batchId and date are required" }, { status: 400 });
   }
 
+  const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
+  if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+  if (batch.branchId && batch.branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Forbidden: batch belongs to a different branch" }, { status: 403 });
+  }
+
   const records = await prisma.attendance.findMany({
     where: { batchId, date: new Date(date), instituteId: ctx.instituteId },
   });
@@ -40,6 +46,9 @@ export async function POST(req: Request) {
 
   const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
   if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+  if (batch.branchId && batch.branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Forbidden: batch belongs to a different branch" }, { status: 403 });
+  }
 
   const day = new Date(date);
 

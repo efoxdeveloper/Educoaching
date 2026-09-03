@@ -10,7 +10,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.admission.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
   if (!existing) return NextResponse.json({ error: "Admission not found" }, { status: 404 });
 
@@ -65,17 +65,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     });
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
   }
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
   if (batchId) {
     const batch = await prisma.batch.findFirst({
-      where: { id: batchId, instituteId: ctx.instituteId },
+      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId },
     });
-    if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
-  }
-  if (branchId) {
-    const branch = await prisma.branch.findFirst({
-      where: { id: branchId, instituteId: ctx.instituteId },
-    });
-    if (!branch) return NextResponse.json({ error: "Branch not found" }, { status: 404 });
+    if (!batch) {
+      const anyBatch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
+      if (!anyBatch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+      if (anyBatch.branchId && anyBatch.branchId !== ctx.branchId) return NextResponse.json({ error: "Batch belongs to a different branch" }, { status: 403 });
+    }
   }
 
   // Moving to ENROLLED for the first time creates the actual Student record.
@@ -97,7 +98,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           email: email !== undefined ? email : existing.email,
           courseId: finalCourseId,
           batchId: finalBatchId || null,
-          branchId: existing.branchId || null,
+          branchId: ctx.branchId,
           photoUrl: existing.photoUrl || null,
           totalFee: finalFeePlan,
           paidFee: initialPaidAmount && Number(initialPaidAmount) > 0 ? Number(initialPaidAmount) : 0,
@@ -121,7 +122,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return tx.admission.update({
       where: { id: params.id },
       data: {
-        ...(branchId !== undefined ? { branchId: branchId || null } : {}),
+        ...(branchId !== undefined ? { branchId: ctx.branchId } : {}),
         ...(applicantName !== undefined ? { applicantName: String(applicantName).trim() } : {}),
         ...(mobile !== undefined ? { mobile: String(mobile).trim() } : {}),
         ...(email !== undefined ? { email: email || null } : {}),
@@ -177,7 +178,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.admission.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
   if (!existing) return NextResponse.json({ error: "Admission not found" }, { status: 404 });
 

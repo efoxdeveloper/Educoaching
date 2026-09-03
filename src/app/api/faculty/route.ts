@@ -10,23 +10,18 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const department = searchParams.get("department") || undefined;
   const roleType = searchParams.get("roleType") || undefined;
-  const branchId = searchParams.get("branchId") || undefined;
+  const queryBranchId = searchParams.get("branchId") || undefined;
+  if (queryBranchId && queryBranchId !== "ALL" && queryBranchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
 
   const [staff, permRows] = await Promise.all([
     prisma.faculty.findMany({
       where: {
         instituteId: ctx.instituteId,
+        branchId: ctx.branchId,
         ...(department && department !== "ALL" ? { department } : {}),
         ...(roleType && roleType !== "ALL" ? { roleType } : {}),
-        ...(branchId && branchId !== "ALL"
-          ? {
-              OR: [
-                { branchId },
-                { isAllBranches: true },
-                { branches: { some: { id: branchId } } },
-              ],
-            }
-          : {}),
       },
       include: {
         branch: { select: { id: true, name: true, city: true } },
@@ -84,32 +79,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Staff member name is required" }, { status: 400 });
   }
 
-  // Only allow assigning batches that belong to this institute.
+  // Branch isolation: faculty are always created for the caller's active branch
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch: cannot create faculty for a different branch" }, { status: 403 });
+  }
+  if (Array.isArray(branchIds) && branchIds.length > 0 && !branchIds.includes(ctx.branchId as string)) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
+  const validBranchIds: string[] = [ctx.branchId as string];
+  const primaryBranchId = ctx.branchId;
+
+  // Only allow assigning batches that belong to this institute and same branch.
   let validBatchIds: string[] = [];
   if (Array.isArray(batchIds) && batchIds.length > 0) {
     const owned = await prisma.batch.findMany({
-      where: { id: { in: batchIds }, instituteId: ctx.instituteId },
+      where: { id: { in: batchIds }, instituteId: ctx.instituteId, branchId: ctx.branchId },
       select: { id: true },
     });
     validBatchIds = owned.map((b) => b.id);
   }
-
-  // Multi-branch verification
-  let validBranchIds: string[] = [];
-  if (Array.isArray(branchIds) && branchIds.length > 0) {
-    const ownedBranches = await prisma.branch.findMany({
-      where: { id: { in: branchIds }, instituteId: ctx.instituteId },
-      select: { id: true },
-    });
-    validBranchIds = ownedBranches.map((b) => b.id);
-  } else if (branchId) {
-    const singleBranch = await prisma.branch.findFirst({
-      where: { id: branchId, instituteId: ctx.instituteId },
-    });
-    if (singleBranch) validBranchIds = [singleBranch.id];
-  }
-
-  const primaryBranchId = validBranchIds[0] || branchId || null;
 
   // Process subjects
   let subjectList: string[] = [];

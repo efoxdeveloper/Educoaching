@@ -13,7 +13,7 @@ export async function GET() {
   if ("error" in ctx) return ctx.error;
 
   const students = await prisma.student.findMany({
-    where: { instituteId: ctx.instituteId },
+    where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
     include: { course: true, batch: true },
     orderBy: { createdAt: "desc" },
   });
@@ -62,16 +62,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
   }
 
-  // Make sure the chosen course/batch/branch actually belong to this institute.
+  // Branch isolation: all creates are scoped to the caller's active branch.
+  // If a branchId is explicitly passed, it must match ctx.branchId; otherwise reject.
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch: cannot create student for a different branch. Impersonate that branch first." }, { status: 403 });
+  }
+  const effectiveBranchId = ctx.branchId;
+
+  // Make sure the chosen course/batch belong to this institute and branch.
   const course = await prisma.course.findFirst({ where: { id: courseId, instituteId: ctx.instituteId } });
   if (!course) return NextResponse.json({ error: "Invalid course" }, { status: 400 });
   if (batchId) {
     const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
     if (!batch) return NextResponse.json({ error: "Invalid batch" }, { status: 400 });
-  }
-  if (branchId) {
-    const branch = await prisma.branch.findFirst({ where: { id: branchId, instituteId: ctx.instituteId } });
-    if (!branch) return NextResponse.json({ error: "Invalid branch" }, { status: 400 });
+    if (batch.branchId && batch.branchId !== ctx.branchId) {
+      return NextResponse.json({ error: "Batch belongs to a different branch" }, { status: 403 });
+    }
   }
 
   const now = new Date();
@@ -148,7 +154,7 @@ export async function POST(req: Request) {
       parentEmail: cleanParentEmail,
       courseId,
       batchId: batchId || null,
-      branchId: branchId || null,
+      branchId: effectiveBranchId,
       totalFee: Number(totalFee),
       paidFee: initialPaid,
       dueDate: computedDueDate,
@@ -246,7 +252,7 @@ export async function POST(req: Request) {
           password: hashedInitialPassword,
           role: "STUDENT",
           instituteId: ctx.instituteId,
-          branchId: branchId || null,
+          branchId: effectiveBranchId,
         },
       });
     } else {
@@ -257,7 +263,7 @@ export async function POST(req: Request) {
           password: hashedInitialPassword,
           role: "STUDENT",
           instituteId: ctx.instituteId,
-          branchId: branchId || null,
+          branchId: effectiveBranchId,
         },
       });
     }
@@ -286,7 +292,7 @@ export async function POST(req: Request) {
             password: hashedParentPassword,
             role: "PARENT",
             instituteId: ctx.instituteId,
-            branchId: branchId || null,
+            branchId: effectiveBranchId,
           },
         });
         isNewParentUser = true;

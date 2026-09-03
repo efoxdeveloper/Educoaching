@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if ("error" in ctx) return ctx.error;
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
     include: {
       course: { select: { id: true, name: true, fee: true, duration: true } },
       batch: { select: { id: true, name: true, timing: true } },
@@ -216,7 +216,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
@@ -299,6 +299,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         where: { id: batchId, instituteId: ctx.instituteId },
       });
       if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 400 });
+      if (batch.branchId && batch.branchId !== ctx.branchId) {
+        return NextResponse.json({ error: "Batch belongs to a different branch" }, { status: 403 });
+      }
       updateData.batchId = batchId;
     }
   }
@@ -358,8 +361,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   if (branchId !== undefined) {
     if (branchId === null || branchId === "") {
-      updateData.branchId = null;
+      return NextResponse.json({ error: "Branch must remain as your active branch" }, { status: 403 });
     } else {
+      if (branchId !== ctx.branchId) {
+        return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+      }
       const branch = await prisma.branch.findFirst({
         where: { id: branchId, instituteId: ctx.instituteId },
       });
@@ -413,7 +419,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const permanent = searchParams.get("permanent") === "true";
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
 
   if (!student) {

@@ -21,14 +21,17 @@ export async function GET(req: Request) {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
   const admissions = await prisma.admission.findMany({
     where: {
       instituteId: ctx.instituteId,
+      branchId: ctx.branchId,
       ...(status ? { status: status as AdmissionStatus } : {}),
       ...(stage ? { stage } : {}),
       ...(priority ? { priority } : {}),
       ...(source ? { source } : {}),
-      ...(branchId ? { branchId } : {}),
       ...(todayOnly
         ? {
             nextFollowUpDate: {
@@ -96,18 +99,21 @@ export async function POST(req: Request) {
       ? Number(feePlan)
       : Number(course.fee);
 
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch: cannot create admission for a different branch" }, { status: 403 });
+  }
   if (batchId) {
     const batch = await prisma.batch.findFirst({
-      where: { id: batchId, instituteId: ctx.instituteId },
+      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId },
     });
-    if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
-  }
-
-  if (branchId) {
-    const branch = await prisma.branch.findFirst({
-      where: { id: branchId, instituteId: ctx.instituteId },
-    });
-    if (!branch) return NextResponse.json({ error: "Branch not found" }, { status: 404 });
+    if (!batch) {
+      // Fallback: batch may be from legacy null branch, but enforce strict check
+      const anyBatch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
+      if (!anyBatch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+      if (anyBatch.branchId && anyBatch.branchId !== ctx.branchId) {
+        return NextResponse.json({ error: "Batch belongs to a different branch" }, { status: 403 });
+      }
+    }
   }
 
   let resolvedAssignedTo = assignedTo || null;
@@ -124,7 +130,7 @@ export async function POST(req: Request) {
   const admission = await prisma.admission.create({
     data: {
       instituteId: ctx.instituteId,
-      branchId: branchId || null,
+      branchId: ctx.branchId,
       applicantName: String(applicantName).trim(),
       mobile: String(mobile).trim(),
       email: email ? String(email).trim() : null,

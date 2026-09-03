@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const batchId = searchParams.get("batchId") || undefined;
 
   try {
-    const data = await getReportsData(ctx.instituteId, {
+    const data = await getReportsData(ctx.instituteId, ctx.branchId as string, {
       startDate,
       endDate,
       courseId,

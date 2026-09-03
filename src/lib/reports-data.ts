@@ -18,12 +18,29 @@ export interface ReportFilterOptions {
   batchId?: string;
 }
 
-export async function getReportsData(instituteId: string, filters?: ReportFilterOptions) {
+export async function getReportsData(instituteId: string, branchIdOrFilters?: string | ReportFilterOptions, maybeFilters?: ReportFilterOptions) {
+  // Support both signatures: getReportsData(instituteId, branchId, filters) and getReportsData(instituteId, filters)
+  let branchId: string | undefined;
+  let filters: ReportFilterOptions | undefined;
+  if (typeof branchIdOrFilters === "string") {
+    branchId = branchIdOrFilters;
+    filters = maybeFilters;
+  } else {
+    filters = branchIdOrFilters;
+  }
+  // If branchId is provided, always scope by it (strict branch isolation)
+  const branchFilter = branchId ? { branchId } : {};
+
   // Parse optional date range
   const startDate = filters?.startDate ? startOfDay(new Date(filters.startDate)) : undefined;
   const endDate = filters?.endDate ? endOfDay(new Date(filters.endDate)) : undefined;
   const courseId = filters?.courseId && filters.courseId !== "ALL" ? filters.courseId : undefined;
   const batchId = filters?.batchId && filters.batchId !== "ALL" ? filters.batchId : undefined;
+
+  // Validate batchId belongs to active branch if both are provided
+  if (batchId && branchId) {
+    // This will be handled via where filters below; cross-branch batchIds will naturally yield no results
+  }
 
   // 1. Fetch reference collections for filters and joins
   const [courses, rawBatches, branches] = await Promise.all([
@@ -33,7 +50,7 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
       orderBy: { name: "asc" },
     }),
     prisma.batch.findMany({
-      where: { instituteId },
+      where: { instituteId, ...branchFilter },
       include: {
         course: { select: { id: true, name: true } },
         faculty: { include: { faculty: { select: { name: true } } } },
@@ -49,12 +66,7 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
   ]);
 
   // 2. Fetch Students
-  const studentWhere: {
-    instituteId: string;
-    courseId?: string;
-    batchId?: string;
-    admissionDate?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  const studentWhere: any = { instituteId, ...branchFilter };
 
   if (courseId) studentWhere.courseId = courseId;
   if (batchId) studentWhere.batchId = batchId;
@@ -74,12 +86,7 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
   });
 
   // 3. Fetch Admissions
-  const admissionWhere: {
-    instituteId: string;
-    courseId?: string;
-    batchId?: string;
-    createdAt?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  const admissionWhere: any = { instituteId, ...branchFilter };
 
   if (courseId) admissionWhere.courseId = courseId;
   if (batchId) admissionWhere.batchId = batchId;
@@ -99,11 +106,8 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
     orderBy: { createdAt: "desc" },
   });
 
-  // 4. Fetch Payments
-  const paymentWhere: {
-    instituteId: string;
-    paidAt?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  // 4. Fetch Payments - scoped via student.branchId when branch isolation is active
+  const paymentWhere: any = { instituteId, ...(branchId ? { student: { branchId } } : {}) };
 
   if (startDate || endDate) {
     paymentWhere.paidAt = {};
@@ -136,12 +140,8 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
     return true;
   });
 
-  // 5. Fetch Attendance
-  const attendanceWhere: {
-    instituteId: string;
-    batchId?: string;
-    date?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  // 5. Fetch Attendance - scoped via batch.branchId
+  const attendanceWhere: any = { instituteId, ...(branchId ? { batch: { branchId } } : {}) };
 
   if (batchId) attendanceWhere.batchId = batchId;
   if (startDate || endDate) {
@@ -173,13 +173,8 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
     return true;
   });
 
-  // 6. Fetch Tests and Results
-  const testWhere: {
-    instituteId: string;
-    batchId?: string;
-    courseId?: string;
-    testDate?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  // 6. Fetch Tests and Results - scoped via batch.branchId when branch isolation is active
+  const testWhere: any = { instituteId, ...(branchId ? { batch: { branchId } } : {}) };
 
   if (batchId) testWhere.batchId = batchId;
   if (courseId) testWhere.courseId = courseId;
@@ -209,10 +204,7 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
   });
 
   // 7. Fetch Expenses
-  const expenseWhere: {
-    instituteId: string;
-    expenseDate?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  const expenseWhere: any = { instituteId, ...branchFilter };
 
   if (startDate || endDate) {
     expenseWhere.expenseDate = {};
@@ -230,10 +222,7 @@ export async function getReportsData(instituteId: string, filters?: ReportFilter
   });
 
   // 8. Fetch Incomes
-  const incomeWhere: {
-    instituteId: string;
-    incomeDate?: { gte?: Date; lte?: Date };
-  } = { instituteId };
+  const incomeWhere: any = { instituteId, ...branchFilter };
 
   if (startDate || endDate) {
     incomeWhere.incomeDate = {};

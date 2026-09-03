@@ -42,38 +42,72 @@ function isMainBranchRecord(b: { id?: string; name?: string | null; isMainBranch
   return false;
 }
 
-export async function getBranchImpersonationState(): Promise<{
+const BRANCH_SELECT = {
+  id: true,
+  name: true,
+  city: true,
+  state: true,
+  contact: true,
+  guidePhone: true,
+  isMainBranch: true,
+} as const;
+
+type BranchRecord = {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  contact: string | null;
+  guidePhone: string | null;
+  isMainBranch: boolean;
+};
+
+/**
+ * Finds the main branch for an institute (tries isMainBranch flag, then name contains "main",
+ * then falls back to the earliest-created branch).
+ */
+async function findDefaultMainBranch(instId: string): Promise<BranchRecord | null> {
+  let mb = await prisma.branch.findFirst({
+    where: { instituteId: instId, isMainBranch: true },
+    select: BRANCH_SELECT,
+  });
+  if (!mb) {
+    mb = await prisma.branch.findFirst({
+      where: { instituteId: instId, name: { contains: "main", mode: "insensitive" } },
+      select: BRANCH_SELECT,
+    });
+  }
+  if (!mb) {
+    mb = await prisma.branch.findFirst({
+      where: { instituteId: instId },
+      orderBy: { createdAt: "asc" },
+      select: BRANCH_SELECT,
+    });
+  }
+  return mb ? { ...mb, isMainBranch: true } : null;
+}
+
+// Internal shared function for branch resolution logic
+async function resolveBranchContext(
+  user: (SessionUser & { isMainBranch?: boolean; branchId?: string | null }) | undefined,
+  instituteId: string
+): Promise<{
   isImpersonating: boolean;
   branchId: string | null;
-  branch: {
-    id: string;
-    name: string;
-    city: string | null;
-    state: string | null;
-    contact: string | null;
-    guidePhone: string | null;
-    isMainBranch: boolean;
-  } | null;
+  branch: BranchRecord | null;
 }> {
-  const session = await auth();
-  const user = session?.user as (SessionUser & { isMainBranch?: boolean; branchId?: string | null }) | undefined;
   const role = user?.role?.toUpperCase();
 
   // If this user is directly assigned to a sub-branch (not main branch),
   // they are locked to that branch as their active operational context!
   if (user?.branchId && user?.isMainBranch === false) {
     try {
-      const branch = await prisma.branch.findUnique({
-        where: { id: user.branchId },
-        select: {
-          id: true,
-          name: true,
-          city: true,
-          state: true,
-          contact: true,
-          guidePhone: true,
-          isMainBranch: true,
+      const branch = await prisma.branch.findFirst({
+        where: {
+          id: user.branchId,
+          instituteId,
         },
+        select: BRANCH_SELECT,
       });
       if (branch) {
         return {
@@ -97,89 +131,36 @@ export async function getBranchImpersonationState(): Promise<{
     const cookieStore = cookies();
     const branchId = cookieStore.get(BRANCH_IMPERSONATION_COOKIE)?.value || null;
 
-    const findDefaultMainBranch = async (instId: string) => {
-      let mb = await prisma.branch.findFirst({
-        where: { instituteId: instId, isMainBranch: true },
-        select: {
-          id: true,
-          name: true,
-          city: true,
-          state: true,
-          contact: true,
-          guidePhone: true,
-          isMainBranch: true,
-        },
-      });
-      if (!mb) {
-        mb = await prisma.branch.findFirst({
-          where: { instituteId: instId, name: { contains: "main", mode: "insensitive" } },
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-            contact: true,
-            guidePhone: true,
-            isMainBranch: true,
-          },
-        });
-      }
-      if (!mb) {
-        mb = await prisma.branch.findFirst({
-          where: { instituteId: instId },
-          orderBy: { createdAt: "asc" },
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-            contact: true,
-            guidePhone: true,
-            isMainBranch: true,
-          },
-        });
-      }
-      return mb ? { ...mb, isMainBranch: true } : null;
-    };
-
     if (!branchId) {
-      if (user?.instituteId) {
-        const mainBranch = await findDefaultMainBranch(user.instituteId);
-        if (mainBranch) {
-          return {
-            isImpersonating: false,
-            branchId: mainBranch.id,
-            branch: mainBranch,
-          };
-        }
+      const mainBranch = await findDefaultMainBranch(instituteId);
+      if (mainBranch) {
+        return {
+          isImpersonating: false,
+          branchId: mainBranch.id,
+          branch: mainBranch,
+        };
       }
       return { isImpersonating: false, branchId: null, branch: null };
     }
 
-    const branch = await prisma.branch.findUnique({
-      where: { id: branchId },
-      select: {
-        id: true,
-        name: true,
-        city: true,
-        state: true,
-        contact: true,
-        guidePhone: true,
-        isMainBranch: true,
+    // FIX: enforce that the cookie branch belongs to the user's own institute
+    const branch = await prisma.branch.findFirst({
+      where: {
+        id: branchId,
+        instituteId,
       },
+      select: BRANCH_SELECT,
     });
 
     if (!branch) {
-      if (user?.instituteId) {
-        const mainBranch = await findDefaultMainBranch(user.instituteId);
-        return { isImpersonating: false, branchId: mainBranch?.id || null, branch: mainBranch };
-      }
-      return { isImpersonating: false, branchId: null, branch: null };
+      // Cookie branch doesn't exist or belongs to a different institute — fall back to main
+      const mainBranch = await findDefaultMainBranch(instituteId);
+      return { isImpersonating: false, branchId: mainBranch?.id || null, branch: mainBranch };
     }
 
     const isMain = isMainBranchRecord(branch);
     if (isMain) {
-      // It's the main branch, so never impersonating!
+      // It's the main branch, so never impersonating
       return {
         isImpersonating: false,
         branchId: branch.id,
@@ -197,59 +178,82 @@ export async function getBranchImpersonationState(): Promise<{
   }
 }
 
-// Use in API routes. Returns { error } if there's no logged-in Institute user,
-// or if a platform admin is impersonating, returns the impersonated institute.
-export async function requireInstitute() {
+export async function getBranchImpersonationState(): Promise<{
+  isImpersonating: boolean;
+  branchId: string | null;
+  branch: BranchRecord | null;
+}> {
   const session = await auth();
-  const user = session?.user as (SessionUser & { id?: string; email?: string; permissions?: string[] }) | undefined;
-  let instituteId = user?.instituteId;
+  const user = session?.user as (SessionUser & { isMainBranch?: boolean; branchId?: string | null }) | undefined;
+  const instituteId = user?.instituteId || "";
 
-  if (user?.role === "PLATFORM_ADMIN") {
-    try {
-      const cookieStore = cookies();
-      const impersonated = cookieStore.get(IMPERSONATION_COOKIE)?.value;
-      if (impersonated) {
-        instituteId = impersonated;
-      }
-    } catch {}
+  if (!instituteId) {
+    return { isImpersonating: false, branchId: null, branch: null };
   }
 
-  if (!session || !instituteId) {
+  return resolveBranchContext(user, instituteId);
+}
+
+// Use in API routes. Returns { error } if there's no logged-in Institute user,
+  // or if a platform admin is impersonating, returns the impersonated institute.
+  // Always returns a specific branchId — Main Branch id when not impersonating,
+  // the sub-branch id when directly assigned, or the impersonated branch id.
+  export async function requireInstitute() {
+    const session = await auth();
+    const user = session?.user as (SessionUser & { id?: string; email?: string; permissions?: string[]; isMainBranch?: boolean; branchId?: string | null }) | undefined;
+    let instituteId = user?.instituteId;
+
+    if (user?.role === "PLATFORM_ADMIN") {
+      try {
+        const cookieStore = cookies();
+        const impersonated = cookieStore.get(IMPERSONATION_COOKIE)?.value;
+        if (impersonated) {
+          instituteId = impersonated;
+        }
+      } catch {}
+    }
+
+    if (!session || !instituteId) {
+      return {
+        error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      } as const;
+    }
+
+    let permissions: string[] = user?.permissions || [];
+    const upperRole = (user?.role || "").toUpperCase();
+
+    // If permissions not in session or for fresh permissions check, query Faculty record
+    if (upperRole && upperRole !== "OWNER" && upperRole !== "ADMIN" && upperRole !== "PLATFORM_ADMIN") {
+      try {
+        const faculty = await prisma.faculty.findFirst({
+          where: {
+            instituteId,
+            OR: [
+              ...(user?.id ? [{ userId: user.id }] : []),
+              ...(user?.email ? [{ email: { equals: user.email, mode: "insensitive" as const } }] : []),
+            ],
+          },
+          select: { permissions: true },
+        });
+        if (faculty?.permissions) {
+          permissions = faculty.permissions;
+        }
+      } catch {}
+    }
+
+    // Resolve the effective branch using shared logic
+    const branchContext = await resolveBranchContext(user, instituteId);
+
     return {
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      session,
+      instituteId,
+      branchId: branchContext.branchId,
+      role: user?.role,
+      permissions,
+      isImpersonating: user?.role === "PLATFORM_ADMIN" && instituteId !== user?.instituteId,
+      isImpersonatingBranch: branchContext.isImpersonating,
     } as const;
   }
-
-  let permissions: string[] = user?.permissions || [];
-  const upperRole = (user?.role || "").toUpperCase();
-
-  // If permissions not in session or for fresh permissions check, query Faculty record
-  if (upperRole && upperRole !== "OWNER" && upperRole !== "ADMIN" && upperRole !== "PLATFORM_ADMIN") {
-    try {
-      const faculty = await prisma.faculty.findFirst({
-        where: {
-          instituteId,
-          OR: [
-            ...(user?.id ? [{ userId: user.id }] : []),
-            ...(user?.email ? [{ email: { equals: user.email, mode: "insensitive" as const } }] : []),
-          ],
-        },
-        select: { permissions: true },
-      });
-      if (faculty?.permissions) {
-        permissions = faculty.permissions;
-      }
-    } catch {}
-  }
-
-  return {
-    session,
-    instituteId,
-    role: user?.role,
-    permissions,
-    isImpersonating: user?.role === "PLATFORM_ADMIN" && instituteId !== user?.instituteId,
-  } as const;
-}
 
 // Use in server page components - returns active instituteId (or impersonated instituteId).
 export async function getInstituteId() {

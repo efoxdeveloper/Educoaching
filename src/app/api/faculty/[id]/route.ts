@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const [faculty, permRows] = await Promise.all([
     prisma.faculty.findFirst({
-      where: { id: params.id, instituteId: ctx.instituteId },
+      where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
       include: {
         branch: { select: { id: true, name: true, city: true } },
         branches: { select: { id: true, name: true, city: true } },
@@ -35,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.faculty.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
   if (!existing) return NextResponse.json({ error: "Faculty not found" }, { status: 404 });
 
@@ -64,25 +64,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
   }
 
-  // Multi-branch update handling
+  // Branch isolation: cannot move faculty to different branch
+  if (branchId !== undefined && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
+  if (branchIds !== undefined && Array.isArray(branchIds) && branchIds.length > 0 && !branchIds.includes(ctx.branchId as string)) {
+    return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+  }
   let branchConnectData: any = undefined;
   let primaryBranchId: string | null | undefined = undefined;
 
-  if (branchIds !== undefined) {
-    if (Array.isArray(branchIds) && branchIds.length > 0) {
-      const owned = await prisma.branch.findMany({
-        where: { id: { in: branchIds }, instituteId: ctx.instituteId },
-        select: { id: true },
-      });
-      const validIds = owned.map((b) => b.id);
-      branchConnectData = { set: validIds.map((id) => ({ id })) };
-      primaryBranchId = validIds[0] || null;
-    } else {
-      branchConnectData = { set: [] };
-      primaryBranchId = null;
-    }
-  } else if (branchId !== undefined) {
-    primaryBranchId = branchId || null;
+  if (branchIds !== undefined || branchId !== undefined) {
+    primaryBranchId = ctx.branchId;
+    branchConnectData = { set: [{ id: ctx.branchId }] };
   }
 
   // Multi-subject update handling
@@ -183,7 +177,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.faculty.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
   });
   if (!existing) return NextResponse.json({ error: "Faculty not found" }, { status: 404 });
 

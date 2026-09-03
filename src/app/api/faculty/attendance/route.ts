@@ -26,6 +26,7 @@ export async function GET(req: Request) {
       const records = await prisma.staffAttendance.findMany({
         where: {
           instituteId: ctx.instituteId,
+          ...(ctx.branchId ? { faculty: { branchId: ctx.branchId } } : {}),
           date: {
             gte: startDate,
             lte: endDate,
@@ -48,6 +49,7 @@ export async function GET(req: Request) {
     const records = await prisma.staffAttendance.findMany({
       where: {
         instituteId: ctx.instituteId,
+        ...(ctx.branchId ? { faculty: { branchId: ctx.branchId } } : {}),
         date: targetDate,
       },
     });
@@ -90,6 +92,20 @@ export async function POST(req: Request) {
   }
 
   const attendanceDate = new Date(date);
+
+  // Verify all facultyIds belong to active branch (only when branchId is resolved)
+  if (ctx.branchId) {
+    const facultyIds = records.map((r) => r.facultyId);
+    const validFaculty = await prisma.faculty.findMany({
+      where: { id: { in: facultyIds }, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      select: { id: true },
+    });
+    const validIds = new Set(validFaculty.map((f) => f.id));
+    const invalid = facultyIds.filter((id) => !validIds.has(id));
+    if (invalid.length > 0) {
+      return NextResponse.json({ error: "Forbidden: one or more faculty belong to a different branch" }, { status: 403 });
+    }
+  }
 
   try {
     const results = await Promise.all(

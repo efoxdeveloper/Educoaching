@@ -7,7 +7,7 @@ export async function GET() {
   if ("error" in ctx) return ctx.error;
 
   const batches = await prisma.batch.findMany({
-    where: { instituteId: ctx.instituteId },
+    where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
     include: {
       course: true,
       branch: true,
@@ -44,19 +44,18 @@ export async function POST(req: Request) {
   const course = await prisma.course.findFirst({ where: { id: courseId, instituteId: ctx.instituteId } });
   if (!course) return NextResponse.json({ error: "Invalid course" }, { status: 400 });
 
-  let validBranchIds: string[] = [];
-  if (Array.isArray(branchIds) && branchIds.length > 0) {
-    const verified = await prisma.branch.findMany({
-      where: { id: { in: branchIds }, instituteId: ctx.instituteId },
-      select: { id: true },
-    });
-    validBranchIds = verified.map((b) => b.id);
-  } else if (branchId) {
-    const singleBranch = await prisma.branch.findFirst({ where: { id: branchId, instituteId: ctx.instituteId } });
-    if (singleBranch) validBranchIds = [singleBranch.id];
+  // Branch isolation: batches are always created for the caller's active branch
+  if (branchId && branchId !== ctx.branchId) {
+    return NextResponse.json({ error: "Branch mismatch: cannot create batch for a different branch" }, { status: 403 });
   }
-
-  const primaryBranchId = validBranchIds[0] || branchId || null;
+  if (Array.isArray(branchIds) && branchIds.length > 0 && !branchIds.includes(ctx.branchId as string)) {
+    return NextResponse.json({ error: "Branch mismatch: batch must include your active branch" }, { status: 403 });
+  }
+  let validBranchIds: string[] = [ctx.branchId as string];
+  // Verify the active branch exists
+  const activeBranch = await prisma.branch.findFirst({ where: { id: ctx.branchId as string, instituteId: ctx.instituteId } });
+  if (!activeBranch) return NextResponse.json({ error: "Branch not found" }, { status: 400 });
+  const primaryBranchId = ctx.branchId;
 
   // Calculate total capacity from branchCapacities if present and multiple branches allocated
   let totalCapacity = capacity ? Number(capacity) : 40;
