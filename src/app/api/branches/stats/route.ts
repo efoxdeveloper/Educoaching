@@ -6,6 +6,12 @@ export async function GET() {
   const ctx = await requireInstitute();
   if ("error" in ctx) return ctx.error;
 
+  // Aggregate view — Owner/Admin-only (STAFF/ACCOUNTANT etc must not see cross-branch summary)
+  const role = String((ctx as any).role || (ctx.session?.user as any)?.role || "").toUpperCase();
+  if (!["OWNER", "ADMIN", "PLATFORM_ADMIN"].includes(role)) {
+    return NextResponse.json({ error: "Forbidden: Only Owner/Admin can view branch stats" }, { status: 403 });
+  }
+
   const branches = await prisma.branch.findMany({
     where: { instituteId: ctx.instituteId },
     include: {
