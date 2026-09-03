@@ -135,10 +135,8 @@ describe("requireInstitute() — branch resolution", () => {
   });
 
   it("Owner impersonating Branch B → returns Branch B id, isImpersonatingBranch=true", async () => {
-    mockAuth.mockResolvedValue(ownerSession());
-    // Cookie set to sub-branch
-    mockGet.mockReturnValue({ value: SUB_BRANCH_A.id });
-    // findFirst for branch (institute ownership check on cookie branch)
+    mockAuth.mockResolvedValue(ownerSession({ impersonatingBranchId: SUB_BRANCH_A.id, impersonationStartedAt: Date.now() }));
+    // findFirst for branch (institute ownership check on JWT branch)
     mockFindFirst.mockResolvedValue({ id: SUB_BRANCH_A.id, isMainBranch: false, name: "North Branch" } as any);
 
     const ctx = await requireInstitute();
@@ -150,11 +148,9 @@ describe("requireInstitute() — branch resolution", () => {
     expect(mockFindFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ instituteId: INST_A, id: SUB_BRANCH_A.id }) }));
   });
 
-  it("Tampered cookie with another institute's branch → falls back to Main Branch", async () => {
-    mockAuth.mockResolvedValue(ownerSession());
-    // Cookie set to a branch from INST_B
-    mockGet.mockReturnValue({ value: BRANCH_B.id });
-    // First findFirst: cookie branch lookup with instituteId=INST_A → not found (belongs to INST_B)
+  it("Tampered JWT with another institute's branch → falls back to Main Branch", async () => {
+    mockAuth.mockResolvedValue(ownerSession({ impersonatingBranchId: BRANCH_B.id, impersonationStartedAt: Date.now() }));
+    // First findFirst: JWT branch lookup with instituteId=INST_A → not found (belongs to INST_B)
     mockFindFirst.mockResolvedValueOnce(null);
     // Fallback: findFirst for main branch
     mockFindFirst.mockResolvedValueOnce(MAIN_BRANCH_A);
@@ -166,6 +162,38 @@ describe("requireInstitute() — branch resolution", () => {
     // Must NOT resolve to INST_B's branch
     expect(ctx.branchId).toBe(MAIN_BRANCH_A.id);
     expect(ctx.isImpersonatingBranch).toBe(false);
+  });
+
+  it("Expired impersonation (4h+) → falls back to Main Branch", async () => {
+    const expiredAt = Date.now() - 5 * 60 * 60 * 1000;
+    mockAuth.mockResolvedValue(ownerSession({ impersonatingBranchId: SUB_BRANCH_A.id, impersonationStartedAt: expiredAt }));
+    mockFindFirst.mockResolvedValue(MAIN_BRANCH_A);
+
+    const ctx = await requireInstitute();
+    expect("error" in ctx).toBe(false);
+    if ("error" in ctx) return;
+
+    expect(ctx.branchId).toBe(MAIN_BRANCH_A.id);
+    expect(ctx.isImpersonatingBranch).toBe(false);
+  });
+
+  it("Impersonation is per-session: faculty not affected by OWNER's JWT", async () => {
+    // OWNER impersonates (separate session)
+    mockAuth.mockResolvedValueOnce(ownerSession({ impersonatingBranchId: SUB_BRANCH_A.id, impersonationStartedAt: Date.now() }));
+    mockFindFirst.mockResolvedValueOnce({ id: SUB_BRANCH_A.id, isMainBranch: false, name: "North Branch" } as any);
+    const ownerCtx = await requireInstitute();
+    expect(ownerCtx.branchId).toBe(SUB_BRANCH_A.id);
+    expect((ownerCtx as any).isImpersonatingBranch).toBe(true);
+
+    // Faculty session (different JWT, no impersonation) should see only own branch, not OWNER's impersonation
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(staffSession(SUB_BRANCH_A.id));
+    mockFindFirst.mockResolvedValueOnce({ id: SUB_BRANCH_A.id, name: "North Branch", isMainBranch: false } as any);
+    const facultyCtx = await requireInstitute();
+    expect(facultyCtx.branchId).toBe(SUB_BRANCH_A.id);
+    expect(facultyCtx.isImpersonatingBranch).toBe(false);
+    // Ensure faculty's branchId is not polluted by OWNER's impersonation
+    expect(facultyCtx.branchId).not.toBe(MAIN_BRANCH_A.id);
   });
 
   it("Single-branch institute → resolves correctly without regression", async () => {

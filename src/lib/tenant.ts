@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { parseInstituteSettings, type FeatureFlags } from "@/lib/institute-settings";
 
-type SessionUser = { instituteId?: string | null; role?: string };
+type SessionUser = { instituteId?: string | null; role?: string; id?: string; impersonatingBranchId?: string | null; impersonationStartedAt?: number | null };
 
 export const IMPERSONATION_COOKIE = "platform_impersonate_institute";
 
@@ -87,7 +87,7 @@ async function findDefaultMainBranch(instId: string): Promise<BranchRecord | nul
   return mb ? { ...mb, isMainBranch: true } : null;
 }
 
-// Internal shared function for branch resolution logic
+// Internal shared function for branch resolution logic — per-session JWT, not global cookie/DB
 async function resolveBranchContext(
   user: (SessionUser & { isMainBranch?: boolean; branchId?: string | null }) | undefined,
   instituteId: string
@@ -127,52 +127,40 @@ async function resolveBranchContext(
     return { isImpersonating: false, branchId: null, branch: null };
   }
 
-  try {
-    const cookieStore = cookies();
-    const branchId = cookieStore.get(BRANCH_IMPERSONATION_COOKIE)?.value || null;
-
-    if (!branchId) {
-      const mainBranch = await findDefaultMainBranch(instituteId);
-      if (mainBranch) {
-        return {
-          isImpersonating: false,
-          branchId: mainBranch.id,
-          branch: mainBranch,
-        };
+  // Per-session impersonation via JWT claim (tied to userId, not global cookie/DB)
+  const impersonatingBranchId = (user as any)?.impersonatingBranchId as string | null | undefined;
+  const impersonationStartedAt = (user as any)?.impersonationStartedAt as number | null | undefined;
+  if (impersonatingBranchId) {
+    // Auto-expire after 4 hours
+    if (impersonationStartedAt && Date.now() - impersonationStartedAt > 4 * 60 * 60 * 1000) {
+      // Expired — fall through to main branch
+    } else {
+      try {
+        const branch = await prisma.branch.findFirst({
+          where: { id: impersonatingBranchId, instituteId },
+          select: BRANCH_SELECT,
+        });
+        if (branch) {
+          const isMain = isMainBranchRecord(branch);
+          if (isMain) {
+            return { isImpersonating: false, branchId: branch.id, branch: { ...branch, isMainBranch: true } };
+          }
+          return { isImpersonating: true, branchId: branch.id, branch: { ...branch, isMainBranch: false } };
+        }
+        // Branch not found or not in institute — fall through to main
+      } catch {
+        // fall through
       }
-      return { isImpersonating: false, branchId: null, branch: null };
     }
+  }
 
-    // FIX: enforce that the cookie branch belongs to the user's own institute
-    const branch = await prisma.branch.findFirst({
-      where: {
-        id: branchId,
-        instituteId,
-      },
-      select: BRANCH_SELECT,
-    });
-
-    if (!branch) {
-      // Cookie branch doesn't exist or belongs to a different institute — fall back to main
-      const mainBranch = await findDefaultMainBranch(instituteId);
-      return { isImpersonating: false, branchId: mainBranch?.id || null, branch: mainBranch };
+  // No impersonation — default to Main Branch (per-session)
+  try {
+    const mainBranch = await findDefaultMainBranch(instituteId);
+    if (mainBranch) {
+      return { isImpersonating: false, branchId: mainBranch.id, branch: mainBranch };
     }
-
-    const isMain = isMainBranchRecord(branch);
-    if (isMain) {
-      // It's the main branch, so never impersonating
-      return {
-        isImpersonating: false,
-        branchId: branch.id,
-        branch: { ...branch, isMainBranch: true },
-      };
-    }
-
-    return {
-      isImpersonating: true,
-      branchId: branch.id,
-      branch: { ...branch, isMainBranch: false },
-    };
+    return { isImpersonating: false, branchId: null, branch: null };
   } catch {
     return { isImpersonating: false, branchId: null, branch: null };
   }

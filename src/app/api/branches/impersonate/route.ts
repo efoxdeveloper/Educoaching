@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute, BRANCH_IMPERSONATION_COOKIE, getBranchImpersonationState } from "@/lib/tenant";
+import { requireInstitute, getBranchImpersonationState } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 
 export async function GET() {
@@ -51,16 +50,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const cookieStore = cookies();
   const isMain = Boolean(branch.isMainBranch || (branch.name && branch.name.toLowerCase().includes("main")));
   if (isMain) {
-    cookieStore.delete(BRANCH_IMPERSONATION_COOKIE);
-    if (!branch.isMainBranch) {
-      await prisma.branch.update({
-        where: { id: branch.id },
-        data: { isMainBranch: true },
-      }).catch(() => {});
-    }
+    // Switching to Main — client will clear JWT via update({ impersonatingBranchId: null })
     await logAudit({
       instituteId: ctx.instituteId,
       actor: actorFromSession(ctx.session),
@@ -75,16 +67,10 @@ export async function POST(req: Request) {
       isImpersonating: false,
       branchId: branch.id,
       branchName: branch.name,
+      // Tell client to clear JWT claim
+      impersonatingBranchId: null,
     });
   }
-
-  cookieStore.set(BRANCH_IMPERSONATION_COOKIE, branch.id, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 4, // 4 hours
-  });
 
   await logAudit({
     instituteId: ctx.instituteId,
@@ -92,7 +78,7 @@ export async function POST(req: Request) {
     action: "BRANCH_IMPERSONATION_STARTED",
     entityType: "Branch",
     entityId: branch.id,
-    metadata: { branchName: branch.name, branchCity: branch.city },
+    metadata: { branchName: branch.name, branchCity: branch.city, userId: (ctx.session?.user as any)?.id },
   });
 
   return NextResponse.json({
@@ -100,5 +86,6 @@ export async function POST(req: Request) {
     isImpersonating: true,
     branchId: branch.id,
     branchName: branch.name,
+    impersonatingBranchId: branch.id,
   });
 }

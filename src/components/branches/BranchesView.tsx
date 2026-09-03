@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   Building2,
   Plus,
@@ -39,6 +40,7 @@ export function BranchesView({
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   const [activeImpersonationBranchId, setActiveImpersonationBranchId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const { update } = useSession();
 
   useEffect(() => {
     fetch("/api/branches/impersonate")
@@ -63,11 +65,15 @@ export function BranchesView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ branchId: branch.id }),
       });
+      const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         alert(body.error || "Failed to start branch impersonation");
         return;
       }
+      // Per-session JWT: update session with impersonatingBranchId
+      try {
+        await update({ impersonatingBranchId: body.impersonatingBranchId || branch.id });
+      } catch {}
       window.location.reload();
     } catch {
       alert("Error initiating branch impersonation");
@@ -78,7 +84,11 @@ export function BranchesView({
 
   const handleExitImpersonation = async () => {
     try {
-      await fetch("/api/branches/impersonate/exit", { method: "POST" });
+      const res = await fetch("/api/branches/impersonate/exit", { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      try {
+        await update({ impersonatingBranchId: null });
+      } catch {}
       window.location.reload();
     } catch {
       alert("Error exiting branch impersonation");
