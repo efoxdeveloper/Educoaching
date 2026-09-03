@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Building2 } from "lucide-react";
+import { Search, Building2, Mail, MessageCircle, Send, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils";
 
 interface AdminTicket {
   id: string;
   instituteId: string;
+  branchId?: string | null;
   userId?: string | null;
+  userRole?: string | null;
   subject: string;
   description: string;
+  contactEmail?: string | null;
+  contactMobile?: string | null;
   status: string;
   createdAt: string;
   institute: {
@@ -26,6 +30,15 @@ interface AdminTicket {
     email: string;
     role: string;
   } | null;
+  branch?: { id: string; name: string } | null;
+  replies?: Array<{
+    id: string;
+    channel: string;
+    message: string;
+    subject?: string | null;
+    sentAt: string;
+    sentByAdmin?: { name: string; email: string } | null;
+  }>;
 }
 
 export function SupportTicketsTable({ initialTickets }: { initialTickets: AdminTicket[] }) {
@@ -170,9 +183,108 @@ export function SupportTicketsTable({ initialTickets }: { initialTickets: AdminT
                   {ticket.description}
                 </p>
               </div>
+
+              {/* Contact & branch context — admin doesn't have to hunt */}
+              <div className="flex flex-wrap gap-2 text-[11px] text-scholar-600 bg-white border border-scholar-100 rounded-xl p-2.5">
+                <span className="inline-flex items-center gap-1"><Mail size={11} /> {ticket.contactEmail || ticket.user?.email || ticket.institute.email}</span>
+                <span className="inline-flex items-center gap-1"><MessageCircle size={11} /> {ticket.contactMobile || ticket.institute.mobile}</span>
+                {ticket.userRole && <span className="rounded-md bg-scholar-100 px-2 py-0.5 font-bold">{ticket.userRole}</span>}
+                {ticket.branch && <span className="rounded-md bg-purple-50 border border-purple-200 px-2 py-0.5 font-bold text-purple-800">{ticket.branch.name}</span>}
+              </div>
+
+              {/* Reply thread */}
+              {ticket.replies && ticket.replies.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-scholar-700">Reply history ({ticket.replies.length}):</p>
+                  {ticket.replies.map((r) => (
+                    <div key={r.id} className="rounded-xl border p-3 text-xs bg-white">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${r.channel === "EMAIL" ? "bg-blue-50 text-blue-700 border-blue-200" : r.channel === "WHATSAPP" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-scholar-50 text-scholar-700 border-scholar-200"}`}>
+                          {r.channel === "EMAIL" ? <Mail size={10} /> : r.channel === "WHATSAPP" ? <MessageCircle size={10} /> : <span>💬</span>} {r.channel}
+                        </span>
+                        <span className="text-[11px] text-scholar-400">{formatDate(new Date(r.sentAt))} {r.sentByAdmin ? `• ${r.sentByAdmin.name}` : ""}</span>
+                      </div>
+                      {r.subject && <p className="font-bold text-ink text-xs">{r.subject}</p>}
+                      <p className="whitespace-pre-wrap text-scholar-700">{r.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reply actions */}
+              <ReplyForm ticket={ticket} onReplied={(updated) => setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, ...(updated as any) } : t))} />
             </Card>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+function ReplyForm({ ticket, onReplied }: { ticket: AdminTicket; onReplied: (t: any) => void }) {
+  const [channel, setChannel] = useState<"EMAIL" | "WHATSAPP" | "IN_APP">("EMAIL");
+  const [message, setMessage] = useState("");
+  const [subject, setSubject] = useState(`Re: ${ticket.subject} [#${ticket.id.slice(-6).toUpperCase()}]`);
+  const [sending, setSending] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleSend = async () => {
+    if (!message.trim()) {
+      setFeedback({ type: "error", text: "Message is required" });
+      return;
+    }
+    setSending(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/admin/support-tickets/${ticket.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, message: message.trim(), subject: channel === "EMAIL" ? subject.trim() : undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send reply");
+      setFeedback({ type: "success", text: `Reply sent via ${channel}${data.warning ? ` — ${data.warning}` : ""}` });
+      setMessage("");
+      // Refresh ticket
+      const refreshed = await fetch(`/api/admin/support-tickets/${ticket.id}/reply`).then(r => r.json()).catch(() => null);
+      if (refreshed && refreshed.id) {
+        onReplied(refreshed);
+      } else {
+        // Optimistically append
+        onReplied({ replies: [...(ticket.replies || []), { id: Date.now().toString(), channel, message, subject, sentAt: new Date().toISOString(), sentByAdmin: { name: "You" } }], status: ticket.status === "OPEN" ? "IN_PROGRESS" : ticket.status });
+      }
+    } catch (e: any) {
+      setFeedback({ type: "error", text: e.message || "Failed to send" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-scholar-200 bg-white p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <select value={channel} onChange={(e) => setChannel(e.target.value as any)} className="rounded-lg border border-scholar-200 bg-white px-2 py-1.5 text-xs font-bold">
+          <option value="EMAIL">Reply via Email</option>
+          <option value="WHATSAPP">Reply via WhatsApp</option>
+          <option value="IN_APP">In-app reply</option>
+        </select>
+        {channel === "WHATSAPP" && (
+          <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5">Requires approved WhatsApp template — sandbox will log only</span>
+        )}
+      </div>
+      {channel === "EMAIL" && (
+        <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="w-full rounded-xl border border-scholar-200 px-3 py-2 text-xs outline-none focus:border-scholar-400" />
+      )}
+      <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={channel === "EMAIL" ? "Write email reply..." : channel === "WHATSAPP" ? "Short WhatsApp message..." : "In-app reply..."} rows={3} className="w-full rounded-xl border border-scholar-200 px-3 py-2 text-xs outline-none focus:border-scholar-400 resize-y" />
+      {feedback && (
+        <div className={`flex items-center gap-1.5 rounded-xl border p-2 text-xs ${feedback.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+          {feedback.type === "success" ? <Send size={12} /> : <AlertCircle size={12} />} <span>{feedback.text}</span>
+        </div>
+      )}
+      <div className="flex justify-end">
+        <button type="button" onClick={handleSend} disabled={sending || !message.trim()} className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-700 px-4 py-2 text-xs font-bold text-white hover:bg-scholar-800 disabled:opacity-50">
+          {sending ? "Sending..." : <><Send size={12} /> Send {channel === "EMAIL" ? "Email" : channel === "WHATSAPP" ? "WhatsApp" : "Reply"}</>}
+        </button>
       </div>
     </div>
   );

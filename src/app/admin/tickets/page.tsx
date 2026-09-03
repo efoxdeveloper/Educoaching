@@ -17,6 +17,8 @@ export default async function AdminTicketsPage() {
       user: {
         select: { id: true, name: true, email: true, role: true },
       },
+      branch: { select: { id: true, name: true } },
+      replies: { orderBy: { sentAt: "asc" }, include: { sentByAdmin: { select: { name: true, email: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -24,6 +26,11 @@ export default async function AdminTicketsPage() {
   const serialized = tickets.map((t) => ({
     ...t,
     createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+    replies: t.replies.map((r) => ({
+      ...r,
+      sentAt: r.sentAt.toISOString(),
+    })),
   }));
 
   return (

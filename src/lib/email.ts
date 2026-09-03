@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-function isEmailConfigured() {
+export function isEmailConfigured() {
   return !!(
     process.env.SMTP_HOST &&
     process.env.SMTP_USER &&
@@ -478,6 +478,30 @@ export async function sendBroadcastEmail(params: {
     `
   );
 
+  return sendMail(to, subject, html);
+}
+
+export async function sendSupportTicketReply(params: {
+  to: string;
+  ticketId: string;
+  subject: string;
+  message: string;
+  instituteName?: string;
+  ticketSubject?: string;
+}) {
+  const { to, ticketId, subject, message, instituteName = "Vidyalaya Institute", ticketSubject } = params;
+  const html = emailShell(
+    subject,
+    `
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Your support ticket <strong>#${ticketId.slice(-6).toUpperCase()}</strong> ${ticketSubject ? `&ldquo;${ticketSubject}&rdquo; ` : ""}has received a reply from the ${instituteName} platform admin.
+    </p>
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin: 16px 0; white-space: pre-wrap; color: #1E293B; font-size: 13px; line-height: 1.6;">${message}</div>
+    <p style="color: #7E9BBC; font-size: 12px; margin-top: 16px; border-top: 1px solid #EEF2F7; padding-top: 12px;">
+      Please do not reply directly to this email. Reply via your Help & Support → Support Tickets in the app for the fastest response.
+    </p>
+    `
+  );
   return sendMail(to, subject, html);
 }
 

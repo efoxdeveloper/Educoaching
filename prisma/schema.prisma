@@ -124,6 +124,7 @@ model User {
   passwordResetTokens    PasswordResetToken[]
   uploadedStudyMaterials StudyMaterial[]
   supportTickets         SupportTicket[]
+  supportReplies         SupportTicketReply[]
   branch                 Branch?              @relation(fields: [branchId], references: [id])
   institute              Institute?           @relation(fields: [instituteId], references: [id])
 
@@ -197,6 +198,7 @@ model Branch {
   students         Student[]
   studyMaterials   StudyMaterial[]
   subjects         Subject[]
+  supportTickets   SupportTicket[]
   tests            Test[]
   timetableSlots   TimetableSlot[]
   users            User[]
@@ -993,21 +995,45 @@ model CertificateIssued {
 }
 
 model SupportTicket {
-  id          String    @id @default(cuid())
-  instituteId String
-  userId      String?
-  subject     String
-  description String
-  status      String    @default("OPEN")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
-  user        User?     @relation(fields: [userId], references: [id])
+  id             String               @id @default(cuid())
+  instituteId    String
+  branchId       String?
+  userId         String?
+  userRole       String?
+  subject        String
+  description    String
+  contactEmail   String?
+  contactMobile  String?
+  status         String               @default("OPEN")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  institute      Institute            @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  user           User?                @relation(fields: [userId], references: [id])
+  branch         Branch?              @relation(fields: [branchId], references: [id])
+  replies        SupportTicketReply[]
 
   @@index([instituteId])
+  @@index([branchId])
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model SupportTicketReply {
+  id            String        @id @default(cuid())
+  ticketId      String
+  sentByAdminId String?
+  channel       String        // EMAIL, WHATSAPP, IN_APP
+  message       String
+  subject       String?
+  sentAt        DateTime      @default(now())
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sentByAdmin   User?         @relation(fields: [sentByAdminId], references: [id])
+
+  @@index([ticketId])
+  @@index([sentByAdminId])
+  @@index([sentAt])
+  @@index([channel])
 }
 
 enum Role {

@@ -10,7 +10,7 @@ const ENABLE_LIVE_WHATSAPP = process.env.ENABLE_LIVE_WHATSAPP === "true";
 // Blacklist personal phone numbers from ever receiving automated bot pings
 const PROTECTED_PHONE_PATTERNS = ["9411454931", "+919411454931"];
 
-function isWhatsAppConfigured() {
+export function isWhatsAppConfigured() {
   return !!(
     ENABLE_LIVE_WHATSAPP &&
     process.env.TWILIO_ACCOUNT_SID &&
@@ -103,4 +103,19 @@ export async function sendLeadFollowUpReminder(params: {
   const { counsellorMobile, counsellorName, instituteName, leadsCount, leadsSummary } = params;
   const message = `Hello ${counsellorName}, you have ${leadsCount} lead follow-up(s) due today at ${instituteName}:\n\n${leadsSummary}\n\nPlease check your Admissions CRM to complete these follow-ups.`;
   return sendWhatsApp(counsellorMobile, message);
+}
+
+export async function sendSupportTicketWhatsAppReply(params: { to: string; ticketId: string; message: string }) {
+  const { to, ticketId, message } = params;
+  // IMPORTANT: WhatsApp sandbox currently only accepts pre-approved template pattern
+  // (see TEMPORARY workaround comment above). Support ticket replies are free-form
+  // and will NOT match the sandbox "Your appointment is coming up on..." pattern.
+  // In production, you need a real approved WhatsApp template for support replies
+  // or an upgraded Twilio WhatsApp sender (not sandbox). We still attempt send via
+  // sendWhatsApp which will log/safe-mode if not configured.
+  const fullMessage = `Support Ticket #${ticketId.slice(-6).toUpperCase()} reply: ${message}\n\n— Vidyalaya Support`;
+  if (!isWhatsAppConfigured()) {
+    console.warn(`[whatsapp:support] WhatsApp not configured — ticket ${ticketId} reply would have been sent to ${to}: "${fullMessage}" — requires approved template / upgraded sender for free-form replies.`);
+  }
+  return sendWhatsApp(to, fullMessage);
 }

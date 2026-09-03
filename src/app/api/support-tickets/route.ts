@@ -13,6 +13,8 @@ export async function GET() {
       user: {
         select: { id: true, name: true, email: true, role: true },
       },
+      branch: { select: { id: true, name: true } },
+      replies: { orderBy: { sentAt: "asc" }, include: { sentByAdmin: { select: { name: true, email: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -39,13 +41,29 @@ export async function POST(req: Request) {
   }
 
   const userId = (ctx.session?.user as { id?: string } | undefined)?.id || null;
+  const userRole = String((ctx.session?.user as { role?: string })?.role || "").toUpperCase();
+  const userEmail = (ctx.session?.user as { email?: string })?.email || null;
+  // Try to get mobile from User or Student record
+  let userMobile: string | null = null;
+  try {
+    const u = userId ? await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }) : null;
+    // For student/parent, try student table
+    if (userEmail) {
+      const s = await prisma.student.findFirst({ where: { email: userEmail, instituteId: ctx.instituteId }, select: { mobile: true, parentMobile: true } });
+      if (s) userMobile = s.mobile || s.parentMobile || null;
+    }
+  } catch {}
 
   const ticket = await prisma.supportTicket.create({
     data: {
       instituteId: ctx.instituteId,
+      branchId: ctx.branchId as string | null,
       userId,
+      userRole,
       subject: subject.trim(),
       description: description.trim(),
+      contactEmail: userEmail,
+      contactMobile: userMobile,
       status: "OPEN",
     },
     include: {
