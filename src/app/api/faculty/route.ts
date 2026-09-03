@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     prisma.faculty.findMany({
       where: {
         instituteId: ctx.instituteId,
-        branchId: ctx.branchId,
+        branchId: ctx.branchId as string,
         ...(department && department !== "ALL" ? { department } : {}),
         ...(roleType && roleType !== "ALL" ? { roleType } : {}),
       },
@@ -87,13 +87,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
   }
   const validBranchIds: string[] = [ctx.branchId as string];
-  const primaryBranchId = ctx.branchId;
+  const primaryBranchId = ctx.branchId as string;
 
   // Only allow assigning batches that belong to this institute and same branch.
   let validBatchIds: string[] = [];
   if (Array.isArray(batchIds) && batchIds.length > 0) {
     const owned = await prisma.batch.findMany({
-      where: { id: { in: batchIds }, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { id: { in: batchIds }, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
       select: { id: true },
     });
     validBatchIds = owned.map((b) => b.id);

@@ -220,7 +220,7 @@ model Faculty {
   department      String          @default("ACADEMIC")
   designation     String?
   monthlySalary   Decimal?        @db.Decimal(10, 2)
-  branchId        String?
+  branchId        String
   isAllBranches   Boolean         @default(false)
   hasSystemAccess Boolean         @default(false)
   userId          String?
@@ -228,7 +228,7 @@ model Faculty {
   createdAt       DateTime        @default(now())
   admissions      Admission[]
   batches         BatchFaculty[]
-  branch          Branch?         @relation("FacultyPrimaryBranch", fields: [branchId], references: [id])
+  branch          Branch          @relation("FacultyPrimaryBranch", fields: [branchId], references: [id])
   institute       Institute       @relation(fields: [instituteId], references: [id])
   user            User?           @relation(fields: [userId], references: [id])
   reviews         FacultyReview[]
@@ -283,13 +283,13 @@ model Batch {
   status           String          @default("Active")
   startDate        DateTime?
   endDate          DateTime?
-  branchId         String?
+  branchId         String
   isAllBranches    Boolean         @default(false)
   createdAt        DateTime        @default(now())
   admissions       Admission[]
   assignments      Assignment[]
   attendance       Attendance[]
-  branch           Branch?         @relation("BranchPrimaryBatch", fields: [branchId], references: [id])
+  branch           Branch          @relation("BranchPrimaryBatch", fields: [branchId], references: [id])
   course           Course          @relation(fields: [courseId], references: [id])
   institute        Institute       @relation(fields: [instituteId], references: [id])
   faculty          BatchFaculty[]
@@ -307,7 +307,7 @@ model Batch {
 model TimetableSlot {
   id          String    @id @default(cuid())
   instituteId String
-  branchId    String?
+  branchId    String
   batchId     String
   facultyId   String?
   dayOfWeek   DayOfWeek
@@ -317,7 +317,7 @@ model TimetableSlot {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   batch       Batch     @relation(fields: [batchId], references: [id])
-  branch      Branch?   @relation(fields: [branchId], references: [id])
+  branch      Branch    @relation(fields: [branchId], references: [id])
   faculty     Faculty?  @relation(fields: [facultyId], references: [id])
   institute   Institute @relation(fields: [instituteId], references: [id])
 
@@ -330,11 +330,11 @@ model TimetableSlot {
 model Subject {
   id        String   @id @default(cuid())
   courseId  String
-  branchId  String?
+  branchId  String
   name      String
   createdAt DateTime @default(now())
   course    Course   @relation(fields: [courseId], references: [id])
-  branch    Branch?  @relation(fields: [branchId], references: [id])
+  branch    Branch   @relation(fields: [branchId], references: [id])
 
   @@unique([courseId, branchId, name])
   @@index([courseId])
@@ -350,7 +350,7 @@ model Student {
   parentMobile           String?
   courseId               String
   batchId                String?
-  branchId               String?
+  branchId               String
   admissionDate          DateTime               @default(now())
   status                 StudentStatus          @default(ACTIVE)
   totalFee               Decimal                @db.Decimal(10, 2)
@@ -385,7 +385,7 @@ model Student {
   paymentTransactions    PaymentTransaction[]
   renewals               Renewal[]
   batch                  Batch?                 @relation(fields: [batchId], references: [id])
-  branch                 Branch?                @relation(fields: [branchId], references: [id])
+  branch                 Branch                 @relation(fields: [branchId], references: [id])
   course                 Course                 @relation(fields: [courseId], references: [id])
   institute              Institute              @relation(fields: [instituteId], references: [id])
   testAttempts           StudentTestAttempt[]
@@ -497,7 +497,7 @@ model LeadFollowUp {
 model Attendance {
   id          String           @id @default(cuid())
   instituteId String
-  branchId    String?
+  branchId    String
   studentId   String
   batchId     String
   date        DateTime         @db.Date
@@ -505,7 +505,7 @@ model Attendance {
   locked      Boolean          @default(false)
   createdAt   DateTime         @default(now())
   batch       Batch            @relation(fields: [batchId], references: [id])
-  branch      Branch?          @relation(fields: [branchId], references: [id])
+  branch      Branch           @relation(fields: [branchId], references: [id])
   institute   Institute        @relation(fields: [instituteId], references: [id])
   student     Student          @relation(fields: [studentId], references: [id])
 

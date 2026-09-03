@@ -108,6 +108,32 @@ async function main() {
     },
   });
 
+  // Branches — create before faculty/batches so branchId can be set (required after backfill)
+  const branches = await Promise.all([
+    prisma.branch.create({
+      data: {
+        instituteId: institute.id,
+        name: "Main Campus (North)",
+        city: "Delhi",
+        state: "Delhi",
+        address: "Block B, Model Town",
+        contact: randomMobile(),
+        isMainBranch: true,
+      },
+    }),
+    prisma.branch.create({
+      data: {
+        instituteId: institute.id,
+        name: "South Extension Branch",
+        city: "Delhi",
+        state: "Delhi",
+        address: "Ring Road, South Ext 1",
+        contact: randomMobile(),
+      },
+    }),
+  ]);
+  const mainBranchId = branches[0].id;
+
   // Courses
   const courseNames = [
     { name: "JEE Main + Advanced", fee: 85000 },
@@ -120,7 +146,7 @@ async function main() {
     courseNames.map((c) => prisma.course.create({ data: { ...c, instituteId: institute.id } }))
   );
 
-  // Faculty
+  // Faculty — all seeded faculty belong to Main Branch (later moves are per-branch)
   const facultyData = [
     { name: "Dr. R. Sharma", subject: "Physics", qualification: "Ph.D. Physics", experienceYears: 12, email: "r.sharma@vidyalaya.test", mobile: randomMobile() },
     { name: "Ms. A. Kapoor", subject: "Chemistry", qualification: "M.Sc. Chemistry", experienceYears: 8, email: "a.kapoor@vidyalaya.test", mobile: randomMobile() },
@@ -129,10 +155,10 @@ async function main() {
     { name: "Mr. K. Bansal", subject: "English", qualification: "M.A. English", experienceYears: 6, email: "k.bansal@vidyalaya.test", mobile: randomMobile() },
   ];
   const faculty = await Promise.all(
-    facultyData.map((f) => prisma.faculty.create({ data: { ...f, instituteId: institute.id } }))
+    facultyData.map((f) => prisma.faculty.create({ data: { ...f, instituteId: institute.id, branchId: mainBranchId } }))
   );
 
-  // Batches
+  // Batches — seeded batches belong to Main Branch (later multi-branch copies are per-branch)
   const timings = ["7:00 AM - 9:00 AM", "9:30 AM - 11:30 AM", "2:00 PM - 4:00 PM", "4:30 PM - 6:30 PM", "6:45 PM - 8:45 PM"];
   const batches = [];
   for (let i = 0; i < courses.length; i++) {
@@ -140,6 +166,7 @@ async function main() {
       const batch = await prisma.batch.create({
         data: {
           instituteId: institute.id,
+          branchId: mainBranchId,
           name: `${courses[i].name.split(" ")[0]} Batch ${j === 0 ? "A" : "B"}`,
           courseId: courses[i].id,
           timing: timings[(i + j) % timings.length],
@@ -182,6 +209,7 @@ async function main() {
     const student = await prisma.student.create({
       data: {
         instituteId: institute.id,
+        branchId: mainBranchId,
         name: studentName,
         mobile: studentMobile,
         email: studentEmail,
@@ -238,6 +266,7 @@ async function main() {
       await prisma.attendance.create({
         data: {
           instituteId: institute.id,
+          branchId: mainBranchId,
           studentId: s.id,
           batchId: s.batchId!,
           date,
@@ -272,31 +301,7 @@ async function main() {
     });
   }
 
-  // Branches
-  const branches = await Promise.all([
-    prisma.branch.create({
-      data: {
-        instituteId: institute.id,
-        name: "Main Campus (North)",
-        city: "Delhi",
-        state: "Delhi",
-        address: "Block B, Model Town",
-        contact: randomMobile(),
-      },
-    }),
-    prisma.branch.create({
-      data: {
-        instituteId: institute.id,
-        name: "South Extension Branch",
-        city: "Delhi",
-        state: "Delhi",
-        address: "Ring Road, South Ext 1",
-        contact: randomMobile(),
-      },
-    }),
-  ]);
-
-  // Admissions (pipeline of applicants)
+  // Admissions (pipeline of applicants) — uses branches created earlier
   const admissionStatuses = ["PENDING", "APPROVED", "ENROLLED", "REJECTED"] as const;
   const sampleNotes = [
     "Interested in weekend batches, visited with parents.",

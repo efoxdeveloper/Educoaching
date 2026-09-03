@@ -7,7 +7,7 @@ export async function GET() {
   if ("error" in ctx) return ctx.error;
 
   const batches = await prisma.batch.findMany({
-    where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       course: true,
       branch: true,
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
       instituteId: ctx.instituteId,
       name: String(name).trim(),
       courseId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       timing: String(timing),
       capacity: capacity ? Number(capacity) : 40,
       status: status || "Active",

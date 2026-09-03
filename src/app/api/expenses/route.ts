@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   const endDate = url.searchParams.get("endDate");
   const search = url.searchParams.get("search");
 
-  const where: Prisma.ExpenseWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId };
+  const where: Prisma.ExpenseWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId as string };
 
   if (category && Object.values(ExpenseCategory).includes(category as ExpenseCategory)) {
     where.category = category as ExpenseCategory;
@@ -58,13 +58,13 @@ export async function GET(req: Request) {
     prisma.expense.findMany({
       where: {
         instituteId: ctx.instituteId,
-        branchId: ctx.branchId,
+        branchId: ctx.branchId as string,
         expenseDate: { gte: firstOfThisMonth, lt: nextMonth },
       },
       select: { amount: true, category: true, paymentMethod: true },
     }),
     prisma.expense.aggregate({
-      where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
       _sum: { amount: true },
     }),
   ]);
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
   const expense = await prisma.expense.create({
     data: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       title: title.trim(),
       amount: Number(amount),
       category: validCategory,

@@ -71,6 +71,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const student = await tx.student.create({
           data: {
             instituteId: ctx.instituteId,
+            branchId: (admission.branchId as string) || (ctx.branchId as string),
             name: admission.applicantName,
             mobile: admission.mobile,
             email: admission.email,

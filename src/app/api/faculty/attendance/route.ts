@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       const records = await prisma.staffAttendance.findMany({
         where: {
           instituteId: ctx.instituteId,
-          ...(ctx.branchId ? { faculty: { branchId: ctx.branchId } } : {}),
+          ...(ctx.branchId ? { faculty: { branchId: ctx.branchId as string } } : {}),
           date: {
             gte: startDate,
             lte: endDate,
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
     const records = await prisma.staffAttendance.findMany({
       where: {
         instituteId: ctx.instituteId,
-        ...(ctx.branchId ? { faculty: { branchId: ctx.branchId } } : {}),
+        ...(ctx.branchId ? { faculty: { branchId: ctx.branchId as string } } : {}),
         date: targetDate,
       },
     });
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   if (ctx.branchId) {
     const facultyIds = records.map((r) => r.facultyId);
     const validFaculty = await prisma.faculty.findMany({
-      where: { id: { in: facultyIds }, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { id: { in: facultyIds }, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
       select: { id: true },
     });
     const validIds = new Set(validFaculty.map((f) => f.id));

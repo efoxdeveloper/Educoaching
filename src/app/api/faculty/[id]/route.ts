@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const [faculty, permRows] = await Promise.all([
     prisma.faculty.findFirst({
-      where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
       include: {
         branch: { select: { id: true, name: true, city: true } },
         branches: { select: { id: true, name: true, city: true } },
@@ -35,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.faculty.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Faculty not found" }, { status: 404 });
 
@@ -72,10 +72,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
   }
   let branchConnectData: any = undefined;
-  let primaryBranchId: string | null | undefined = undefined;
+  let primaryBranchId: string | undefined = undefined;
 
   if (branchIds !== undefined || branchId !== undefined) {
-    primaryBranchId = ctx.branchId;
+    primaryBranchId = ctx.branchId as string;
     branchConnectData = { set: [{ id: ctx.branchId }] };
   }
 
@@ -177,7 +177,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.faculty.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Faculty not found" }, { status: 404 });
 

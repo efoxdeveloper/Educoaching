@@ -13,7 +13,7 @@ export async function GET() {
   if ("error" in ctx) return ctx.error;
 
   const students = await prisma.student.findMany({
-    where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: { course: true, batch: true },
     orderBy: { createdAt: "desc" },
   });
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   if (branchId && branchId !== ctx.branchId) {
     return NextResponse.json({ error: "Branch mismatch: cannot create student for a different branch. Impersonate that branch first." }, { status: 403 });
   }
-  const effectiveBranchId = ctx.branchId;
+  const effectiveBranchId = ctx.branchId as string;
 
   // Make sure the chosen course/batch belong to this institute and branch.
   const course = await prisma.course.findFirst({ where: { id: courseId, instituteId: ctx.instituteId } });

@@ -9,7 +9,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if ("error" in ctx) return ctx.error;
 
   const income = await prisma.income.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string},
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
     },
@@ -31,7 +31,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.income.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string},
   });
 
   if (!existing) {
@@ -83,7 +83,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.income.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string},
   });
 
   if (!existing) {

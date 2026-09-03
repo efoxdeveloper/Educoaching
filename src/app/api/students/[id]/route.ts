@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if ("error" in ctx) return ctx.error;
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       course: { select: { id: true, name: true, fee: true, duration: true } },
       batch: { select: { id: true, name: true, timing: true } },
@@ -216,7 +216,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
@@ -232,7 +232,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     parentEmail?: string | null;
     courseId?: string;
     batchId?: string | null;
-    branchId?: string | null;
+    branchId?: string;
     status?: StudentStatus;
     totalFee?: number;
     dueDate?: Date | null;
@@ -419,7 +419,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const permanent = searchParams.get("permanent") === "true";
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
 
   if (!student) {

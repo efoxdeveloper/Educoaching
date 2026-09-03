@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   const { courseId, batchId, leadStage } = filterDetails;
 
   if (validAudience === "ADMISSION_LEADS") {
-    const where: Prisma.AdmissionWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId };
+    const where: Prisma.AdmissionWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId as string};
     if (leadStage) where.stage = leadStage;
     if (courseId) where.courseId = courseId;
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   } else {
     const where: Prisma.StudentWhereInput = {
     instituteId: ctx.instituteId,
-    branchId: ctx.branchId,
+    branchId: ctx.branchId as string,
       status: "ACTIVE",
     };
     if (courseId) where.courseId = courseId;

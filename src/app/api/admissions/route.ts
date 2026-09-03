@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const admissions = await prisma.admission.findMany({
     where: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       ...(status ? { status: status as AdmissionStatus } : {}),
       ...(stage ? { stage } : {}),
       ...(priority ? { priority } : {}),
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
   }
   if (batchId) {
     const batch = await prisma.batch.findFirst({
-      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     });
     if (!batch) {
       // Fallback: batch may be from legacy null branch, but enforce strict check
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
   const admission = await prisma.admission.create({
     data: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       applicantName: String(applicantName).trim(),
       mobile: String(mobile).trim(),
       email: email ? String(email).trim() : null,

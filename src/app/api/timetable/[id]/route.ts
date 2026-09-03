@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.timetableSlot.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
 
@@ -40,18 +40,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   if (batchId) {
-    const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId } });
+    const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
     if (!batch) return NextResponse.json({ error: "Invalid batch for this branch" }, { status: 400 });
   }
   if (nextFacultyId) {
-    const faculty = await prisma.faculty.findFirst({ where: { id: nextFacultyId, instituteId: ctx.instituteId, branchId: ctx.branchId } });
+    const faculty = await prisma.faculty.findFirst({ where: { id: nextFacultyId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
     if (!faculty) return NextResponse.json({ error: "Invalid faculty for this branch" }, { status: 400 });
   }
 
   const sameDay = await prisma.timetableSlot.findMany({
     where: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       dayOfWeek: nextDay,
       id: { not: params.id },
       OR: [{ batchId: nextBatchId }, ...(nextFacultyId ? [{ facultyId: nextFacultyId }] : [])],
@@ -112,7 +112,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.timetableSlot.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
 

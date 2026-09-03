@@ -21,7 +21,7 @@ export async function POST(
     const test = await prisma.test.findUnique({
       where: { id: params.id },
       include: {
-        batch: { select: { id: true, name: true, courseId: true } },
+        batch: { select: { id: true, name: true, courseId: true, branchId: true } },
         questions: {
           include: { question: true },
           orderBy: { order: "asc" },
@@ -42,10 +42,16 @@ export async function POST(
     });
 
     if (!student) {
-      // Create new student record
+      // Create new student record — use batch's branch as branch context (required after backfill)
+      let effectiveBranchId = (test.batch as any).branchId as string | null;
+      if (!effectiveBranchId) {
+        const fallback = await prisma.branch.findFirst({ where: { instituteId: test.instituteId }, orderBy: { createdAt: "asc" }, select: { id: true } });
+        effectiveBranchId = fallback?.id ?? null;
+      }
       student = await prisma.student.create({
         data: {
           instituteId: test.instituteId,
+          branchId: effectiveBranchId as string,
           name: String(name).trim(),
           mobile: cleanMobile,
           email: email ? String(email).trim() : null,

@@ -8,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if ("error" in ctx) return ctx.error;
 
   const batch = await prisma.batch.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       course: true,
       branch: true,
@@ -26,7 +26,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.batch.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: { course: true, branches: true },
   });
 
@@ -61,11 +61,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   // Handle multi-branch updates - but locked to current branch only
   let branchConnectData: any = undefined;
-  let primaryBranchId: string | null | undefined = undefined;
+  let primaryBranchId: string | undefined = undefined;
 
   if (branchIds !== undefined || branchId !== undefined) {
     // Force to current branch only - ignore other branches
-    primaryBranchId = ctx.branchId;
+    primaryBranchId = ctx.branchId as string;
     branchConnectData = { set: [{ id: ctx.branchId }] };
   }
 
@@ -138,7 +138,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.batch.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
 
   if (!existing) return NextResponse.json({ error: "Batch not found" }, { status: 404 });

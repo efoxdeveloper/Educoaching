@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
   const subjects = await prisma.subject.findMany({
     where: {
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       course: { instituteId: ctx.instituteId },
       ...(courseId ? { courseId } : {}),
     },
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   }
 
   const existing = await prisma.subject.findFirst({
-    where: { courseId, branchId: ctx.branchId, name: String(name).trim() },
+    where: { courseId, branchId: ctx.branchId as string, name: String(name).trim() },
   });
   if (existing) {
     return NextResponse.json({ error: "Subject already exists for this course in this branch" }, { status: 409 });
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   const subject = await prisma.subject.create({
     data: {
       courseId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       name: String(name).trim(),
     },
   });

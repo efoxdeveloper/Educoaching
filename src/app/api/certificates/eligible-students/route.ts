@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const where: Prisma.StudentWhereInput = {
     instituteId: ctx.instituteId,
-    branchId: ctx.branchId,
+    branchId: ctx.branchId as string,
     courseEndDate: {
       lte: now,
     },

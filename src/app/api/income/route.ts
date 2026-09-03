@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   const endDate = url.searchParams.get("endDate");
   const search = url.searchParams.get("search");
 
-  const where: Prisma.IncomeWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId };
+  const where: Prisma.IncomeWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId as string };
 
   if (category && Object.values(IncomeCategory).includes(category as IncomeCategory)) {
     where.category = category as IncomeCategory;
@@ -58,13 +58,13 @@ export async function GET(req: Request) {
     prisma.income.findMany({
       where: {
         instituteId: ctx.instituteId,
-        branchId: ctx.branchId,
+        branchId: ctx.branchId as string,
         incomeDate: { gte: firstOfThisMonth, lt: nextMonth },
       },
       select: { amount: true, category: true, paymentMethod: true },
     }),
     prisma.income.aggregate({
-      where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
       _sum: { amount: true },
     }),
   ]);
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
   const income = await prisma.income.create({
     data: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       title: title.trim(),
       amount: Number(amount),
       category: validCategory,

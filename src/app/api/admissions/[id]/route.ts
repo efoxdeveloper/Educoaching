@@ -10,7 +10,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.admission.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Admission not found" }, { status: 404 });
 
@@ -70,7 +70,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   if (batchId) {
     const batch = await prisma.batch.findFirst({
-      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId },
+      where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     });
     if (!batch) {
       const anyBatch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId } });
@@ -98,7 +98,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           email: email !== undefined ? email : existing.email,
           courseId: finalCourseId,
           batchId: finalBatchId || null,
-          branchId: ctx.branchId,
+          branchId: ctx.branchId as string,
           photoUrl: existing.photoUrl || null,
           totalFee: finalFeePlan,
           paidFee: initialPaidAmount && Number(initialPaidAmount) > 0 ? Number(initialPaidAmount) : 0,
@@ -122,7 +122,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return tx.admission.update({
       where: { id: params.id },
       data: {
-        ...(branchId !== undefined ? { branchId: ctx.branchId } : {}),
+        ...(branchId !== undefined ? { branchId: ctx.branchId as string } : {}),
         ...(applicantName !== undefined ? { applicantName: String(applicantName).trim() } : {}),
         ...(mobile !== undefined ? { mobile: String(mobile).trim() } : {}),
         ...(email !== undefined ? { email: email || null } : {}),
@@ -178,7 +178,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.admission.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) return NextResponse.json({ error: "Admission not found" }, { status: 404 });
 

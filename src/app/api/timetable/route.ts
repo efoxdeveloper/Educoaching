@@ -14,7 +14,7 @@ export async function GET() {
   if ("error" in ctx) return ctx.error;
 
   const slots = await prisma.timetableSlot.findMany({
-    where: { instituteId: ctx.instituteId, branchId: ctx.branchId },
+    where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       batch: { select: { id: true, name: true, course: { select: { name: true } } } },
       faculty: { select: { id: true, name: true } },
@@ -52,11 +52,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "End time must be after start time" }, { status: 400 });
   }
 
-  const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId } });
+  const batch = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
   if (!batch) return NextResponse.json({ error: "Invalid batch for this branch" }, { status: 400 });
 
   if (facultyId) {
-    const faculty = await prisma.faculty.findFirst({ where: { id: facultyId, instituteId: ctx.instituteId, branchId: ctx.branchId } });
+    const faculty = await prisma.faculty.findFirst({ where: { id: facultyId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
     if (!faculty) return NextResponse.json({ error: "Invalid faculty for this branch" }, { status: 400 });
   }
 
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   const existingSlots = await prisma.timetableSlot.findMany({
     where: {
       instituteId: ctx.instituteId,
-      branchId: ctx.branchId,
+      branchId: ctx.branchId as string,
       dayOfWeek: { in: targetDays },
       OR: [{ batchId }, ...(facultyId ? [{ facultyId }] : [])],
     },
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
       prisma.timetableSlot.create({
         data: {
           instituteId: ctx.instituteId,
-          branchId: ctx.branchId,
+          branchId: ctx.branchId as string,
           batchId,
           facultyId: facultyId || null,
           dayOfWeek: day,
