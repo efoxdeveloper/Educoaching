@@ -10,13 +10,10 @@ export default async function StudentsPage() {
   const instituteId = await getInstituteId();
   if (!instituteId) redirect("/login");
 
-  const branchImpersonation = await getBranchImpersonationState();
-  const impersonatedBranchId = branchImpersonation.isImpersonating ? branchImpersonation.branchId : null;
+  const { branchId: activeBranchId } = await getBranchImpersonationState();
+  if (!activeBranchId) redirect("/login");
 
-  const studentWhere: any = { instituteId };
-  if (impersonatedBranchId) {
-    studentWhere.branchId = impersonatedBranchId;
-  }
+  const studentWhere: any = { instituteId, branchId: activeBranchId };
 
   const [students, courses, batches, branches] = await Promise.all([
     prisma.student.findMany({
@@ -26,7 +23,7 @@ export default async function StudentsPage() {
     }),
     prisma.course.findMany({ where: { instituteId }, orderBy: { name: "asc" } }),
     prisma.batch.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       select: {
         id: true,
         name: true,

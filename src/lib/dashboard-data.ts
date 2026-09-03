@@ -76,7 +76,7 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
       include: { course: true, batch: true },
     }),
     prisma.admission.findMany({
-      where: { instituteId },
+      where: { instituteId, ...(branchId ? { branchId } : {}) },
       select: {
         id: true,
         applicantName: true,
@@ -135,7 +135,7 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
 
   // Attendance
   const todaysAttendanceRecords = await prisma.attendance.findMany({
-    where: { instituteId, date: todayStart },
+    where: { instituteId, ...(branchId ? { branchId } : {}), date: todayStart },
   });
   const todaysPresent = todaysAttendanceRecords.filter((r) => r.status === "PRESENT").length;
   const todaysAttendancePct =
@@ -150,7 +150,7 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
     days.map(async (d) => {
       const sum = await prisma.payment.aggregate({
         _sum: { amount: true },
-        where: { instituteId, paidAt: { gte: startOfDay(d), lte: endOfDay(d) } },
+        where: { instituteId, ...(branchId ? { student: { branchId } } : {}), paidAt: { gte: startOfDay(d), lte: endOfDay(d) } },
       });
       return { day: format(d, "EEE"), amount: Number(sum._sum.amount || 0) };
     })
@@ -159,7 +159,7 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
   const attendanceTrend = await Promise.all(
     days.map(async (d) => {
       const records = await prisma.attendance.findMany({
-        where: { instituteId, date: startOfDay(d) },
+        where: { instituteId, ...(branchId ? { branchId } : {}), date: startOfDay(d) },
       });
       const present = records.filter((r) => r.status === "PRESENT").length;
       const percent = records.length > 0 ? Math.round((present / records.length) * 100) : 0;

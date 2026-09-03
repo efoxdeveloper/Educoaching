@@ -3,12 +3,13 @@ import { Shell } from "@/components/layout/Shell";
 import { FeesView } from "@/components/fees/FeesView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId } from "@/lib/tenant";
+import { getBranchImpersonationState } from "@/lib/tenant";
 
 export default async function FeesPage() {
   const session = await auth();
-  const instituteId = await getInstituteId();
-  if (!instituteId) redirect("/login");
+  const { branchId } = await getBranchImpersonationState();
+  const instituteId = (session?.user as any)?.instituteId as string | null;
+  if (!instituteId || !branchId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
   if (role !== "OWNER" && role !== "ADMIN" && role !== "ACCOUNTANT") {
@@ -16,7 +17,7 @@ export default async function FeesPage() {
   }
 
   const students = await prisma.student.findMany({
-    where: { instituteId },
+    where: { instituteId, branchId },
     include: { course: true },
     orderBy: { createdAt: "desc" },
   });

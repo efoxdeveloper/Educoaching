@@ -10,22 +10,15 @@ export default async function FacultyPage() {
   const instituteId = await getInstituteId();
   if (!instituteId) redirect("/login");
 
-  const branchImpersonation = await getBranchImpersonationState();
-  const impersonatedBranchId = branchImpersonation.isImpersonating ? branchImpersonation.branchId : null;
+  const { branchId: activeBranchId } = await getBranchImpersonationState();
+  if (!activeBranchId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
   if (role !== "OWNER" && role !== "ADMIN") {
     redirect("/dashboard");
   }
 
-  const facultyWhere: any = { instituteId };
-  if (impersonatedBranchId) {
-    facultyWhere.OR = [
-      { branchId: impersonatedBranchId },
-      { branches: { some: { id: impersonatedBranchId } } },
-      { isAllBranches: true },
-    ];
-  }
+  const facultyWhere: any = { instituteId, branchId: activeBranchId };
 
   const [staffList, batches, courses, branches] = await Promise.all([
     prisma.faculty.findMany({
@@ -40,7 +33,7 @@ export default async function FacultyPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.batch.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       include: {
         course: true,
         branch: { select: { id: true, name: true, city: true } },

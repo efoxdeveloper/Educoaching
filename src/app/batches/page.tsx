@@ -10,8 +10,8 @@ export default async function BatchesPage() {
   const instituteId = await getInstituteId();
   if (!instituteId) redirect("/login");
 
-  const branchImpersonation = await getBranchImpersonationState();
-  const impersonatedBranchId = branchImpersonation.isImpersonating ? branchImpersonation.branchId : null;
+  const { branchId: activeBranchId } = await getBranchImpersonationState();
+  if (!activeBranchId) redirect("/login");
 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
@@ -38,25 +38,14 @@ export default async function BatchesPage() {
     }
   }
 
-  // Restrict faculty to allocated batches and branch credentials, or scope to impersonated branch
-  const batchWhere: any = { instituteId };
+  // Strict branch isolation: every view is scoped to activeBranchId
+  const batchWhere: any = { instituteId, branchId: activeBranchId };
   if (userRole === "FACULTY" && !isFacultyAllBranches) {
-    batchWhere.OR = [
-      { id: { in: allocatedBatchIds } },
-      { faculty: { some: { faculty: { email: userEmail } } } },
-      ...(facultyBranchIds.length > 0
-        ? [
-            { branchId: { in: facultyBranchIds } },
-            { branches: { some: { id: { in: facultyBranchIds } } } },
-          ]
-        : []),
+    batchWhere.AND = [
+      { OR: [{ id: { in: allocatedBatchIds } }, { faculty: { some: { faculty: { email: userEmail } } } }] },
+      { branchId: activeBranchId },
     ];
-  } else if (impersonatedBranchId) {
-    batchWhere.OR = [
-      { branchId: impersonatedBranchId },
-      { branches: { some: { id: impersonatedBranchId } } },
-      { isAllBranches: true },
-    ];
+    delete batchWhere.branchId;
   }
 
   const [batches, courses, branches] = await Promise.all([

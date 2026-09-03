@@ -3,13 +3,14 @@ import { Shell } from "@/components/layout/Shell";
 import { TimetableView } from "@/components/timetable/TimetableView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId } from "@/lib/tenant";
+import { getBranchImpersonationState } from "@/lib/tenant";
 import { hasPermission } from "@/lib/permissions";
 
 export default async function TimetablePage() {
   const session = await auth();
-  const instituteId = await getInstituteId();
-  if (!instituteId) redirect("/login");
+  const { branchId: activeBranchId } = await getBranchImpersonationState();
+  const instituteId = (session?.user as any)?.instituteId as string | null;
+  if (!instituteId || !activeBranchId) redirect("/login");
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const canManage = hasPermission(role, "timetable:write");
@@ -21,7 +22,7 @@ export default async function TimetablePage() {
       orderBy: { name: "asc" },
     }),
     prisma.timetableSlot.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       include: {
         batch: { select: { id: true, name: true, timing: true, course: { select: { id: true, name: true } } } },
         faculty: { select: { id: true, name: true } },
@@ -29,11 +30,11 @@ export default async function TimetablePage() {
       orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
     }),
     prisma.batch.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       include: { course: { select: { id: true, name: true } } },
       orderBy: { name: "asc" },
     }),
-    prisma.faculty.findMany({ where: { instituteId }, orderBy: { name: "asc" } }),
+    prisma.faculty.findMany({ where: { instituteId, branchId: activeBranchId }, orderBy: { name: "asc" } }),
   ]);
 
   return (

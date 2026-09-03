@@ -3,12 +3,13 @@ import { Shell } from "@/components/layout/Shell";
 import { SubjectsTable } from "@/components/subjects/SubjectsTable";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId } from "@/lib/tenant";
+import { getBranchImpersonationState } from "@/lib/tenant";
 
 export default async function SubjectsPage() {
   const session = await auth();
-  const instituteId = await getInstituteId();
-  if (!instituteId) redirect("/login");
+  const { branchId: activeBranchId, branch } = await getBranchImpersonationState();
+  const instituteId = (session?.user as any)?.instituteId as string | null;
+  if (!instituteId || !activeBranchId) redirect("/login");
 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
@@ -16,7 +17,7 @@ export default async function SubjectsPage() {
 
   const [subjects, courses] = await Promise.all([
     prisma.subject.findMany({
-      where: { course: { instituteId } },
+      where: { branchId: activeBranchId, course: { instituteId } },
       include: { course: { select: { id: true, name: true } } },
       orderBy: { name: "asc" },
     }),

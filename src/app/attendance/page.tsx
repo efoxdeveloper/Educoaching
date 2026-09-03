@@ -3,12 +3,13 @@ import { Shell } from "@/components/layout/Shell";
 import { AttendanceView } from "@/components/attendance/AttendanceView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId } from "@/lib/tenant";
+import { getBranchImpersonationState } from "@/lib/tenant";
 
 export default async function AttendancePage() {
   const session = await auth();
-  const instituteId = await getInstituteId();
-  if (!instituteId) redirect("/login");
+  const { branchId: activeBranchId } = await getBranchImpersonationState();
+  const instituteId = (session?.user as any)?.instituteId as string | null;
+  if (!instituteId || !activeBranchId) redirect("/login");
 
   const [courses, batches, students] = await Promise.all([
     prisma.course.findMany({
@@ -17,12 +18,12 @@ export default async function AttendancePage() {
       orderBy: { name: "asc" },
     }),
     prisma.batch.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       include: { course: true },
       orderBy: { name: "asc" },
     }),
     prisma.student.findMany({
-      where: { instituteId },
+      where: { instituteId, branchId: activeBranchId },
       select: { id: true, name: true, mobile: true, batchId: true },
     }),
   ]);
