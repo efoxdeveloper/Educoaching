@@ -15,6 +15,8 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
+  const role = String((req.auth.user as { role?: string })?.role || "").toUpperCase();
+
   // If role is STUDENT or PARENT, strictly confine access to /portal
   if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal")) {
     return NextResponse.redirect(new URL("/portal", req.url));

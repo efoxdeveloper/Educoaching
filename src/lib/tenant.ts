@@ -287,7 +287,7 @@ export async function requirePermission(permission: Permission) {
   const ctx = await requireInstitute();
   if ("error" in ctx) return ctx;
 
-  const role = ctx.session.user?.role;
+  const role = ctx.role;
   let effectiveRole = role;
   if (role === "PLATFORM_ADMIN" && ctx.isImpersonating) {
     effectiveRole = "OWNER";
