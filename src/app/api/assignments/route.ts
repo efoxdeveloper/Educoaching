@@ -13,13 +13,16 @@ export async function GET(req: Request) {
   const type = searchParams.get("type");
   const subject = searchParams.get("subject");
 
-  const where: Prisma.AssignmentWhereInput = { instituteId: ctx.instituteId };
+  const where: Prisma.AssignmentWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId as string };
 
-  if (batchId) where.batchId = batchId;
+  if (batchId) {
+    // Validate batch belongs to active branch
+    where.batchId = batchId;
+  }
   if (type) where.type = type;
   if (subject) where.subject = subject;
 
-  const assignments = await prisma.assignment.findMany({
+  let assignments = await prisma.assignment.findMany({
     where,
     include: {
       batch: {
@@ -42,6 +45,35 @@ export async function GET(req: Request) {
     },
     orderBy: { dueDate: "desc" },
   });
+
+  // Student/Parent targeting: filter to only targeted content (branch already filtered)
+  const role = String((ctx as any).role || "").toUpperCase();
+  if (role === "STUDENT") {
+    const student = await prisma.student.findFirst({ where: { email: (ctx.session?.user as any)?.email, instituteId: ctx.instituteId } });
+    if (!student) assignments = [];
+    else {
+      const { isStudentTargetedForContent } = await import("@/lib/targeting");
+      assignments = assignments.filter((a) => isStudentTargetedForContent(a as any, student as any));
+    }
+  } else if (role === "PARENT") {
+    const parentId = (ctx.session?.user as any)?.id as string;
+    const links = await (prisma as any).parentStudentLink.findMany({ where: { parentUserId: parentId }, include: { student: true } });
+    const students = links.map((l: any) => l.student).filter(Boolean);
+    if (students.length === 0) assignments = [];
+    else {
+      const { isStudentTargetedForContent } = await import("@/lib/targeting");
+      const targetedIds = new Set<string>();
+      for (const a of assignments) {
+        for (const s of students) {
+          if (isStudentTargetedForContent(a as any, s as any)) {
+            targetedIds.add(a.id);
+            break;
+          }
+        }
+      }
+      assignments = assignments.filter((a) => targetedIds.has(a.id));
+    }
+  }
 
   const enriched = assignments.map((a) => {
     const evaluatedCount = a.submissions.filter((s) => s.status === "EVALUATED").length;
@@ -98,15 +130,16 @@ export async function POST(req: Request) {
   }
 
   const batch = await prisma.batch.findFirst({
-    where: { id: batchId, instituteId: ctx.instituteId },
+    where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!batch) {
-    return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+    return NextResponse.json({ error: "Batch not found for this branch" }, { status: 404 });
   }
 
   const assignment = await prisma.assignment.create({
     data: {
       instituteId: ctx.instituteId,
+      branchId: ctx.branchId as string,
       batchId,
       courseId: courseId || batch.courseId,
       title: String(title).trim(),

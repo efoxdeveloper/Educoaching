@@ -186,14 +186,18 @@ model Branch {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   admissions       Admission[]
+  assignments      Assignment[]
   attendance       Attendance[]
   batches          Batch[]      @relation("BranchPrimaryBatch")
   institute        Institute    @relation(fields: [instituteId], references: [id])
   expenses         Expense[]
   faculty          Faculty[]    @relation("FacultyPrimaryBranch")
   incomes          Income[]
+  liveClasses      LiveClass[]
   students         Student[]
+  studyMaterials   StudyMaterial[]
   subjects         Subject[]
+  tests            Test[]
   timetableSlots   TimetableSlot[]
   users            User[]
   allocatedBatches Batch[]      @relation("BatchBranches")
@@ -620,6 +624,7 @@ model FileAsset {
 model Test {
   id               String               @id @default(cuid())
   instituteId      String
+  branchId         String
   batchId          String
   courseId         String?
   title            String
@@ -640,12 +645,14 @@ model Test {
   updatedAt        DateTime             @updatedAt
   attempts         StudentTestAttempt[]
   batch            Batch                @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  branch           Branch               @relation(fields: [branchId], references: [id])
   course           Course?              @relation(fields: [courseId], references: [id])
   institute        Institute            @relation(fields: [instituteId], references: [id], onDelete: Cascade)
   questions        TestQuestion[]
   results          TestResult[]
 
   @@index([instituteId])
+  @@index([branchId])
   @@index([batchId])
   @@index([courseId])
 }
@@ -729,6 +736,7 @@ model StudentTestAttempt {
 model StudyMaterial {
   id               String    @id @default(cuid())
   instituteId      String
+  branchId         String
   courseId         String?
   batchId          String?
   subject          String
@@ -742,11 +750,13 @@ model StudyMaterial {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   batch            Batch?    @relation(fields: [batchId], references: [id])
+  branch           Branch    @relation(fields: [branchId], references: [id])
   course           Course?   @relation(fields: [courseId], references: [id])
   institute        Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
   uploadedBy       User?     @relation(fields: [uploadedByUserId], references: [id])
 
   @@index([instituteId])
+  @@index([branchId])
   @@index([courseId])
   @@index([batchId])
 }
@@ -754,6 +764,7 @@ model StudyMaterial {
 model Assignment {
   id            String                 @id @default(cuid())
   instituteId   String
+  branchId      String
   batchId       String
   courseId      String?
   title         String
@@ -766,11 +777,13 @@ model Assignment {
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   batch         Batch                  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  branch        Branch                 @relation(fields: [branchId], references: [id])
   course        Course?                @relation(fields: [courseId], references: [id])
   institute     Institute              @relation(fields: [instituteId], references: [id], onDelete: Cascade)
   submissions   AssignmentSubmission[]
 
   @@index([instituteId])
+  @@index([branchId])
   @@index([batchId])
 }
 
@@ -913,6 +926,7 @@ model BulkCommunication {
 model LiveClass {
   id              String          @id @default(cuid())
   instituteId     String
+  branchId        String
   batchId         String?
   courseId        String?
   facultyId       String?
@@ -927,11 +941,13 @@ model LiveClass {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   batch           Batch?          @relation(fields: [batchId], references: [id])
+  branch          Branch          @relation(fields: [branchId], references: [id])
   course          Course?         @relation(fields: [courseId], references: [id])
   faculty         Faculty?        @relation(fields: [facultyId], references: [id])
   institute       Institute       @relation(fields: [instituteId], references: [id], onDelete: Cascade)
 
   @@index([instituteId])
+  @@index([branchId])
   @@index([batchId])
   @@index([courseId])
   @@index([facultyId])

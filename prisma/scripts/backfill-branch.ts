@@ -34,42 +34,50 @@ async function main() {
     console.log(`\nInstitute ${inst.name} (${inst.id}) -> Main Branch ${main.name} (${main.id})`);
 
     const countsBefore = {
-      batch: await prisma.batch.count({ where: { instituteId: inst.id, branchId: null } }),
-      faculty: await prisma.faculty.count({ where: { instituteId: inst.id, branchId: null } }),
-      student: await prisma.student.count({ where: { instituteId: inst.id, branchId: null } }),
-      attendance: await prisma.attendance.count({ where: { instituteId: inst.id, branchId: null } }),
-      timetable: await prisma.timetableSlot.count({ where: { instituteId: inst.id, branchId: null } }),
+      batch: 0, // already required + backfilled earlier
+      faculty: 0,
+      student: 0,
+      attendance: 0,
+      timetable: 0,
       admission: await prisma.admission.count({ where: { instituteId: inst.id, branchId: null } }),
+      assignment: await prisma.assignment.count({ where: { instituteId: inst.id, branchId: null } }),
+      studyMaterial: await prisma.studyMaterial.count({ where: { instituteId: inst.id, branchId: null } }),
+      test: await prisma.test.count({ where: { instituteId: inst.id, branchId: null } }),
+      liveClass: await prisma.liveClass.count({ where: { instituteId: inst.id, branchId: null } }),
       user: await prisma.user.count({ where: { instituteId: inst.id, branchId: null } }),
     };
     console.log("  Before backfill (NULL branchId):", countsBefore);
 
-    const batch = await prisma.batch.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
-    const faculty = await prisma.faculty.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
-    const student = await prisma.student.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
-    const attendance = await prisma.attendance.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
-    const timetable = await prisma.timetableSlot.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
+    // Already-required models have no NULLs to backfill (skip)
+    const batch = { count: 0 };
+    const faculty = { count: 0 };
+    const student = { count: 0 };
+    const attendance = { count: 0 };
+    const timetable = { count: 0 };
     const admission = await prisma.admission.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
+    const assignment = await prisma.assignment.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
+    const studyMaterial = await prisma.studyMaterial.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
+    const test = await prisma.test.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
+    const liveClass = await prisma.liveClass.updateMany({ where: { instituteId: inst.id, branchId: null }, data: { branchId: main.id } });
     // User: keep null for PLATFORM_ADMIN etc, only backfill institute users
     const user = await prisma.user.updateMany({ where: { instituteId: inst.id, branchId: null, role: { not: "PLATFORM_ADMIN" } }, data: { branchId: main.id } });
 
-    // Subjects are per-course per-branch; need course -> institute mapping
-    const courses = await prisma.course.findMany({ where: { instituteId: inst.id }, select: { id: true } });
-    const courseIds = courses.map(c => c.id);
+    // Subjects already required + backfilled
     let subject = { count: 0 };
-    if (courseIds.length) {
-      subject = await prisma.subject.updateMany({ where: { courseId: { in: courseIds }, branchId: null }, data: { branchId: main.id } });
-    }
 
-    console.log("  Updated:", { batch: batch.count, faculty: faculty.count, student: student.count, attendance: attendance.count, timetable: timetable.count, admission: admission.count, user: user.count, subject: subject.count });
+    console.log("  Updated:", { batch: batch.count, faculty: faculty.count, student: student.count, attendance: attendance.count, timetable: timetable.count, admission: admission.count, assignment: assignment.count, studyMaterial: studyMaterial.count, test: test.count, liveClass: liveClass.count, user: user.count, subject: subject.count });
 
     const countsAfter = {
-      batch: await prisma.batch.count({ where: { instituteId: inst.id, branchId: null } }),
-      faculty: await prisma.faculty.count({ where: { instituteId: inst.id, branchId: null } }),
-      student: await prisma.student.count({ where: { instituteId: inst.id, branchId: null } }),
-      attendance: await prisma.attendance.count({ where: { instituteId: inst.id, branchId: null } }),
-      timetable: await prisma.timetableSlot.count({ where: { instituteId: inst.id, branchId: null } }),
+      batch: 0,
+      faculty: 0,
+      student: 0,
+      attendance: 0,
+      timetable: 0,
       admission: await prisma.admission.count({ where: { instituteId: inst.id, branchId: null } }),
+      assignment: await prisma.assignment.count({ where: { instituteId: inst.id, branchId: null } }),
+      studyMaterial: await prisma.studyMaterial.count({ where: { instituteId: inst.id, branchId: null } }),
+      test: await prisma.test.count({ where: { instituteId: inst.id, branchId: null } }),
+      liveClass: await prisma.liveClass.count({ where: { instituteId: inst.id, branchId: null } }),
     };
     console.log("  After backfill (NULL branchId):", countsAfter);
     if (Object.values(countsAfter).some(c => c > 0)) {

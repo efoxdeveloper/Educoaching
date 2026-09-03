@@ -11,7 +11,7 @@ export async function GET(
   if ("error" in ctx) return ctx.error;
 
   const assignment = await prisma.assignment.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       batch: { select: { id: true, name: true } },
       submissions: {
@@ -25,6 +25,23 @@ export async function GET(
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
   }
 
+  // Student/Parent targeting check — reuse helper, not just list filtering
+  const role = String((ctx as any).role || "").toUpperCase();
+  if (role === "STUDENT") {
+    const student = await prisma.student.findFirst({ where: { email: (ctx.session?.user as any)?.email, instituteId: ctx.instituteId } });
+    if (!student) return NextResponse.json({ error: "Student not found" }, { status: 403 });
+    const { isStudentTargetedForContent } = await import("@/lib/targeting");
+    if (!isStudentTargetedForContent(assignment as any, student as any)) {
+      return NextResponse.json({ error: "Not targeted for this assignment" }, { status: 403 });
+    }
+  } else if (role === "PARENT") {
+    const parentId = (ctx.session?.user as any)?.id as string;
+    const links = await (prisma as any).parentStudentLink.findMany({ where: { parentUserId: parentId }, include: { student: true } });
+    const { isStudentTargetedForContent } = await import("@/lib/targeting");
+    const targeted = links.some((l: any) => l.student && isStudentTargetedForContent(assignment as any, l.student));
+    if (!targeted) return NextResponse.json({ error: "Not targeted for your children" }, { status: 403 });
+  }
+
   return NextResponse.json(assignment);
 }
 
@@ -36,7 +53,7 @@ export async function PUT(
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.assignment.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) {
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
@@ -78,7 +95,7 @@ export async function DELETE(
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.assignment.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
   if (!existing) {
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 });

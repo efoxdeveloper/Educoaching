@@ -351,6 +351,7 @@ async function main() {
       const test = await prisma.test.create({
         data: {
           instituteId: institute.id,
+          branchId: (b as any).branchId || mainBranchId,
           batchId: b.id,
           courseId: b.courseId,
           title: `${b.name} - Unit Test ${t + 1} (${subject})`,

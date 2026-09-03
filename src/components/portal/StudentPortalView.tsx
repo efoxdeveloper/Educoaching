@@ -855,7 +855,11 @@ export function StudentPortalView({
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-scholar-100">
-                      {isJoinable ? (
+                      {viewerRole === "PARENT" ? (
+                        <div className="text-center py-2 px-3 rounded-xl bg-scholar-50 border border-scholar-200 text-scholar-600 text-xs font-medium">
+                          Live class scheduled for your child&apos;s batch — join is available only via student login
+                        </div>
+                      ) : isJoinable ? (
                         <a
                           href={lc.meetingLink}
                           target="_blank"

@@ -13,11 +13,32 @@ export async function GET(req: Request) {
   const facultyId = searchParams.get("facultyId");
   const status = searchParams.get("status");
 
-  const where: Prisma.LiveClassWhereInput = { instituteId: ctx.instituteId };
+  const where: Prisma.LiveClassWhereInput = { instituteId: ctx.instituteId, branchId: ctx.branchId as string };
 
-  if (batchId) where.batchId = batchId;
+  if (batchId) {
+    const b = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
+    if (!b) return NextResponse.json({ error: "Batch not found for this branch" }, { status: 404 });
+    where.batchId = batchId;
+  }
   if (facultyId) where.facultyId = facultyId;
   if (status) where.status = status as any;
+
+  // Parent role: block meetingLink in list (view-only)
+  const role = String((ctx as any).role || "").toUpperCase();
+  if (role === "PARENT") {
+    // Parents can view scheduled classes for their children but not join — filter to children's batches only
+    const parentId = (ctx.session?.user as any)?.id as string;
+    const links = await (prisma as any).parentStudentLink.findMany({ where: { parentUserId: parentId }, include: { student: { select: { batchId: true } } } });
+    const childBatchIds = links.map((l: any) => l.student?.batchId).filter(Boolean) as string[];
+    if (childBatchIds.length === 0) return NextResponse.json([]);
+    where.batchId = { in: childBatchIds } as any;
+  } else if (role === "STUDENT") {
+    const student = await prisma.student.findFirst({ where: { email: (ctx.session?.user as any)?.email, instituteId: ctx.instituteId } });
+    if (!student || !student.batchId) return NextResponse.json([]);
+    // Student can only see live classes for their own batch and branch
+    if (batchId && batchId !== student.batchId) return NextResponse.json({ error: "Not targeted for this batch" }, { status: 403 });
+    where.batchId = student.batchId as any;
+  }
 
   const liveClasses = await prisma.liveClass.findMany({
     where,
@@ -40,6 +61,12 @@ export async function GET(req: Request) {
     },
     orderBy: { scheduledAt: "asc" },
   });
+
+  // Parents can view scheduled classes but must not get Join link
+  if (role === "PARENT") {
+    const sanitized = liveClasses.map(({ meetingLink, ...rest }) => rest);
+    return NextResponse.json(sanitized);
+  }
 
   return NextResponse.json(liveClasses);
 }
@@ -84,20 +111,26 @@ export async function POST(req: Request) {
   }
 
   let resolvedCourseId = courseId || null;
-  if (batchId && !resolvedCourseId) {
-    const b = await prisma.batch.findUnique({ where: { id: batchId }, select: { courseId: true } });
-    if (b) resolvedCourseId = b.courseId;
+  if (batchId) {
+    const b = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
+    if (!b) return NextResponse.json({ error: "Batch not found for this branch" }, { status: 404 });
+    if (!resolvedCourseId) resolvedCourseId = b.courseId;
+  }
+  if (facultyId) {
+    const f = await prisma.faculty.findFirst({ where: { id: facultyId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
+    if (!f) return NextResponse.json({ error: "Faculty not found for this branch" }, { status: 404 });
   }
 
   const liveClass = await prisma.liveClass.create({
     data: {
       instituteId: ctx.instituteId,
+      branchId: ctx.branchId as string,
       batchId: batchId || null,
       courseId: resolvedCourseId,
       facultyId: facultyId || null,
       subject: subject ? subject.trim() : null,
       title: title.trim(),
-      description: description ? description.trim() : null,
+      description: description ? String(description).trim() : null,
       scheduledAt: new Date(scheduledAt),
       durationMinutes: durationMinutes ? Number(durationMinutes) : 60,
       meetingLink: meetingLink.trim(),

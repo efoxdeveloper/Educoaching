@@ -9,10 +9,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const batchId = searchParams.get("batchId");
 
-  const whereClause: { instituteId: string; batchId?: string } = {
+  const whereClause: any = {
     instituteId: ctx.instituteId,
+    branchId: ctx.branchId as string,
   };
   if (batchId) {
+    const b = await prisma.batch.findFirst({ where: { id: batchId, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
+    if (!b) return NextResponse.json({ error: "Batch not found for this branch" }, { status: 404 });
     whereClause.batchId = batchId;
   }
 
@@ -91,7 +94,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const perm = await requirePermission("tests:write");
   if ("error" in perm) return perm.error;
-  const { instituteId } = perm;
+  const { instituteId, branchId } = perm as any;
 
   try {
     const body = await req.json();
@@ -148,9 +151,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify batches belong to this institute
+    // Verify batches belong to this institute and active branch
     const targetBatches = await prisma.batch.findMany({
-      where: { id: { in: targetBatchIds }, instituteId },
+      where: { id: { in: targetBatchIds }, instituteId, branchId: branchId as string },
       include: { course: true },
     });
 
@@ -186,6 +189,7 @@ export async function POST(req: Request) {
         prisma.test.create({
           data: {
             instituteId,
+            branchId: branchId as string,
             batchId: b.id,
             courseId: b.courseId,
             title: title.trim(),

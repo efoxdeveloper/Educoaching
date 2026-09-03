@@ -11,7 +11,7 @@ export async function PATCH(
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.liveClass.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
 
   if (!existing) {
@@ -73,7 +73,7 @@ export async function DELETE(
   if ("error" in ctx) return ctx.error;
 
   const existing = await prisma.liveClass.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
 
   if (!existing) {

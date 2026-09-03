@@ -17,7 +17,7 @@ export async function GET(
   }
 
   const test = await prisma.test.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       batch: { select: { id: true, name: true } },
       questions: {
@@ -28,7 +28,35 @@ export async function GET(
   });
 
   if (!test) {
-    return NextResponse.json({ error: "Test not found" }, { status: 404 });
+    return NextResponse.json({ error: "Test not found for this branch" }, { status: 404 });
+  }
+
+  // Time-window enforcement — server time, not client
+  const now = new Date();
+  if (test.endTime && now > new Date(test.endTime)) {
+    // If student already has an in-progress attempt, auto-close it as timed out
+    if (studentId) {
+      const existing = await prisma.studentTestAttempt.findUnique({ where: { testId_studentId: { testId: params.id, studentId } } });
+      if (existing && existing.status === "IN_PROGRESS") {
+        await prisma.studentTestAttempt.update({ where: { id: existing.id }, data: { status: "TIMED_OUT", submittedAt: now } });
+        await prisma.testResult.upsert({
+          where: { testId_studentId: { testId: params.id, studentId } },
+          update: { isAbsent: true, remarks: "Auto-closed at window end (late)" },
+          create: { testId: params.id, studentId, isAbsent: true, remarks: "Missed — window closed before submission" },
+        });
+      } else if (!existing) {
+        // Never started before endTime → mark as Missed
+        await prisma.studentTestAttempt.create({
+          data: { testId: params.id, studentId, status: "MISSED", submittedAt: now },
+        }).catch(() => {});
+        await prisma.testResult.upsert({
+          where: { testId_studentId: { testId: params.id, studentId } },
+          update: { isAbsent: true },
+          create: { testId: params.id, studentId, isAbsent: true, remarks: "Missed — never started before endTime" },
+        }).catch(() => {});
+      }
+    }
+    return NextResponse.json({ error: "Test window has closed. Submissions after endTime are not allowed." }, { status: 403 });
   }
 
   const role = String((ctx.session?.user as { role?: string })?.role || "").toUpperCase();
@@ -142,7 +170,7 @@ export async function POST(
   }
 
   const test = await prisma.test.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       questions: {
         include: { question: true },
@@ -151,7 +179,17 @@ export async function POST(
   });
 
   if (!test) {
-    return NextResponse.json({ error: "Test not found" }, { status: 404 });
+    return NextResponse.json({ error: "Test not found for this branch" }, { status: 404 });
+  }
+
+  // Time-window enforcement on submit — server time, not client
+  if (test.endTime && new Date() > new Date(test.endTime)) {
+    // Auto-close any in-progress attempt
+    const existing = await prisma.studentTestAttempt.findUnique({ where: { testId_studentId: { testId: params.id, studentId } } });
+    if (existing && existing.status === "IN_PROGRESS") {
+      await prisma.studentTestAttempt.update({ where: { id: existing.id }, data: { status: "TIMED_OUT", submittedAt: new Date() } });
+    }
+    return NextResponse.json({ error: "Test window has closed. Submission after endTime is not allowed." }, { status: 403 });
   }
 
   const role = String((ctx.session?.user as { role?: string })?.role || "").toUpperCase();
@@ -163,7 +201,7 @@ export async function POST(
   }
 
   const student = await prisma.student.findFirst({
-    where: { id: studentId, instituteId: ctx.instituteId },
+    where: { id: studentId, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
   });
 
   if (!student) {
