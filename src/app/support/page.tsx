@@ -18,6 +18,7 @@ export default async function SupportPage() {
   const instituteName = institute?.name || "Institute";
   const userName = session?.user?.name || "Staff Member";
   const userEmail = session?.user?.email || "";
+  const userRole = String((session?.user as { role?: string })?.role || "OWNER").toUpperCase();
 
   return (
     <Shell title="Help & Support" userName={session?.user?.name ?? undefined}>
@@ -25,6 +26,7 @@ export default async function SupportPage() {
         userName={userName}
         userEmail={userEmail}
         instituteName={instituteName}
+        userRole={userRole}
       />
     </Shell>
   );

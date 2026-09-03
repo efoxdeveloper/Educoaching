@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/Card";
 import { Field, inputClass } from "@/components/ui/Field";
 import { getWhatsAppWebUrl } from "@/lib/whatsapp-link";
 import { formatDate } from "@/lib/utils";
+import { SupportChat } from "./SupportChat";
 
 interface SupportTicketData {
   id: string;
@@ -156,10 +157,12 @@ export function SupportView({
   userName,
   userEmail,
   instituteName,
+  userRole = "OWNER",
 }: {
   userName: string;
   userEmail: string;
   instituteName: string;
+  userRole?: string;
 }) {
   // FAQs start in collapsed form by default; users can click to expand any FAQ
   const [openFaqIndices, setOpenFaqIndices] = useState<number[]>([]);
@@ -177,6 +180,35 @@ export function SupportView({
   // Email copy state
   const [copiedEmail, setCopiedEmail] = useState(false);
 
+  // Role-aware FAQ filtering
+  const normalizedRole = String(userRole).toUpperCase();
+  const roleFaqFilter = (faq: FaqItem) => {
+    if (normalizedRole === "OWNER" || normalizedRole === "ADMIN") return true;
+    if (["STAFF", "FACULTY", "COUNSELLOR", "ACCOUNTANT", "TECHNICIAN"].includes(normalizedRole)) {
+      return ["Attendance & Timetable", "Tests & Online Exams", "Live Classes & Study Material", "Student Portal", "SMS & Gateway"].includes(faq.category);
+    }
+    if (normalizedRole === "STUDENT") {
+      return ["Student Portal", "Live Classes & Study Material", "Tests & Online Exams", "Attendance & Timetable", "Certificates", "Fees & Billing"].includes(faq.category);
+    }
+    if (normalizedRole === "PARENT") {
+      return ["Student Portal", "Fees & Billing", "Live Classes & Study Material", "Certificates", "Attendance & Timetable"].includes(faq.category);
+    }
+    return true;
+  };
+  const roleFilteredFaqs = FAQS.filter(roleFaqFilter);
+  const filteredFaqsBase = useMemo(() => {
+    if (!faqSearch.trim()) return roleFilteredFaqs;
+    const query = faqSearch.toLowerCase();
+    return roleFilteredFaqs.filter(
+      (f) =>
+        f.question.toLowerCase().includes(query) ||
+        f.category.toLowerCase().includes(query) ||
+        f.summary.toLowerCase().includes(query) ||
+        f.steps.some((s) => s.toLowerCase().includes(query))
+    );
+  }, [faqSearch, roleFilteredFaqs]);
+  const filteredFaqs = filteredFaqsBase;
+
   const toggleFaq = (idx: number) => {
     setOpenFaqIndices((prev) =>
       prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
@@ -184,24 +216,12 @@ export function SupportView({
   };
 
   const expandAllFaqs = () => {
-    setOpenFaqIndices(FAQS.map((_, idx) => idx));
+    setOpenFaqIndices(roleFilteredFaqs.map((_, idx) => FAQS.findIndex(f => f.question === roleFilteredFaqs[idx].question)));
   };
 
   const collapseAllFaqs = () => {
     setOpenFaqIndices([]);
   };
-
-  const filteredFaqs = useMemo(() => {
-    if (!faqSearch.trim()) return FAQS;
-    const query = faqSearch.toLowerCase();
-    return FAQS.filter(
-      (f) =>
-        f.question.toLowerCase().includes(query) ||
-        f.category.toLowerCase().includes(query) ||
-        f.summary.toLowerCase().includes(query) ||
-        f.steps.some((s) => s.toLowerCase().includes(query))
-    );
-  }, [faqSearch]);
 
   const supportPhone = "+919876543210";
   const supportPhoneDisplay = "+91 98765 43210";
@@ -291,18 +311,18 @@ export function SupportView({
 
   return (
     <div className="space-y-8 max-w-6xl">
-      {/* Top Hero Banner */}
+      {/* Top Hero Banner — role-aware */}
       <div className="rounded-3xl border border-scholar-200 bg-gradient-to-br from-scholar-900 via-scholar-800 to-scholar-900 p-6 sm:p-8 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-marigold-400 border border-white/10">
-              <HelpCircle size={14} /> Official Vidyalaya Platform Support
+              <HelpCircle size={14} /> Official Vidyalaya Platform Support — {normalizedRole}
             </span>
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-              How can we help your institute today?
+              {normalizedRole === "STUDENT" ? "Student Help Center" : normalizedRole === "PARENT" ? "Parent Help Center" : normalizedRole === "OWNER" || normalizedRole === "ADMIN" ? "Institute Owner Help Center" : "Staff Help Center"}
             </h1>
             <p className="text-xs sm:text-sm text-scholar-200 max-w-xl">
-              Get technical support, onboarding assistance, or billing help directly from the Vidyalaya platform team.
+              {normalizedRole === "STUDENT" ? "Learn how to join live classes, check attendance, and view your assignments." : normalizedRole === "PARENT" ? "Learn how to view your child's fees, DPP, and attendance — per child." : normalizedRole === "OWNER" ? "Manage branches, impersonation, tests, fees, and reports — all scoped to your active branch." : "Get help for your branch's batches, attendance, and DPP."}
             </p>
           </div>
 
@@ -326,6 +346,9 @@ export function SupportView({
           </div>
         </div>
       </div>
+
+      {/* AI Support Agent — role-scoped */}
+      <SupportChat role={normalizedRole} />
 
       {/* Grid: Direct Contact Channels & Operational Hours */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

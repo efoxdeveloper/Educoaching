@@ -18,6 +18,7 @@ import {
   CreditCard,
   CheckCircle2,
   AlertCircle,
+  HelpCircle,
   X,
   Calendar,
   Camera,
@@ -36,6 +37,7 @@ import { Badge } from "@/components/ui/Badge";
 import { OnlineExamModal } from "@/components/tests/OnlineExamModal";
 import { formatDate, formatCurrency, initials } from "@/lib/utils";
 import { useRazorpayCheckout } from "@/lib/useRazorpayCheckout";
+import { SupportChat } from "@/components/support/SupportChat";
 
 export type StudentData = {
   id: string;
@@ -168,7 +170,7 @@ export function StudentPortalView({
 }) {
   const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id || "");
   const [activeTab, setActiveTab] = useState<
-    "batch" | "live-classes" | "certificates" | "exams" | "materials" | "assignments" | "fees" | "doubts"
+    "batch" | "live-classes" | "certificates" | "exams" | "materials" | "assignments" | "fees" | "doubts" | "help"
   >("batch");
   const [activeExamModal, setActiveExamModal] = useState<OnlineExam | null>(null);
 
@@ -652,6 +654,7 @@ export function StudentPortalView({
           { id: "assignments", label: "Homework & DPP", icon: CheckSquare, count: assignments.length },
           { id: "fees", label: "Fee Ledger & Pay Online", icon: Wallet },
           { id: "doubts", label: "✨ AI Doubt Assistant", icon: Sparkles },
+          { id: "help", label: "Help & Support", icon: HelpCircle },
         ].map((t) => (
           <button
             key={t.id}
@@ -1389,6 +1392,28 @@ export function StudentPortalView({
                 })}
               </div>
             )}
+          </Card>
+        </div>
+      )}
+
+      {/* Tab: Help & Support — role-aware AI + FAQ */}
+      {activeTab === "help" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+                <HelpCircle size={16} className="text-scholar-600" /> Help & Support
+              </h3>
+              <p className="text-xs text-scholar-500">
+                {viewerRole === "PARENT" ? "Help for parents — fees, attendance, live classes, and per-child assignments." : "Help for students — live classes, tests, attendance, and DPP."}
+              </p>
+            </div>
+          </div>
+          <SupportChat role={viewerRole} />
+          <Card className="p-5">
+            <h4 className="font-bold text-sm text-ink mb-2">Contact Platform Admin</h4>
+            <p className="text-xs text-scholar-600 mb-3">If the AI couldn’t resolve your issue, submit a support ticket — our team will respond in your portal.</p>
+            <a href="/support" className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-700 px-4 py-2 text-xs font-bold text-white hover:bg-scholar-800">Open Support Tickets →</a>
           </Card>
         </div>
       )}

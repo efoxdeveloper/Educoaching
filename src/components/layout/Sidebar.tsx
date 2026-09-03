@@ -131,9 +131,11 @@ const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
   ],
   STUDENT: [
     "/portal", // Dedicated student portal
+    "/support", // Help & Support (role-aware)
   ],
   PARENT: [
     "/portal", // Dedicated parent portal
+    "/support", // Help & Support (role-aware)
   ],
 };
 
