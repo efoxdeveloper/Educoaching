@@ -33,38 +33,40 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from "@/lib/institute-settings";
+import { hasPermission, type Permission } from "@/lib/permissions";
 
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   featureKey?: keyof FeatureFlags;
+  permission?: Permission;
 };
 
 const nav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/students", label: "Students", icon: Users },
-  { href: "/admissions", label: "Lead CRM", icon: ClipboardList, featureKey: "admissions" },
-  { href: "/courses", label: "Courses", icon: Library },
-  { href: "/batches", label: "Batches", icon: Layers },
-  { href: "/timetable", label: "Timetable", icon: CalendarClock, featureKey: "timetable" },
-  { href: "/subjects", label: "Subjects", icon: BookOpen },
-  { href: "/faculty", label: "Staff & Faculty", icon: UserCog },
-  { href: "/attendance", label: "Attendance", icon: CalendarCheck, featureKey: "attendance" },
-  { href: "/tests", label: "Tests & CBT", icon: Award, featureKey: "onlineTests" },
-  { href: "/live-classes", label: "Live Classes", icon: Video },
-  { href: "/certificates", label: "Certificates", icon: Award },
-  { href: "/study-material", label: "Study Material", icon: FileText },
-  { href: "/assignments", label: "Assignments & DPP", icon: CheckSquare },
+  { href: "/students", label: "Students", icon: Users, permission: "students:write" },
+  { href: "/admissions", label: "Lead CRM", icon: ClipboardList, featureKey: "admissions", permission: "admissions:read" },
+  { href: "/courses", label: "Courses", icon: Library, permission: "courses:write" },
+  { href: "/batches", label: "Batches", icon: Layers, permission: "batches:write" },
+  { href: "/timetable", label: "Timetable", icon: CalendarClock, featureKey: "timetable", permission: "timetable:write" },
+  { href: "/subjects", label: "Subjects", icon: BookOpen, permission: "subjects:read" },
+  { href: "/faculty", label: "Staff & Faculty", icon: UserCog, permission: "staff:manage" },
+  { href: "/attendance", label: "Attendance", icon: CalendarCheck, featureKey: "attendance", permission: "attendance:write" },
+  { href: "/tests", label: "Tests & CBT", icon: Award, featureKey: "onlineTests", permission: "tests:write" },
+  { href: "/live-classes", label: "Live Classes", icon: Video, permission: "live-classes:write" },
+  { href: "/certificates", label: "Certificates", icon: Award, permission: "certificates:write" },
+  { href: "/study-material", label: "Study Material", icon: FileText, permission: "studyMaterials:write" },
+  { href: "/assignments", label: "Assignments & DPP", icon: CheckSquare, permission: "assignments:write" },
   { href: "/portal", label: "Student Portal", icon: GraduationCap },
-  { href: "/fees", label: "Fees & Collection", icon: Wallet },
-  { href: "/expenses", label: "Expenses", icon: Receipt, featureKey: "expenses" },
-  { href: "/income", label: "Extra Income", icon: TrendingUp, featureKey: "expenses" },
-  { href: "/communication", label: "Broadcast", icon: Megaphone, featureKey: "communication" },
-  { href: "/reports", label: "Reports", icon: BarChart3, featureKey: "reports" },
-  { href: "/branches", label: "Branches", icon: Building2 },
-  { href: "/plans", label: "My Plans & Subscription", icon: CreditCard },
-  { href: "/settings", label: "Institute Setup", icon: Settings },
+  { href: "/fees", label: "Fees & Collection", icon: Wallet, permission: "payments:write" },
+  { href: "/expenses", label: "Expenses", icon: Receipt, featureKey: "expenses", permission: "expenses:write" },
+  { href: "/income", label: "Extra Income", icon: TrendingUp, featureKey: "expenses", permission: "income:write" },
+  { href: "/communication", label: "Broadcast", icon: Megaphone, featureKey: "communication", permission: "communication:write" },
+  { href: "/reports", label: "Reports", icon: BarChart3, featureKey: "reports", permission: "payments:write" },
+  { href: "/branches", label: "Branches", icon: Building2, permission: "branches:write" },
+  { href: "/plans", label: "My Plans & Subscription", icon: CreditCard, permission: "billing:manage" },
+  { href: "/settings", label: "Institute Setup", icon: Settings, permission: "institute:manage" },
   { href: "/support", label: "Help & Support", icon: HelpCircle },
 ];
 
@@ -139,6 +141,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const pathname = usePathname();
   const { data: session } = useSession();
   const [features, setFeatures] = useState<FeatureFlags>(DEFAULT_FEATURE_FLAGS);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
@@ -148,15 +151,32 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       .then((res) => res.json())
       .then((data) => {
         if (data.featureFlags) setFeatures(data.featureFlags);
+        if (Array.isArray(data.permissions)) setUserPermissions(data.permissions);
       })
       .catch(() => {});
   }, []);
+
+  const sessionPermissions = (session?.user as any)?.permissions || [];
+  const effectivePermissions = userPermissions.length > 0 ? userPermissions : sessionPermissions;
 
   const allowedList = ROLE_ALLOWED_ROUTES[userRole] || (userRole === "PARENT" ? ["/portal"] : ROLE_ALLOWED_ROUTES["STAFF"]);
 
   const visibleNav = nav
     .filter((item) => {
       if (item.featureKey && !features[item.featureKey]) return false;
+      if (userRole === "OWNER" || userRole === "ADMIN") {
+        if (allowedList.includes("*")) return true;
+        return allowedList.includes(item.href);
+      }
+      if (userRole === "STUDENT" || userRole === "PARENT") {
+        return item.href === "/portal";
+      }
+      // For staff roles, gate item if specific permission required
+      if (item.permission) {
+        if (!hasPermission({ role: userRole, permissions: effectivePermissions }, item.permission)) {
+          return false;
+        }
+      }
       if (allowedList.includes("*")) return true;
       return allowedList.includes(item.href);
     })

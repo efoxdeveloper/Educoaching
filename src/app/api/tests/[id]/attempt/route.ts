@@ -31,6 +31,23 @@ export async function GET(
     return NextResponse.json({ error: "Test not found" }, { status: 404 });
   }
 
+  const role = String((ctx.session?.user as { role?: string })?.role || "").toUpperCase();
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, instituteId: ctx.instituteId },
+  });
+
+  if (!student) {
+    return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+
+  if (student.batchId !== test.batchId) {
+    return NextResponse.json(
+      { error: "Student is not enrolled in the batch for this exam" },
+      { status: 403 }
+    );
+  }
+
   const attempt = await prisma.studentTestAttempt.findUnique({
     where: {
       testId_studentId: {
@@ -41,6 +58,13 @@ export async function GET(
   });
 
   const isCompleted = attempt && (attempt.status === "SUBMITTED" || attempt.status === "TIMED_OUT");
+
+  if (role === "PARENT" && !isCompleted) {
+    return NextResponse.json(
+      { error: "Parents cannot start or take online exams" },
+      { status: 403 }
+    );
+  }
 
   if (isCompleted) {
     // Return full details including solutions & answers
@@ -128,6 +152,29 @@ export async function POST(
 
   if (!test) {
     return NextResponse.json({ error: "Test not found" }, { status: 404 });
+  }
+
+  const role = String((ctx.session?.user as { role?: string })?.role || "").toUpperCase();
+  if (role === "PARENT") {
+    return NextResponse.json(
+      { error: "Parents cannot submit exam attempts" },
+      { status: 403 }
+    );
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, instituteId: ctx.instituteId },
+  });
+
+  if (!student) {
+    return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+
+  if (student.batchId !== test.batchId) {
+    return NextResponse.json(
+      { error: "Student is not enrolled in the batch for this exam" },
+      { status: 403 }
+    );
   }
 
   // Calculate scores with negative marking

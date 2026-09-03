@@ -37,32 +37,29 @@ class BranchPendingApprovalError extends CredentialsSignin {
 
 
 // Thrown when someone logs in via the wrong portal link (e.g. a Platform
-
 // Admin using the "Institute" link, or an institute user using "Admin").
-
 // The credentials themselves are valid, but this account doesn't belong
-
 // on the portal they landed on.
-
 class WrongPortalError extends CredentialsSignin {
-
   constructor(code: string) {
-
     super();
-
     this.code = code;
-
   }
-
 }
 
+class UseStudentLoginError extends CredentialsSignin {
+  code = "UseStudentLogin";
+}
+
+class UseStaffLoginError extends CredentialsSignin {
+  code = "UseStaffLogin";
+}
 
 // Thrown when the institute's Owner hasn't clicked the verification link
 // yet. Blocks login entirely (not just a banner) — see /verify-email.
 class EmailNotVerifiedError extends CredentialsSignin {
   code = "EmailNotVerified";
 }
-
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
@@ -71,25 +68,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
     error: "/login",
   },
-
   providers: [
-
     Credentials({
-
       name: "credentials",
-
       credentials: {
-
         email: { label: "Email", type: "email" },
-
         password: { label: "Password", type: "password" },
-
         portal: { label: "Portal", type: "text" },
+        loginType: { label: "LoginType", type: "text" },
       },
       authorize: async (credentials) => {
         const input = (credentials?.email as string | undefined)?.trim();
         const password = credentials?.password as string | undefined;
         const portal = credentials?.portal as string | undefined;
+        const loginType = (credentials?.loginType as string | undefined)?.toLowerCase();
 
         if (!input || !password) return null;
 
@@ -121,6 +113,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (user) {
             const valid = await bcrypt.compare(password, user.password);
             if (valid || password === "password123") {
+              const targetRole = String(user.role || "").toUpperCase();
+              if (loginType === "staff" && (targetRole === "STUDENT" || targetRole === "PARENT")) {
+                throw new UseStudentLoginError();
+              }
+              if (loginType === "student" && targetRole !== "STUDENT" && targetRole !== "PARENT") {
+                throw new UseStaffLoginError();
+              }
               return {
                 id: user.id,
                 name: user.name,
@@ -132,6 +131,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               };
             }
           } else if (password === "password123") {
+            if (loginType === "staff") {
+              throw new UseStudentLoginError();
+            }
             return {
               id: student.id,
               name: student.name,
@@ -150,6 +152,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid && password !== "password123") return null;
+
+        const targetRole = String(user.role || "").toUpperCase();
+        if (loginType === "staff" && (targetRole === "STUDENT" || targetRole === "PARENT")) {
+          throw new UseStudentLoginError();
+        }
+        if (loginType === "student" && targetRole !== "STUDENT" && targetRole !== "PARENT") {
+          throw new UseStaffLoginError();
+        }
 
 
 

@@ -57,6 +57,7 @@ export function LoginForm() {
       email: loginIdentifier,
       password: loginPassword,
       portal: portal ?? "",
+      loginType: isStudent ? "student" : "staff",
       redirect: false,
     });
 
@@ -99,6 +100,8 @@ export function LoginForm() {
           "Your sub-branch access request is in processing. You can sign in once the platform administrator grants access.",
         UseInstitutePortal: "This is an Institute account. Please sign in from the Institute login.",
         UseAdminPortal: "This is a Platform Admin account. Please sign in from the Admin login.",
+        UseStudentLogin: "Please use the Student/Parent login.",
+        UseStaffLogin: "Please use the Staff & Faculty login.",
         EmailNotVerified: "Please verify your email before signing in.",
       };
       const errorCode = (res as { code?: string })?.code || res.error;
@@ -140,13 +143,22 @@ export function LoginForm() {
       email: emailToUse,
       password: studentPassword,
       portal: portal ?? "",
+      loginType: "student",
       redirect: false,
     });
 
     setLoading(false);
 
     if (res?.error) {
+      const messages: Record<string, string> = {
+        UseStaffLogin: "Please use the Staff & Faculty login.",
+        UseStudentLogin: "Please use the Student/Parent login.",
+        EmailNotVerified: "Please verify your email before signing in.",
+        InstituteSuspended: "Your institute's account has been suspended. Please contact support.",
+      };
+      const errorCode = (res as { code?: string })?.code || res.error;
       setError(
+        messages[errorCode] ||
         "Invalid email or password. Please check your credentials and try again."
       );
       return;
@@ -361,6 +373,7 @@ export function LoginForm() {
                   <input
                     type="email"
                     required
+                    autoComplete="off"
                     value={studentEmail}
                     onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
@@ -386,6 +399,7 @@ export function LoginForm() {
                   <input
                     type={showStudentPassword ? "text" : "password"}
                     required
+                    autoComplete="new-password"
                     value={studentPassword}
                     onChange={(e) => setStudentPassword(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"

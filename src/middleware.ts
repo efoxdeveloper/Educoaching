@@ -15,16 +15,27 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = String((req.auth.user as { role?: string })?.role || "").toUpperCase();
-
   // If role is STUDENT or PARENT, strictly confine access to /portal
   if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal")) {
     return NextResponse.redirect(new URL("/portal", req.url));
   }
 
-  // If staff/admin role accesses /portal, they can still preview, but students/parents cannot access admin routes
-  if (role === "PLATFORM_ADMIN" && !pathname.startsWith("/admin") && !pathname.startsWith("/settings")) {
-    // Platform admin routes
+  // If staff/admin role accesses /portal, redirect them away to their dashboard
+  if (
+    (role === "OWNER" ||
+      role === "ADMIN" ||
+      role === "STAFF" ||
+      role === "FACULTY" ||
+      role === "ACCOUNTANT" ||
+      role === "COUNSELLOR" ||
+      role === "TECHNICIAN") &&
+    pathname.startsWith("/portal")
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  if (role === "PLATFORM_ADMIN" && pathname.startsWith("/portal")) {
+    return NextResponse.redirect(new URL("/admin", req.url));
   }
 
   return NextResponse.next();

@@ -226,9 +226,46 @@ const ROLE_PERMISSIONS: Record<InstituteRole, Set<Permission>> = {
   PARENT: new Set<Permission>([]),
 };
 
-export function hasPermission(role: string | undefined | null, permission: Permission): boolean {
+export type UserPermissionContext = {
+  role?: string | null;
+  permissions?: string[] | null;
+  grantedPermissions?: string[] | null;
+};
+
+export function hasPermission(
+  userOrRole: string | UserPermissionContext | null | undefined,
+  permission: Permission,
+  explicitPermissions?: string[] | null
+): boolean {
+  if (!userOrRole) return false;
+
+  let role: string | undefined | null;
+  let grantedPermissions: string[] | undefined | null = explicitPermissions;
+
+  if (typeof userOrRole === "string") {
+    role = userOrRole;
+  } else {
+    role = userOrRole.role;
+    if (grantedPermissions === undefined || grantedPermissions === null) {
+      grantedPermissions = userOrRole.permissions || userOrRole.grantedPermissions;
+    }
+  }
+
   if (!role) return false;
   const upper = role.toUpperCase() as InstituteRole;
+
+  // OWNER and ADMIN always retain full access regardless of permissions array
+  if (upper === "OWNER" || upper === "ADMIN") {
+    const roleSet = ROLE_PERMISSIONS[upper];
+    return roleSet ? roleSet.has(permission) : false;
+  }
+
+  // If specific permissions are granted / configured for this staff/faculty member
+  if (grantedPermissions !== undefined && grantedPermissions !== null) {
+    return grantedPermissions.includes(permission);
+  }
+
+  // Fallback to role-level default permissions when no specific permissions array was supplied
   const roleSet = ROLE_PERMISSIONS[upper];
   if (!roleSet) return false;
   return roleSet.has(permission);

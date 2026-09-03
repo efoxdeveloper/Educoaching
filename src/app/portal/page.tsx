@@ -77,48 +77,59 @@ export default async function StudentPortalPage({
     redirect("/dashboard");
   }
 
-  const [rawStudents, rawExams, rawMaterials, rawAssignments, rawLiveClasses] = await Promise.all([
-    prisma.student.findMany({
-      where: { instituteId, ...studentFilter },
-      include: {
-        course: { select: { name: true, duration: true } },
-        branch: { select: { id: true, name: true, city: true } },
-        batch: {
-          select: {
-            id: true,
-            name: true,
-            timing: true,
-            status: true,
-            isAllBranches: true,
-            branch: { select: { name: true } },
-            branches: { select: { name: true } },
-            faculty: {
-              select: {
-                faculty: { select: { name: true, subject: true } },
-              },
+  const rawStudents = await prisma.student.findMany({
+    where: { instituteId, ...studentFilter },
+    include: {
+      course: { select: { name: true, duration: true } },
+      branch: { select: { id: true, name: true, city: true } },
+      batch: {
+        select: {
+          id: true,
+          name: true,
+          timing: true,
+          status: true,
+          isAllBranches: true,
+          branch: { select: { name: true } },
+          branches: { select: { name: true } },
+          faculty: {
+            select: {
+              faculty: { select: { name: true, subject: true } },
             },
           },
         },
-        payments: {
-          orderBy: { paidAt: "desc" },
-          take: 20,
+      },
+      payments: {
+        orderBy: { paidAt: "desc" },
+        take: 20,
+      },
+      issuedCertificates: {
+        include: {
+          template: { select: { name: true, title: true } },
         },
-        issuedCertificates: {
-          include: {
-            template: { select: { name: true, title: true } },
+        orderBy: { issuedAt: "desc" },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const studentBatchIds = rawStudents
+    .map((s) => s.batchId)
+    .filter((b): b is string => Boolean(b));
+
+  const [rawExams, rawMaterials, rawAssignments, rawLiveClasses] = await Promise.all([
+    studentBatchIds.length > 0
+      ? prisma.test.findMany({
+          where: {
+            instituteId,
+            isOnline: true,
+            batchId: { in: studentBatchIds },
           },
-          orderBy: { issuedAt: "desc" },
-        },
-      },
-      orderBy: { name: "asc" },
-    }),
-    prisma.test.findMany({
-      where: { instituteId, isOnline: true },
-      include: {
-        attempts: true,
-      },
-      orderBy: { testDate: "desc" },
-    }),
+          include: {
+            attempts: true,
+          },
+          orderBy: { testDate: "desc" },
+        })
+      : [],
     prisma.studyMaterial.findMany({
       where: { instituteId },
       orderBy: { createdAt: "desc" },
@@ -284,6 +295,7 @@ export default async function StudentPortalPage({
         materials={materials}
         assignments={assignments}
         liveClasses={liveClasses}
+        viewerRole={userRole === "PARENT" ? "PARENT" : "STUDENT"}
       />
     </Shell>
   );

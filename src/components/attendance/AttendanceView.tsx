@@ -42,9 +42,11 @@ export function AttendanceView({
   const [batchId, setBatchId] = useState(() => batches[0]?.id ?? "");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [marks, setMarks] = useState<Record<string, Status>>({});
+  const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const availableBatches = useMemo(() => {
     if (!courseId) return batches;
@@ -57,12 +59,20 @@ export function AttendanceView({
     if (!batchId || !date) return;
     setLoading(true);
     setSaved(false);
+    setErrorMsg("");
     fetch(`/api/attendance?batchId=${batchId}&date=${date}`)
       .then((r) => r.json())
-      .then((records: { studentId: string; status: Status }[]) => {
+      .then((records: { studentId: string; status: Status; locked?: boolean }[]) => {
         const map: Record<string, Status> = {};
-        for (const r of records) map[r.studentId] = r.status;
+        let lockedFound = false;
+        if (Array.isArray(records)) {
+          for (const r of records) {
+            map[r.studentId] = r.status;
+            if (r.locked) lockedFound = true;
+          }
+        }
         setMarks(map);
+        setIsLocked(lockedFound);
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,14 +82,17 @@ export function AttendanceView({
   const pct = batchStudents.length > 0 ? Math.round((presentCount / batchStudents.length) * 100) : 0;
 
   const setStatus = (studentId: string, status: Status) => {
+    if (isLocked) return;
     setMarks((m) => ({ ...m, [studentId]: status }));
     setSaved(false);
   };
 
   const handleSave = async () => {
+    if (isLocked) return;
     setSaving(true);
+    setErrorMsg("");
     try {
-      await fetch("/api/attendance", {
+      const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,7 +103,17 @@ export function AttendanceView({
             .map((s) => ({ studentId: s.id, status: marks[s.id] })),
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error || "Failed to save attendance";
+        setErrorMsg(msg);
+        if (msg.includes("already been saved")) {
+          setIsLocked(true);
+        }
+        return;
+      }
       setSaved(true);
+      setIsLocked(true);
     } finally {
       setSaving(false);
     }
@@ -156,6 +179,18 @@ export function AttendanceView({
           </div>
         </div>
 
+        {isLocked && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            Attendance already submitted for this date. Records are locked and cannot be changed.
+          </div>
+        )}
+
+        {errorMsg && !isLocked && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="space-y-2">
           {loading && <p className="py-6 text-center text-sm text-scholar-400">Loading students…</p>}
           {!loading && batchStudents.length === 0 && (
@@ -182,8 +217,10 @@ export function AttendanceView({
                       <button
                         key={st}
                         onClick={() => setStatus(s.id, st)}
+                        disabled={isLocked}
                         className={cn(
                           "flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                          isLocked && "cursor-not-allowed opacity-80",
                           active ? meta.active : "border-scholar-100 text-scholar-400 hover:border-scholar-300"
                         )}
                       >
@@ -199,10 +236,17 @@ export function AttendanceView({
         {batchStudents.length > 0 && (
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60"
+            disabled={saving || isLocked}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Save size={16} /> {saving ? "Saving..." : saved ? "Saved ✓" : "Save attendance"}
+            <Save size={16} />{" "}
+            {saving
+              ? "Saving..."
+              : isLocked
+              ? "Attendance already submitted for this date"
+              : saved
+              ? "Saved ✓"
+              : "Save attendance"}
           </button>
         )}
       </Card>

@@ -201,7 +201,7 @@ export async function getBranchImpersonationState(): Promise<{
 // or if a platform admin is impersonating, returns the impersonated institute.
 export async function requireInstitute() {
   const session = await auth();
-  const user = session?.user as SessionUser | undefined;
+  const user = session?.user as (SessionUser & { id?: string; email?: string; permissions?: string[] }) | undefined;
   let instituteId = user?.instituteId;
 
   if (user?.role === "PLATFORM_ADMIN") {
@@ -220,7 +220,35 @@ export async function requireInstitute() {
     } as const;
   }
 
-  return { session, instituteId, isImpersonating: user?.role === "PLATFORM_ADMIN" && instituteId !== user?.instituteId } as const;
+  let permissions: string[] = user?.permissions || [];
+  const upperRole = (user?.role || "").toUpperCase();
+
+  // If permissions not in session or for fresh permissions check, query Faculty record
+  if (upperRole && upperRole !== "OWNER" && upperRole !== "ADMIN" && upperRole !== "PLATFORM_ADMIN") {
+    try {
+      const faculty = await prisma.faculty.findFirst({
+        where: {
+          instituteId,
+          OR: [
+            ...(user?.id ? [{ userId: user.id }] : []),
+            ...(user?.email ? [{ email: { equals: user.email, mode: "insensitive" as const } }] : []),
+          ],
+        },
+        select: { permissions: true },
+      });
+      if (faculty?.permissions) {
+        permissions = faculty.permissions;
+      }
+    } catch {}
+  }
+
+  return {
+    session,
+    instituteId,
+    role: user?.role,
+    permissions,
+    isImpersonating: user?.role === "PLATFORM_ADMIN" && instituteId !== user?.instituteId,
+  } as const;
 }
 
 // Use in server page components - returns active instituteId (or impersonated instituteId).
@@ -254,37 +282,24 @@ export async function requirePlatformAdmin() {
 }
 
 // Use in Institute API routes that require a specific permission.
-// Grants access to Platform Admin when in impersonation mode or checks role.
+// Grants access to Platform Admin when in impersonation mode or checks role & granular permissions.
 export async function requirePermission(permission: Permission) {
-  const session = await auth();
-  const user = session?.user as SessionUser | undefined;
-  let instituteId = user?.instituteId;
-  let role = user?.role;
+  const ctx = await requireInstitute();
+  if ("error" in ctx) return ctx;
 
-  if (user?.role === "PLATFORM_ADMIN") {
-    try {
-      const cookieStore = cookies();
-      const impersonated = cookieStore.get(IMPERSONATION_COOKIE)?.value;
-      if (impersonated) {
-        instituteId = impersonated;
-        role = "OWNER"; // Impersonate as Owner
-      }
-    } catch {}
+  const role = ctx.session.user?.role;
+  let effectiveRole = role;
+  if (role === "PLATFORM_ADMIN" && ctx.isImpersonating) {
+    effectiveRole = "OWNER";
   }
 
-  if (!session || !instituteId) {
-    return {
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-    } as const;
-  }
-
-  if (!hasPermission(role, permission)) {
+  if (!hasPermission({ role: effectiveRole, permissions: ctx.permissions }, permission)) {
     return {
       error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     } as const;
   }
 
-  return { session, instituteId } as const;
+  return ctx;
 }
 
 // Checks if a feature flag is enabled for the current institute tenant.

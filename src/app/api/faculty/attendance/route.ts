@@ -17,71 +17,47 @@ export async function GET(req: Request) {
 
   try {
     if (month) {
-      const records = await prisma.$queryRawUnsafe<
-        Array<{
-          id: string;
-          instituteId: string;
-          facultyId: string;
-          date: string;
-          status: string;
-          checkIn: string | null;
-          checkOut: string | null;
-          notes: string | null;
-        }>
-      >(
-        `SELECT id, "instituteId", "facultyId", to_char(date, 'YYYY-MM-DD') as date, status, "checkIn", "checkOut", notes
-         FROM "StaffAttendance"
-         WHERE "instituteId" = $1 AND to_char(date, 'YYYY-MM') = $2
-         ORDER BY date ASC`,
-        ctx.instituteId,
-        month
+      const [yearStr, monthStr] = month.split("-");
+      const year = parseInt(yearStr, 10);
+      const monthNum = parseInt(monthStr, 10);
+      const startDate = new Date(Date.UTC(year, monthNum - 1, 1));
+      const endDate = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+
+      const records = await prisma.staffAttendance.findMany({
+        where: {
+          instituteId: ctx.instituteId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { date: "asc" },
+      });
+
+      return NextResponse.json(
+        records.map((r) => ({
+          ...r,
+          date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
+        }))
       );
-      return NextResponse.json(records);
     }
 
-    if (date) {
-      const records = await prisma.$queryRawUnsafe<
-        Array<{
-          id: string;
-          instituteId: string;
-          facultyId: string;
-          date: string;
-          status: string;
-          checkIn: string | null;
-          checkOut: string | null;
-          notes: string | null;
-        }>
-      >(
-        `SELECT id, "instituteId", "facultyId", to_char(date, 'YYYY-MM-DD') as date, status, "checkIn", "checkOut", notes
-         FROM "StaffAttendance"
-         WHERE "instituteId" = $1 AND date = $2::DATE`,
-        ctx.instituteId,
-        date
-      );
-      return NextResponse.json(records);
-    }
+    const targetDateStr = date || new Date().toISOString().slice(0, 10);
+    const targetDate = new Date(targetDateStr);
 
-    // Default: Today's date
-    const today = new Date().toISOString().slice(0, 10);
-    const records = await prisma.$queryRawUnsafe<
-      Array<{
-        id: string;
-        instituteId: string;
-        facultyId: string;
-        date: string;
-        status: string;
-        checkIn: string | null;
-        checkOut: string | null;
-        notes: string | null;
-      }>
-    >(
-      `SELECT id, "instituteId", "facultyId", to_char(date, 'YYYY-MM-DD') as date, status, "checkIn", "checkOut", notes
-       FROM "StaffAttendance"
-       WHERE "instituteId" = $1 AND date = $2::DATE`,
-      ctx.instituteId,
-      today
+    const records = await prisma.staffAttendance.findMany({
+      where: {
+        instituteId: ctx.instituteId,
+        date: targetDate,
+      },
+    });
+
+    return NextResponse.json(
+      records.map((r) => ({
+        ...r,
+        date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
+      }))
     );
-    return NextResponse.json(records);
   } catch (err: any) {
     console.error("Error fetching staff attendance:", err);
     return NextResponse.json({ error: "Failed to load staff attendance" }, { status: 500 });
@@ -113,32 +89,41 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Date and records array are required" }, { status: 400 });
   }
 
-  try {
-    for (const item of records) {
-      const recordId = `sa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "StaffAttendance" ("id", "instituteId", "facultyId", "date", "status", "checkIn", "checkOut", "notes", "updatedAt")
-         VALUES ($1, $2, $3, $4::DATE, $5, $6, $7, $8, NOW())
-         ON CONFLICT ("facultyId", "date")
-         DO UPDATE SET "status" = EXCLUDED."status",
-                       "checkIn" = EXCLUDED."checkIn",
-                       "checkOut" = EXCLUDED."checkOut",
-                       "notes" = EXCLUDED."notes",
-                       "updatedAt" = NOW()`,
-        recordId,
-        ctx.instituteId,
-        item.facultyId,
-        date,
-        item.status || "PRESENT",
-        item.checkIn || null,
-        item.checkOut || null,
-        item.notes || null
-      );
-    }
+  const attendanceDate = new Date(date);
 
-    return NextResponse.json({ ok: true, count: records.length });
+  try {
+    const results = await Promise.all(
+      records.map((item) =>
+        prisma.staffAttendance.upsert({
+          where: {
+            facultyId_date: {
+              facultyId: item.facultyId,
+              date: attendanceDate,
+            },
+          },
+          update: {
+            status: item.status || "PRESENT",
+            checkIn: item.checkIn || null,
+            checkOut: item.checkOut || null,
+            notes: item.notes || null,
+          },
+          create: {
+            instituteId: ctx.instituteId,
+            facultyId: item.facultyId,
+            date: attendanceDate,
+            status: item.status || "PRESENT",
+            checkIn: item.checkIn || null,
+            checkOut: item.checkOut || null,
+            notes: item.notes || null,
+          },
+        })
+      )
+    );
+
+    return NextResponse.json({ ok: true, count: results.length });
   } catch (err: any) {
     console.error("Error saving staff attendance:", err);
     return NextResponse.json({ error: "Failed to save staff attendance records" }, { status: 500 });
   }
 }
+

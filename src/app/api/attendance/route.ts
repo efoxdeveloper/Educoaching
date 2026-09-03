@@ -43,6 +43,17 @@ export async function POST(req: Request) {
 
   const day = new Date(date);
 
+  // Check if attendance for this batch + date has already been locked
+  const lockedRecord = await prisma.attendance.findFirst({
+    where: { batchId, date: day, instituteId: ctx.instituteId, locked: true },
+  });
+  if (lockedRecord) {
+    return NextResponse.json(
+      { error: "Attendance for this date has already been saved and cannot be changed" },
+      { status: 400 }
+    );
+  }
+
   // Snapshot what attendance looked like before this save, so we only notify parents
   // when a student is newly marked Absent/Late - not every time attendance is re-saved.
   const existing = await prisma.attendance.findMany({ where: { batchId, date: day, instituteId: ctx.instituteId } });
@@ -52,8 +63,8 @@ export async function POST(req: Request) {
     records.map((r) =>
       prisma.attendance.upsert({
         where: { studentId_date: { studentId: r.studentId, date: day } },
-        update: { status: r.status, batchId },
-        create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId },
+        update: { status: r.status, batchId, locked: true },
+        create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId, locked: true },
       })
     )
   );

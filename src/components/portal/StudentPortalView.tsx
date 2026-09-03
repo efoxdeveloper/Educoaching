@@ -157,12 +157,14 @@ export function StudentPortalView({
   materials,
   assignments,
   liveClasses = [],
+  viewerRole = "STUDENT",
 }: {
   students: StudentData[];
   exams: OnlineExam[];
   materials: StudyMaterial[];
   assignments: Assignment[];
   liveClasses?: LiveClassPortalItem[];
+  viewerRole?: "STUDENT" | "PARENT" | "STAFF" | "OWNER" | "ADMIN";
 }) {
   const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id || "");
   const [activeTab, setActiveTab] = useState<
@@ -960,95 +962,112 @@ export function StudentPortalView({
             </span>
           </div>
 
-          {exams.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
-              No online examinations scheduled for your batch right now.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {exams.map((ex) => {
-                const hasAttempted = Boolean(ex.attempt);
-                return (
-                  <Card key={ex.id} className="flex flex-col justify-between p-5">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Badge tone={hasAttempted ? "success" : "scholar"}>
-                          {hasAttempted ? "Attempted" : "Live / Scheduled"}
-                        </Badge>
-                        <span className="text-[11px] text-scholar-400">
-                          {formatDate(ex.testDate)}
-                        </span>
-                      </div>
+          {(() => {
+            const studentExams = exams.filter((ex) => !student?.batchId || ex.batchId === student.batchId);
+            if (studentExams.length === 0) {
+              return (
+                <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
+                  No online examinations scheduled for your batch right now.
+                </div>
+              );
+            }
 
-                      <h4 className="mt-2 font-display text-base font-bold text-ink">
-                        {ex.title}
-                      </h4>
-                      <p className="text-xs text-scholar-500">
-                        {ex.subject || "All Subjects"} • {ex.seriesName || "General Exam"}
-                      </p>
-
-                      {ex.startTime && (
-                        <div className="mt-2 inline-flex items-center gap-1 rounded bg-scholar-100/70 px-2 py-0.5 text-[11px] font-semibold text-scholar-700">
-                          <Clock size={11} className="text-scholar-500" />
-                          <span>
-                            {(() => {
-                              const s = new Date(ex.startTime);
-                              if (isNaN(s.getTime())) return null;
-                              const sStr = s.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-                              if (!ex.endTime) return `${sStr} onwards`;
-                              const e = new Date(ex.endTime);
-                              const eStr = !isNaN(e.getTime()) ? e.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
-                              return eStr ? `${sStr} - ${eStr}` : sStr;
-                            })()}
+            return (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {studentExams.map((ex) => {
+                  const hasAttempted = Boolean(ex.attempt);
+                  return (
+                    <Card key={ex.id} className="flex flex-col justify-between p-5">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Badge tone={hasAttempted ? "success" : "scholar"}>
+                            {hasAttempted ? "Attempted" : "Live / Scheduled"}
+                          </Badge>
+                          <span className="text-[11px] text-scholar-400">
+                            {formatDate(ex.testDate)}
                           </span>
                         </div>
-                      )}
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-scholar-50 p-2.5 text-center text-xs text-scholar-700">
-                        <div>
-                          <span className="block text-[10px] text-scholar-400">Duration</span>
-                          <strong>{ex.durationMinutes || 60} mins</strong>
+                        <h4 className="mt-2 font-display text-base font-bold text-ink">
+                          {ex.title}
+                        </h4>
+                        <p className="text-xs text-scholar-500">
+                          {ex.subject || "All Subjects"} • {ex.seriesName || "General Exam"}
+                        </p>
+
+                        {ex.startTime && (
+                          <div className="mt-2 inline-flex items-center gap-1 rounded bg-scholar-100/70 px-2 py-0.5 text-[11px] font-semibold text-scholar-700">
+                            <Clock size={11} className="text-scholar-500" />
+                            <span>
+                              {(() => {
+                                const s = new Date(ex.startTime);
+                                if (isNaN(s.getTime())) return null;
+                                const sStr = s.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+                                if (!ex.endTime) return `${sStr} onwards`;
+                                const e = new Date(ex.endTime);
+                                const eStr = !isNaN(e.getTime()) ? e.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
+                                return eStr ? `${sStr} - ${eStr}` : sStr;
+                              })()}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-scholar-50 p-2.5 text-center text-xs text-scholar-700">
+                          <div>
+                            <span className="block text-[10px] text-scholar-400">Duration</span>
+                            <strong>{ex.durationMinutes || 60} mins</strong>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-scholar-400">Max Marks</span>
+                            <strong>{ex.totalMarks} pts</strong>
+                          </div>
                         </div>
-                        <div>
-                          <span className="block text-[10px] text-scholar-400">Max Marks</span>
-                          <strong>{ex.totalMarks} pts</strong>
-                        </div>
+
+                        {hasAttempted && ex.attempt && (
+                          <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 space-y-1">
+                            <p className="font-bold text-sm">
+                              {viewerRole === "PARENT" ? "Child's Score" : "Your Score"}: {ex.attempt.score} / {ex.totalMarks}
+                            </p>
+                            {ex.attempt.rank && (
+                              <p className="text-[11px]">Rank: #{ex.attempt.rank}</p>
+                            )}
+                            {ex.attempt.percentile && (
+                              <p className="text-[11px]">Percentile: {ex.attempt.percentile}%</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {hasAttempted && ex.attempt && (
-                        <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 space-y-1">
-                          <p className="font-bold text-sm">
-                            Your Score: {ex.attempt.score} / {ex.totalMarks}
-                          </p>
-                          {ex.attempt.rank && (
-                            <p className="text-[11px]">Rank: #{ex.attempt.rank}</p>
-                          )}
-                          {ex.attempt.percentile && (
-                            <p className="text-[11px]">Percentile: {ex.attempt.percentile}%</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-5 border-t border-scholar-100 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setActiveExamModal(ex)}
-                        className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-colors ${
-                          hasAttempted
-                            ? "bg-scholar-700 hover:bg-scholar-800"
-                            : "bg-emerald-600 hover:bg-emerald-700"
-                        }`}
-                      >
-                        <Play size={13} fill="currentColor" />
-                        {hasAttempted ? "Review Answers & Analysis" : "Start Online Exam"}
-                      </button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                      <div className="mt-5 border-t border-scholar-100 pt-3">
+                        {viewerRole === "PARENT" ? (
+                          <div className="text-center py-2 px-3 rounded-xl bg-scholar-50 text-scholar-600 text-xs font-medium border border-scholar-100">
+                            {hasAttempted ? (
+                              <span className="font-semibold text-emerald-700">Attempted — Score: {ex.attempt?.score} / {ex.totalMarks}</span>
+                            ) : (
+                              <span>Not yet attempted</span>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setActiveExamModal(ex)}
+                            className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-colors ${
+                              hasAttempted
+                                ? "bg-scholar-700 hover:bg-scholar-800"
+                                : "bg-emerald-600 hover:bg-emerald-700"
+                            }`}
+                          >
+                            <Play size={13} fill="currentColor" />
+                            {hasAttempted ? "Review Answers & Analysis" : "Start Online Exam"}
+                          </button>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 

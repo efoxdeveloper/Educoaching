@@ -19,5 +19,6 @@ export async function GET() {
   const parsed = parseInstituteSettings(institute.settings);
   return NextResponse.json({
     featureFlags: parsed.featureFlags,
+    permissions: ctx.permissions,
   });
 }
