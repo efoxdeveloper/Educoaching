@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   Award,
   BookOpen,
@@ -172,6 +172,31 @@ export function StudentPortalView({
   const [activeTab, setActiveTab] = useState<
     "batch" | "live-classes" | "certificates" | "exams" | "materials" | "assignments" | "fees" | "doubts" | "help"
   >("batch");
+
+  // Sync activeTab with URL ?tab= param (for sidebar navigation)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as typeof activeTab | null;
+    if (tab && ["batch", "live-classes", "certificates", "exams", "materials", "assignments", "fees", "doubts", "help"].includes(tab)) {
+      setActiveTab(tab);
+    }
+    const childParam = params.get("child");
+    if (childParam && students.some((s) => s.id === childParam)) {
+      setSelectedStudentId(childParam);
+    } else {
+      const stored = localStorage.getItem("parentSelectedChildId");
+      if (stored && students.some((s) => s.id === stored)) setSelectedStudentId(stored);
+    }
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<string>;
+      if (custom.detail && students.some((s) => s.id === custom.detail)) {
+        setSelectedStudentId(custom.detail);
+      }
+    };
+    window.addEventListener("parentChildSwitch", handler as EventListener);
+    return () => window.removeEventListener("parentChildSwitch", handler as EventListener);
+  }, [students]);
   const [activeExamModal, setActiveExamModal] = useState<OnlineExam | null>(null);
 
   // Homework submission state

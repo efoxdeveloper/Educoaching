@@ -115,12 +115,14 @@ export default async function StudentPortalPage({
   const studentBatchIds = rawStudents
     .map((s) => s.batchId)
     .filter((b): b is string => Boolean(b));
+  const studentBranchIds = Array.from(new Set(rawStudents.map((s) => s.branchId).filter(Boolean) as string[]));
 
   const [rawExams, rawMaterials, rawAssignments, rawLiveClasses] = await Promise.all([
     studentBatchIds.length > 0
       ? prisma.test.findMany({
           where: {
             instituteId,
+            branchId: studentBranchIds.length > 0 ? { in: studentBranchIds } : undefined,
             isOnline: true,
             batchId: { in: studentBatchIds },
           },
@@ -131,11 +133,18 @@ export default async function StudentPortalPage({
         })
       : [],
     prisma.studyMaterial.findMany({
-      where: { instituteId },
+      where: {
+        instituteId,
+        ...(studentBranchIds.length > 0 ? { branchId: { in: studentBranchIds } } : {}),
+        // Also scope by batch/course targeting: will be filtered via isStudentTargeted on client, but pre-filter by branch
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.assignment.findMany({
-      where: { instituteId },
+      where: {
+        instituteId,
+        ...(studentBranchIds.length > 0 ? { branchId: { in: studentBranchIds } } : {}),
+      },
       include: {
         submissions: true,
       },
@@ -144,7 +153,9 @@ export default async function StudentPortalPage({
     prisma.liveClass.findMany({
       where: {
         instituteId,
+        ...(studentBranchIds.length > 0 ? { branchId: { in: studentBranchIds } } : {}),
         status: { in: ["SCHEDULED", "LIVE"] },
+        ...(studentBatchIds.length > 0 ? { batchId: { in: studentBatchIds } } : {}),
       },
       include: {
         faculty: { select: { name: true } },
