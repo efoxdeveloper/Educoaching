@@ -201,10 +201,10 @@ export default async function DashboardPage() {
   }
 
   const branchImpersonation = await getBranchImpersonationState();
-  const impersonatedBranchId = branchImpersonation.isImpersonating ? branchImpersonation.branchId : null;
+  const activeBranchId = branchImpersonation.branchId;
 
   const [data, discountRequests, instituteRecord] = await Promise.all([
-    getDashboardData(instituteId, impersonatedBranchId),
+    getDashboardData(instituteId, activeBranchId),
     prisma.discountRequest.findMany({
       where: { instituteId },
       orderBy: { createdAt: "desc" },

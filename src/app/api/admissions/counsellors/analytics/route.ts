@@ -20,11 +20,14 @@ export async function GET(req: Request) {
     dateFilter = { gte: thirtyDaysAgo };
   }
 
-  // Fetch all admissions, follow-ups, faculty, and users for this institute
+  // Branch-scoped: sub-branch sees only own branch, Main sees only Main unless impersonating
+  const branchFilter = { branchId: ctx.branchId as string };
+  // Fetch all admissions, follow-ups, faculty, and users for this institute + branch
   const [admissions, followUps, facultyList, instituteUsers] = await Promise.all([
     prisma.admission.findMany({
       where: {
         instituteId: ctx.instituteId,
+        ...branchFilter,
         ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
       },
       select: {
@@ -43,6 +46,7 @@ export async function GET(req: Request) {
     prisma.leadFollowUp.findMany({
       where: {
         instituteId: ctx.instituteId,
+        admission: { branchId: ctx.branchId as string },
         ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
       },
       select: {
@@ -57,6 +61,7 @@ export async function GET(req: Request) {
     prisma.faculty.findMany({
       where: {
         instituteId: ctx.instituteId,
+        branchId: ctx.branchId as string,
         status: "ACTIVE",
       },
       select: {

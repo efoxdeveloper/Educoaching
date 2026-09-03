@@ -10,7 +10,7 @@ export async function GET(
   if ("error" in ctx) return ctx.error;
 
   const test = await prisma.test.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId },
+    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
     include: {
       batch: { select: { id: true, name: true, course: { select: { name: true } } } },
       questions: {
