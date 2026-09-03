@@ -294,7 +294,7 @@ export function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="you@institute.com"
+                    placeholder="Enter your email"
                   />
                 </div>
               </div>
@@ -317,7 +317,7 @@ export function LoginForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                   />
                   <button
                     type="button"
@@ -366,7 +366,7 @@ export function LoginForm() {
                     value={studentEmail}
                     onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="student@vidyalaya.test / parent@vidyalaya.test"
+                    placeholder="Enter your email"
                   />
                 </div>
               </div>
@@ -392,7 +392,7 @@ export function LoginForm() {
                     value={studentPassword}
                     onChange={(e) => setStudentPassword(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                   />
                   <button
                     type="button"

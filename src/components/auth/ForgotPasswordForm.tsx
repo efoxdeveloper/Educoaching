@@ -145,7 +145,7 @@ export function ForgotPasswordForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-transparent text-sm outline-none"
-                  placeholder="you@institute.com"
+                  placeholder="Enter your email"
                   disabled={loading}
                 />
               </div>

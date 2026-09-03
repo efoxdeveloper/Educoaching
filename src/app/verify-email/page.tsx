@@ -123,7 +123,7 @@ function VerifyEmailContent() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@institute.com"
+                placeholder="Enter your email"
                 className="w-full rounded-xl border border-scholar-100 bg-white px-3 py-2.5 text-sm outline-none focus:border-scholar-400"
               />
               <button
