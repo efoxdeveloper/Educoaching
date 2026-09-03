@@ -356,7 +356,11 @@ export function LoginForm() {
             </form>
           ) : (
             /* Student / Parent Email Login Form */
-            <form onSubmit={handleStudentSubmit} className="mt-6 space-y-4">
+            <form onSubmit={handleStudentSubmit} autoComplete="off" className="mt-6 space-y-4">
+              {/* Hidden dummy fields trick browsers into targeting these instead of the real inputs */}
+              <input type="text" name="fakeusernameremembered" style={{ display: "none" }} readOnly tabIndex={-1} />
+              <input type="password" name="fakepasswordremembered" style={{ display: "none" }} readOnly tabIndex={-1} />
+
               <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 text-xs text-scholar-700">
                 <p className="font-semibold text-scholar-900">Student & Parent Portal Access</p>
                 <p className="mt-0.5 text-scholar-600">
@@ -371,9 +375,10 @@ export function LoginForm() {
                 <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-white px-3 py-2.5 focus-within:border-scholar-400">
                   <Mail size={16} className="text-scholar-300" />
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     required
-                    autoComplete="off"
+                    autoComplete="nope"
                     value={studentEmail}
                     onChange={(e) => setStudentEmail(e.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
