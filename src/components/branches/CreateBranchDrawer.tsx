@@ -13,6 +13,7 @@ export type BranchItem = {
   address: string | null;
   contact: string | null;
   guidePhone?: string | null;
+  inChargeName?: string | null;
   status: "ACTIVE" | "INACTIVE" | "PENDING_APPROVAL";
   isMainBranch?: boolean;
   studentCount?: number;
@@ -36,6 +37,7 @@ export function CreateBranchDrawer({
   onSaved: (branch: any) => void;
 }) {
   const [name, setName] = useState("");
+  const [inChargeName, setInChargeName] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [address, setAddress] = useState("");
@@ -52,6 +54,7 @@ export function CreateBranchDrawer({
   useEffect(() => {
     if (branchToEdit) {
       setName(branchToEdit.name);
+      setInChargeName(branchToEdit.inChargeName || "");
       setCity(branchToEdit.city || "");
       setState(branchToEdit.state || "");
       setAddress(branchToEdit.address || "");
@@ -63,6 +66,7 @@ export function CreateBranchDrawer({
       setIsMainBranch(Boolean(branchToEdit.isMainBranch));
     } else {
       setName("");
+      setInChargeName("");
       setCity("");
       setState("");
       setAddress("");
@@ -81,6 +85,11 @@ export function CreateBranchDrawer({
       setError("Branch name is required");
       return;
     }
+    // Match setup wizard validation: Branch In-Charge/Owner Name is mandatory
+    if (!inChargeName.trim()) {
+      setError("Branch Owner Name is required — matches setup wizard requirement");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -95,6 +104,7 @@ export function CreateBranchDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          inChargeName: inChargeName.trim(),
           city: city.trim() || null,
           state: state.trim() || null,
           address: address.trim() || null,
@@ -135,16 +145,28 @@ export function CreateBranchDrawer({
           </div>
         )}
 
-        <Field label="Branch / Center Name *">
-          <input
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. South Extension Campus, Kota Center"
-            className={inputClass}
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Branch / Center Name *">
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. South Extension Campus, Kota Center"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Branch Owner Name *">
+            <input
+              type="text"
+              required
+              value={inChargeName}
+              onChange={(e) => setInChargeName(e.target.value)}
+              placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
+              className={inputClass}
+            />
+          </Field>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="City">

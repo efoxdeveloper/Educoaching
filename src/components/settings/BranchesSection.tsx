@@ -21,12 +21,14 @@ type Branch = {
   address: string | null;
   contact: string | null;
   guidePhone: string | null;
+  inChargeName?: string | null;
   status: "ACTIVE" | "INACTIVE" | "PENDING_APPROVAL";
   users?: BranchUser[];
 };
 
 const emptyForm = {
   name: "",
+  inChargeName: "",
   city: "",
   state: "",
   address: "",
@@ -68,6 +70,7 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
     if (branch) {
       setForm({
         name: branch.name,
+        inChargeName: branch.inChargeName ?? "",
         city: branch.city ?? "",
         state: branch.state ?? "",
         address: branch.address ?? "",
@@ -93,6 +96,15 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
+    // Match setup wizard: Branch Owner/In-Charge Name is mandatory
+    if (!form.name.trim()) {
+      setError("Branch name is required");
+      return;
+    }
+    if (!form.inChargeName.trim()) {
+      setError("Branch Owner Name is required — matches setup wizard requirement");
+      return;
+    }
     setSaving(true);
     try {
       const isNew = editing === "new";
@@ -211,7 +223,14 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
                     </Badge>
                   </div>
                   <p className="mt-0.5 text-xs text-scholar-400">
-                    {[b.city, b.state].filter(Boolean).join(", ") || "No location set"}
+                    {b.inChargeName ? (
+                      <span className="inline-flex items-center text-xs font-semibold text-ink">
+                        👤 {b.inChargeName}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] italic">No owner set</span>
+                    )}
+                    <span className="ml-2">{[b.city, b.state].filter(Boolean).join(", ") || "No location set"}</span>
                     {b.guidePhone && (
                       <span className="ml-2 inline-flex items-center text-[11px] font-medium text-scholar-600">
                         • Guide Helpline: {b.guidePhone}
@@ -283,13 +302,22 @@ function BranchForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-scholar-100 p-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Branch name">
+        <Field label="Branch name *">
           <input
             required
             className={inputClass}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="e.g. Meerut Branch"
+          />
+        </Field>
+        <Field label="Branch Owner Name *">
+          <input
+            required
+            className={inputClass}
+            value={form.inChargeName}
+            onChange={(e) => setForm((f) => ({ ...f, inChargeName: e.target.value }))}
+            placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
           />
         </Field>
         <Field label="Helpdesk / Office Phone">

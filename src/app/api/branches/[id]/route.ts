@@ -18,6 +18,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (name !== undefined && !String(name).trim()) {
     return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
   }
+  if (inChargeName !== undefined && !String(inChargeName).trim()) {
+    return NextResponse.json({ error: "Branch Owner Name can't be empty" }, { status: 400 });
+  }
 
   if (isMainBranch === true) {
     await prisma.branch.updateMany({

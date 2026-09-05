@@ -42,6 +42,10 @@ export async function POST(req: Request) {
     if (!name || !String(name).trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+    // Mandatory: Branch Owner Name — matches setup wizard (Branch In-Charge Name *)
+    if (!inChargeName || !String(inChargeName).trim()) {
+      return NextResponse.json({ error: "Branch Owner Name is required" }, { status: 400 });
+    }
 
     // Optional credentials for sub-branch sign-in
     const trimmedEmail = email ? String(email).trim().toLowerCase() : null;

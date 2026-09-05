@@ -378,6 +378,12 @@ export function BranchesView({
                     </p>
                   )}
 
+                  {b.inChargeName && (
+                    <p className="mt-1 flex items-center gap-1 text-xs text-ink">
+                      <span className="text-[11px] font-semibold text-scholar-600">👤 Owner:</span> <span className="font-semibold">{b.inChargeName}</span>
+                    </p>
+                  )}
+
                   {b.isMainBranch ? (
                     <div className="mt-2.5 rounded-lg border border-purple-200 bg-purple-50/70 p-2 text-[11px] text-purple-900 font-semibold flex items-center gap-1.5">
                       <Building2 size={13} className="text-purple-700 shrink-0" />
