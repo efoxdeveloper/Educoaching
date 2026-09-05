@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Phone, FileText, Eye, Pencil } from "lucide-react";
+import { Search, Plus, Phone, FileText, Eye, Pencil, Users } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from "recharts";
 
 import { Card } from "@/components/ui/Card";
 import {
@@ -113,8 +114,86 @@ export function StudentsTable({
     });
   }, [students, query, courseFilter, statusFilter]);
 
+  // S1: derived aggregates for visuals — kept separate from table, no filtering of underlying rows
+  const statusCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const s of students) map[s.status] = (map[s.status] || 0) + 1;
+    return map;
+  }, [students]);
+  const statusDonutData = useMemo(() => {
+    const colors: Record<string, string> = { ACTIVE: "#059669", ON_HOLD: "#F59E0B", INACTIVE: "#94A3B8" };
+    return Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace("_", " "), value, color: colors[name] || "#1E3A5F" }));
+  }, [statusCounts]);
+  const courseCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const s of students) map[s.course.name] = (map[s.course.name] || 0) + 1;
+    return Object.entries(map)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [students]);
+
   return (
     <>
+      {/* S1: Student distribution visuals — stat cards + donut/bar; table below stays exactly as before with all badges/numbers */}
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="p-4 flex flex-col">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Users size={14} className="text-scholar-600" />
+            <h4 className="font-display text-sm font-semibold text-ink">Students by Status</h4>
+          </div>
+          <p className="mb-3 text-xs text-scholar-400">Active vs On Hold vs Inactive — distribution, not just count</p>
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusDonutData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={52}
+                  outerRadius={70}
+                  paddingAngle={2}
+                  stroke="none"
+                >
+                  {statusDonutData.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-3 text-[11px]">
+            {statusDonutData.map((d) => (
+              <span key={d.name} className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ background: d.color }} /> {d.name} ({d.value})
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-center text-[11px] text-scholar-500">Total: {students.length} students</p>
+        </Card>
+
+        <Card className="p-4 lg:col-span-2">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="font-display text-sm font-semibold text-ink">Students per Course</h4>
+            <span className="text-[11px] text-scholar-400">Top 6 courses</span>
+          </div>
+          <p className="mb-3 text-xs text-scholar-400">Enrollment concentration by program — bar length = headcount</p>
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={courseCounts} margin={{ left: -10, right: 16, top: 4, bottom: 4 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#4E6E93" }} interval={0} angle={-14} textAnchor="end" height={50} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }} />
+                <Bar dataKey="count" fill="#1E3A5F" radius={[6, 6, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
       <Card className="p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
