@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ShieldCheck, ScrollText, GitBranch, Ticket, Settings, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
 
 const nav = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -16,59 +23,117 @@ const nav = [
 export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
 
-  return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-30 bg-scholar-900/40 lg:hidden" onClick={onClose} aria-hidden="true" />
-      )}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-scholar-900 text-scholar-50 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:overflow-hidden lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-marigold-400 text-scholar-900">
-              <ShieldCheck size={20} strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="font-display text-base font-semibold leading-none text-white">Vidyalaya</p>
-              <p className="text-[11px] text-scholar-300">Platform Admin</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-scholar-300 lg:hidden" aria-label="Close menu">
-            <X size={20} />
-          </button>
-        </div>
+  const drawerContent = (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#0f172a", color: "#f1f5f9" }}>
+      <Box sx={{ display: "flex", height: 64, alignItems: "center", justifyContent: "space-between", px: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box
+            sx={{
+              display: "flex",
+              height: 36,
+              width: 36,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 1.5,
+              bgcolor: "#fbbf24",
+              color: "#1e293b",
+            }}
+          >
+            <ShieldCheck size={20} strokeWidth={2.5} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontFamily: "inherit", fontSize: "1rem", fontWeight: 600, lineHeight: 1, color: "white" }}>
+              Vidyalaya
+            </Typography>
+            <Typography sx={{ fontSize: "11px", color: "#cbd5e1" }}>Platform Admin</Typography>
+          </Box>
+        </Box>
+        <Box
+          component="button"
+          onClick={onClose}
+          sx={{ display: { lg: "none" }, color: "#cbd5e1", bgcolor: "transparent", border: "none", cursor: "pointer", p: 0.5 }}
+          aria-label="Close menu"
+        >
+          <X size={20} />
+        </Box>
+      </Box>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <Box sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 2 }}>
+        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href + "/"));
             return (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-white/10 text-white"
-                    : "text-scholar-200 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <Icon size={18} strokeWidth={2} className={active ? "text-marigold-400" : ""} />
-                {label}
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-marigold-400" />}
-              </Link>
+              <ListItem key={href} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={href}
+                  onClick={onClose}
+                  selected={active}
+                  sx={{
+                    borderRadius: 2,
+                    px: 1.5,
+                    py: 1.25,
+                    gap: 1.5,
+                    bgcolor: active ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: active ? "white" : "#cbd5e1",
+                    fontWeight: active ? 500 : 400,
+                    fontSize: "0.875rem",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "white" },
+                    "&.Mui-selected": { bgcolor: "rgba(255,255,255,0.1)" },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, color: active ? "#fbbf24" : "#cbd5e1" }}>
+                    <Icon size={18} strokeWidth={2} />
+                  </ListItemIcon>
+                  <ListItemText primary={label} slotProps={{ primary: { sx: { fontSize: "0.875rem", fontWeight: active ? 600 : 500 } } }} />
+                  {active && <Box sx={{ ml: "auto", height: 6, width: 6, borderRadius: "50%", bgcolor: "#fbbf24" }} />}
+                </ListItemButton>
+              </ListItem>
             );
           })}
-        </nav>
+        </List>
+      </Box>
 
-        <div className="border-t border-white/10 px-5 py-4 text-[11px] text-scholar-300">
-          Platform Admin v1.0
-        </div>
-      </aside>
+      <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.1)", px: 2.5, py: 2, textAlign: "left" }}>
+        <Typography sx={{ fontSize: "11px", color: "#94a3b8" }}>Platform Admin v1.0</Typography>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <>
+      <Drawer
+        variant="temporary"
+        open={open}
+        onClose={onClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{ display: { xs: "block", lg: "none" }, "& .MuiDrawer-paper": { width: 256, boxSizing: "border-box", bgcolor: "#0f172a", border: "none" } }}
+      >
+        {drawerContent}
+      </Drawer>
+      <Drawer
+        variant="permanent"
+        open
+        sx={{
+          display: { xs: "none", lg: "block" },
+          width: 256,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: 256,
+            boxSizing: "border-box",
+            bgcolor: "#0f172a",
+            border: "none",
+            height: "100vh",
+            overflow: "hidden",
+            position: "fixed",
+            top: 0,
+            left: 0,
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
     </>
   );
 }
+

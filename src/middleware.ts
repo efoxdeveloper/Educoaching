@@ -40,6 +40,15 @@ export default auth((req) => {
   }
 
   const role = String((req.auth.user as { role?: string })?.role || "").toUpperCase();
+  // Impersonation detection for middleware — must allow PLATFORM_ADMIN to stay on /portal when impersonating
+  // Branch impersonation via JWT (impersonatingBranchId / isImpersonatingBranch), platform impersonation via cookie
+  const isImpersonatingBranch = Boolean(
+    (req.auth.user as any)?.impersonatingBranchId || (req.auth.user as any)?.isImpersonatingBranch
+  );
+  const isPlatformImpersonating = Boolean(
+    req.cookies.get("platform_impersonate_institute")?.value || req.cookies.get("platform_impersonating_branch")?.value
+  );
+  const isImpersonating = isImpersonatingBranch || isPlatformImpersonating;
 
   // If role is STUDENT or PARENT, strictly confine access to /portal (skip API requests)
   if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal") && !pathname.startsWith("/api/")) {
@@ -60,7 +69,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (role === "PLATFORM_ADMIN" && pathname.startsWith("/portal")) {
+  if (role === "PLATFORM_ADMIN" && pathname.startsWith("/portal") && !isImpersonating) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 

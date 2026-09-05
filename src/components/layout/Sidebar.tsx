@@ -31,7 +31,15 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from "@/lib/institute-settings";
 import { hasPermission, type Permission } from "@/lib/permissions";
 
@@ -148,6 +156,19 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
 
+  // Impersonation detection — platform admin impersonating an institute/branch
+  // uses either JWT impersonatingBranchId (branch impersonation) or
+  // platform_impersonate_institute cookie (platform admin impersonating institute).
+  // For client, check session JWT fields and cookie.
+  const isImpersonatingBranch = Boolean(
+    (session?.user as any)?.isImpersonatingBranch || (session?.user as any)?.impersonatingBranchId
+  );
+  const isPlatformImpersonating =
+    typeof document !== "undefined" ? document.cookie.includes("platform_impersonate_institute") : false;
+  const isImpersonating = isImpersonatingBranch || isPlatformImpersonating;
+  // When PLATFORM_ADMIN is impersonating, treat as OWNER for nav so Courses/Faculty/etc. show
+  const effectiveRole = userRole === "PLATFORM_ADMIN" && isImpersonating ? "OWNER" : userRole;
+
   useEffect(() => {
     fetch("/api/institutes/features")
       .then((res) => res.json())
@@ -161,21 +182,22 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const sessionPermissions = (session?.user as any)?.permissions || [];
   const effectivePermissions = userPermissions.length > 0 ? userPermissions : sessionPermissions;
 
-  const allowedList = ROLE_ALLOWED_ROUTES[userRole] || (userRole === "PARENT" ? ["/portal"] : ROLE_ALLOWED_ROUTES["STAFF"]);
+  const allowedList =
+    ROLE_ALLOWED_ROUTES[effectiveRole] || (effectiveRole === "PARENT" ? ["/portal"] : ROLE_ALLOWED_ROUTES["STAFF"]);
 
   const visibleNav = nav
     .filter((item) => {
       if (item.featureKey && !features[item.featureKey]) return false;
-      if (userRole === "OWNER" || userRole === "ADMIN") {
+      if (effectiveRole === "OWNER" || effectiveRole === "ADMIN") {
         if (allowedList.includes("*")) return true;
         return allowedList.includes(item.href);
       }
-      if (userRole === "STUDENT" || userRole === "PARENT") {
+      if (effectiveRole === "STUDENT" || effectiveRole === "PARENT") {
         return item.href === "/portal";
       }
       // For staff roles, gate item if specific permission required
       if (item.permission) {
-        if (!hasPermission({ role: userRole, permissions: effectivePermissions }, item.permission)) {
+        if (!hasPermission({ role: effectiveRole, permissions: effectivePermissions }, item.permission)) {
           return false;
         }
       }
@@ -184,67 +206,142 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
     })
     .map((item) => {
       if (item.href === "/portal") {
-        if (userRole === "PARENT") return { ...item, label: "Parent Portal" };
-        if (userRole === "STUDENT") return { ...item, label: "Student Portal" };
+        if (effectiveRole === "PARENT") return { ...item, label: "Parent Portal" };
+        if (effectiveRole === "STUDENT") return { ...item, label: "Student Portal" };
       }
       return item;
     });
 
-  return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-30 bg-scholar-900/40 lg:hidden" onClick={onClose} aria-hidden="true" />
-      )}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-scholar-700 text-scholar-50 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:overflow-hidden lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-marigold-400 text-scholar-900">
-              <GraduationCap size={20} strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="font-display text-base font-semibold leading-none text-white">Vidyalaya</p>
-              <p className="text-[11px] text-scholar-300 capitalize">
-                {userRole === "PARENT" ? "Parent Portal" : userRole === "STUDENT" ? "Student Portal" : `${userRole.toLowerCase()} Panel`}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-scholar-300 lg:hidden" aria-label="Close menu">
-            <X size={20} />
-          </button>
-        </div>
+  const drawerContent = (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#334155", color: "#f1f5f9" }}>
+      <Box sx={{ display: "flex", height: 64, alignItems: "center", justifyContent: "space-between", px: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box
+            sx={{
+              display: "flex",
+              height: 36,
+              width: 36,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 1.5,
+              bgcolor: "#fbbf24",
+              color: "#422006",
+            }}
+          >
+            <GraduationCap size={20} strokeWidth={2.5} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontFamily: "inherit", fontSize: "1rem", fontWeight: 600, lineHeight: 1, color: "white" }}>
+              Vidyalaya
+            </Typography>
+            <Typography sx={{ fontSize: "11px", color: "#cbd5e1", textTransform: "capitalize" }}>
+              {effectiveRole === "PARENT" ? "Parent Portal" : effectiveRole === "STUDENT" ? "Student Portal" : `${effectiveRole.toLowerCase()} Panel`}
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          component="button"
+          onClick={onClose}
+          sx={{
+            display: { lg: "none" },
+            color: "#cbd5e1",
+            bgcolor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            p: 0.5,
+          }}
+          aria-label="Close menu"
+        >
+          <X size={20} />
+        </Box>
+      </Box>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <Box sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 2 }}>
+        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors",
-                  active
-                    ? "bg-white/10 text-white font-bold shadow-2xs"
-                    : "text-scholar-100 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <Icon size={16} className={active ? "text-marigold-400" : "text-scholar-200"} />
-                {item.label}
-              </Link>
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={item.href}
+                  onClick={onClose}
+                  selected={active}
+                  sx={{
+                    borderRadius: 2,
+                    px: 1.5,
+                    py: 1.25,
+                    gap: 1.5,
+                    bgcolor: active ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: active ? "white" : "#f1f5f9",
+                    fontWeight: active ? 700 : 600,
+                    fontSize: "0.75rem",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "white" },
+                    "&.Mui-selected": { bgcolor: "rgba(255,255,255,0.1)" },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, color: active ? "#fbbf24" : "#e2e8f0" }}>
+                    <Icon size={16} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    slotProps={{ primary: { sx: { fontSize: "0.75rem", fontWeight: active ? 700 : 600 } } }}
+                  />
+                </ListItemButton>
+              </ListItem>
             );
           })}
-        </nav>
+        </List>
+      </Box>
 
-        <div className="border-t border-scholar-600/60 p-3 text-[11px] text-scholar-300 text-center">
-          Role: <span className="font-bold text-white uppercase">{userRole}</span>
-        </div>
-      </aside>
+      <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.1)", p: 1.5, textAlign: "center" }}>
+        <Typography sx={{ fontSize: "11px", color: "#cbd5e1" }}>
+          Role: <Box component="span" sx={{ fontWeight: 700, color: "white", textTransform: "uppercase" }}>{effectiveRole}</Box>
+        </Typography>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <>
+      {/* Mobile temporary drawer */}
+      <Drawer
+        variant="temporary"
+        open={open}
+        onClose={onClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", lg: "none" },
+          "& .MuiDrawer-paper": { width: 256, boxSizing: "border-box", bgcolor: "#334155", border: "none" },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+      {/* Desktop permanent drawer — fixed, independent scroll */}
+      <Drawer
+        variant="permanent"
+        open
+        sx={{
+          display: { xs: "none", lg: "block" },
+          width: 256,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: 256,
+            boxSizing: "border-box",
+            bgcolor: "#334155",
+            border: "none",
+            height: "100vh",
+            overflow: "hidden",
+            position: "fixed",
+            top: 0,
+            left: 0,
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
     </>
   );
 }
+

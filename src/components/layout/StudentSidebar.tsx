@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import {
   Layers,
   Video,
@@ -18,7 +16,14 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
 
 type NavItem = {
   href: string;
@@ -43,62 +48,86 @@ export function StudentSidebar({ open, onClose }: { open: boolean; onClose: () =
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "batch";
 
-  return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-30 bg-scholar-900/40 lg:hidden" onClick={onClose} aria-hidden="true" />
-      )}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-scholar-700 text-scholar-50 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:overflow-hidden lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-marigold-400 text-scholar-900">
-              <GraduationCap size={20} strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="font-display text-base font-semibold leading-none text-white">Student Portal</p>
-              <p className="text-[11px] text-scholar-300">My Learning Space</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-scholar-300 lg:hidden" aria-label="Close menu">
-            <X size={20} />
-          </button>
-        </div>
+  const drawerContent = (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#334155", color: "#f1f5f9" }}>
+      <Box sx={{ display: "flex", height: 64, alignItems: "center", justifyContent: "space-between", px: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box sx={{ display: "flex", height: 36, width: 36, alignItems: "center", justifyContent: "center", borderRadius: 1.5, bgcolor: "#fbbf24", color: "#422006" }}>
+            <GraduationCap size={20} strokeWidth={2.5} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontFamily: "inherit", fontSize: "1rem", fontWeight: 600, lineHeight: 1, color: "white" }}>Student Portal</Typography>
+            <Typography sx={{ fontSize: "11px", color: "#cbd5e1" }}>My Learning Space</Typography>
+          </Box>
+        </Box>
+        <Box component="button" onClick={onClose} sx={{ display: { lg: "none" }, color: "#cbd5e1", bgcolor: "transparent", border: "none", cursor: "pointer", p: 0.5 }} aria-label="Close menu">
+          <X size={20} />
+        </Box>
+      </Box>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <Box sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 2 }}>
+        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {studentNav.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === "/portal" && (searchParams.get("tab") || "batch") === item.href.split("tab=")[1];
-            // For Help & Support, also highlight when active
+            const isActive = pathname === "/portal" && (searchParams.get("tab") || "batch") === item.href.split("tab=")[1];
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors",
-                  isActive
-                    ? "bg-white/10 text-white font-bold shadow-2xs"
-                    : "text-scholar-100 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <Icon size={16} className={isActive ? "text-marigold-400" : "text-scholar-200"} />
-                {item.label}
-                {item.label === "AI Doubt Assistant" && <span className="ml-auto text-[10px]">✨</span>}
-              </Link>
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={item.href}
+                  onClick={onClose}
+                  selected={isActive}
+                  sx={{
+                    borderRadius: 2,
+                    px: 1.5,
+                    py: 1.25,
+                    gap: 1.5,
+                    bgcolor: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: isActive ? "white" : "#f1f5f9",
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: "0.75rem",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "white" },
+                    "&.Mui-selected": { bgcolor: "rgba(255,255,255,0.1)" },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, color: isActive ? "#fbbf24" : "#e2e8f0" }}>
+                    <Icon size={16} />
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: "0.75rem", fontWeight: isActive ? 700 : 600 } } }} />
+                  {item.label === "AI Doubt Assistant" && <Typography sx={{ ml: "auto", fontSize: "10px" }}>✨</Typography>}
+                </ListItemButton>
+              </ListItem>
             );
           })}
-        </nav>
+        </List>
+      </Box>
 
-        <div className="border-t border-scholar-600/60 p-3 text-[11px] text-scholar-300 text-center">
-          Student Portal • <span className="font-bold text-white uppercase">v1.0</span>
-        </div>
-      </aside>
+      <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.1)", p: 1.5, textAlign: "center" }}>
+        <Typography sx={{ fontSize: "11px", color: "#cbd5e1" }}>
+          Student Portal • <Box component="span" sx={{ fontWeight: 700, color: "white", textTransform: "uppercase" }}>v1.0</Box>
+        </Typography>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <>
+      <Drawer variant="temporary" open={open} onClose={onClose} ModalProps={{ keepMounted: true }} sx={{ display: { xs: "block", lg: "none" }, "& .MuiDrawer-paper": { width: 256, boxSizing: "border-box", bgcolor: "#334155", border: "none" } }}>
+        {drawerContent}
+      </Drawer>
+      <Drawer
+        variant="permanent"
+        open
+        sx={{
+          display: { xs: "none", lg: "block" },
+          width: 256,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": { width: 256, boxSizing: "border-box", bgcolor: "#334155", border: "none", height: "100vh", overflow: "hidden", position: "fixed", top: 0, left: 0 },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
     </>
   );
 }
+

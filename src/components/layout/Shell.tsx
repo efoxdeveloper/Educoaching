@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import Box from "@mui/material/Box";
 import { Sidebar } from "./Sidebar";
 import { StudentSidebar } from "./StudentSidebar";
 import { ParentSidebar } from "./ParentSidebar";
@@ -29,16 +30,19 @@ export function Shell({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper w-full max-w-full overflow-x-hidden">
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", bgcolor: "background.paper", width: "100%", maxWidth: "100%" }}>
       <ImpersonationBanner />
       <BranchImpersonationBanner />
-      <div className="flex min-h-screen flex-1 w-full max-w-full min-w-0">
+      <Box sx={{ display: "flex", flex: 1, height: "100vh", overflow: "hidden", width: "100%", minWidth: 0 }}>
         {renderSidebar()}
-        <div className="flex min-h-screen flex-1 flex-col min-w-0 max-w-full w-full lg:pl-0">
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh", overflow: "hidden", width: "100%" }}>
           <Topbar onMenuClick={() => setOpen(true)} title={title} userName={userName} />
-          <main className="flex-1 min-w-0 max-w-full w-full px-4 py-6 lg:px-8">{children}</main>
-        </div>
-      </div>
-    </div>
+          <Box component="main" sx={{ flex: 1, overflowY: "auto", minWidth: 0, width: "100%", px: { xs: 2, lg: 4 }, py: 3 }}>
+            {children}
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }
+
