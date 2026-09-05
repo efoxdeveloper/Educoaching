@@ -87,50 +87,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         let user = await prisma.user.findFirst({
           where: {
-            OR: [
-              { email: { equals: input, mode: "insensitive" } },
-            ],
-          },
-          include: { branch: true },
-        });
-
-        // Check if this is a student email login
-        const student = await prisma.student.findFirst({
-          where: {
             email: { equals: input, mode: "insensitive" },
           },
           include: { branch: true },
         });
 
-        if (student) {
-          if (!user && student.email) {
-            user = await prisma.user.findFirst({
-              where: { email: { equals: student.email, mode: "insensitive" } },
-              include: { branch: true },
-            });
-          }
+        // Fallback: Only query the Student table if the initial user lookup returned null
+        if (!user) {
+          const student = await prisma.student.findFirst({
+            where: {
+              email: { equals: input, mode: "insensitive" },
+            },
+            include: { branch: true },
+          });
 
-          if (user) {
-            const valid = await bcrypt.compare(password, user.password);
-            if (valid || password === "password123") {
-              const targetRole = String(user.role || "").toUpperCase();
-              if (loginType === "staff" && (targetRole === "STUDENT" || targetRole === "PARENT")) {
-                throw new UseStudentLoginError();
-              }
-              if (loginType === "student" && targetRole !== "STUDENT" && targetRole !== "PARENT") {
-                throw new UseStaffLoginError();
-              }
-              return {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                instituteId: user.instituteId,
-                branchId: user.branchId,
-                isMainBranch: true,
-              };
-            }
-          } else if (password === "password123") {
+          if (student && password === "password123") {
             if (loginType === "staff") {
               throw new UseStudentLoginError();
             }
@@ -147,8 +118,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           return null;
         }
-
-        if (!user) return null;
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid && password !== "password123") return null;

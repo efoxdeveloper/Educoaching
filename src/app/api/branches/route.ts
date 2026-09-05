@@ -205,88 +205,92 @@ export async function POST(req: Request) {
     },
   });
 
-  // If sub-branch requires approval, dispatch emails
+  // If sub-branch requires approval, dispatch emails in background without blocking response
   if (initialStatus === BranchStatus.PENDING_APPROVAL) {
     const appUrl =
       process.env.NEXTAUTH_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-    // 1. Send processing email to Institute Owner & Main Branch Owner / Admins
-    try {
-      const recipients = new Map<string, string>(); // email -> name
-      // Institute Owner email
-      if (institute.email) {
-        recipients.set(institute.email.toLowerCase(), institute.ownerName);
-      }
-      // Main branch users / Institute Admins
-      for (const u of institute.users) {
-        if (u.email && (u.role === "OWNER" || u.role === "ADMIN")) {
-          recipients.set(u.email.toLowerCase(), u.name || "Administrator");
+    (async () => {
+      // 1. Send processing email to Institute Owner & Main Branch Owner / Admins
+      try {
+        const recipients = new Map<string, string>(); // email -> name
+        // Institute Owner email
+        if (institute.email) {
+          recipients.set(institute.email.toLowerCase(), institute.ownerName);
         }
-      }
-      // Sub-branch admin user (if registered during creation)
-      if (createdUser?.email) {
-        recipients.set(createdUser.email.toLowerCase(), createdUser.name || `${branch.name} Admin`);
+        // Main branch users / Institute Admins
+        for (const u of institute.users) {
+          if (u.email && (u.role === "OWNER" || u.role === "ADMIN")) {
+            recipients.set(u.email.toLowerCase(), u.name || "Administrator");
+          }
+        }
+        // Sub-branch admin user (if registered during creation)
+        if (createdUser?.email) {
+          recipients.set(createdUser.email.toLowerCase(), createdUser.name || `${branch.name} Admin`);
+        }
+
+        for (const [email, recipientName] of Array.from(recipients.entries())) {
+          const isBranchUser = createdUser?.email && email === createdUser.email.toLowerCase();
+          await sendBranchProcessingEmail({
+            to: email,
+            recipientName,
+            branchName: branch.name,
+            instituteName: institute.name,
+            city: branch.city,
+            loginEmail: isBranchUser ? email : undefined,
+          }).catch((err) => console.error("Failed to send branch processing email:", err));
+        }
+      } catch (err) {
+        console.error("Failed to send branch processing email:", err);
       }
 
-      for (const [email, recipientName] of Array.from(recipients.entries())) {
-        const isBranchUser = createdUser?.email && email === createdUser.email.toLowerCase();
-        await sendBranchProcessingEmail({
-          to: email,
-          recipientName,
-          branchName: branch.name,
-          instituteName: institute.name,
-          city: branch.city,
-          loginEmail: isBranchUser ? email : undefined,
+      // 2. Send alert email to Platform Admin(s)
+      try {
+        const platformAdmins = await prisma.user.findMany({
+          where: { role: "PLATFORM_ADMIN" },
+          select: { email: true },
         });
+
+        const adminEmails = platformAdmins.map((a) => a.email);
+        if (adminEmails.length === 0 && process.env.SMTP_USER) {
+          adminEmails.push(process.env.SMTP_USER);
+        }
+
+        const adminPortalUrl = `${appUrl}/admin/branches`;
+
+        for (const adminEmail of adminEmails) {
+          await sendAdminBranchAlertEmail({
+            to: adminEmail,
+            branchName: branch.name,
+            instituteName: institute.name,
+            ownerName: institute.ownerName,
+            city: branch.city,
+            state: branch.state,
+            contact: branch.contact,
+            adminPortalUrl,
+          }).catch((err) => console.error("Failed to send admin branch alert email:", err));
+        }
+      } catch (err) {
+        console.error("Failed to send admin branch alert email:", err);
       }
-    } catch (err) {
-      console.error("Failed to send branch processing email:", err);
-    }
 
-    // 2. Send alert email to Platform Admin(s)
-    try {
-      const platformAdmins = await prisma.user.findMany({
-        where: { role: "PLATFORM_ADMIN" },
-        select: { email: true },
-      });
-
-      const adminEmails = platformAdmins.map((a) => a.email);
-      if (adminEmails.length === 0 && process.env.SMTP_USER) {
-        adminEmails.push(process.env.SMTP_USER);
-      }
-
-      const adminPortalUrl = `${appUrl}/admin/branches`;
-
-      for (const adminEmail of adminEmails) {
-        await sendAdminBranchAlertEmail({
-          to: adminEmail,
-          branchName: branch.name,
-          instituteName: institute.name,
-          ownerName: institute.ownerName,
-          city: branch.city,
-          state: branch.state,
-          contact: branch.contact,
-          adminPortalUrl,
+      // 3. Record platform notification for admin
+      try {
+        await prisma.platformNotification.create({
+          data: {
+            instituteId: institute.id,
+            type: "BRANCH_REGISTRATION",
+            message: `${institute.name} requested to add sub-branch "${branch.name}" (${branch.city || "N/A"}). Awaiting Platform Admin approval.`,
+          },
         });
+      } catch (err) {
+        console.error("Failed to record branch platform notification:", err);
       }
-    } catch (err) {
-      console.error("Failed to send admin branch alert email:", err);
-    }
-
-    // 3. Record platform notification for admin
-    try {
-      await prisma.platformNotification.create({
-        data: {
-          instituteId: institute.id,
-          type: "BRANCH_REGISTRATION",
-          message: `${institute.name} requested to add sub-branch "${branch.name}" (${branch.city || "N/A"}). Awaiting Platform Admin approval.`,
-        },
-      });
-    } catch (err) {
-      console.error("Failed to record branch platform notification:", err);
-    }
+    })().catch((err) => {
+      console.error("[branch background notification error]:", err);
+    });
   }
 
   return NextResponse.json(

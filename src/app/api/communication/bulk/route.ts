@@ -120,66 +120,72 @@ export async function POST(req: Request) {
   let sentCount = 0;
   let failedCount = 0;
 
-  for (const r of recipients) {
-    // Interpolate message supporting all new & existing template tags
-    const personalizedMessage = message
-      .replace(/\{Student Name\}|\{name\}/gi, r.name)
-      .replace(/\{Institute Name\}|\{institute_name\}/gi, instituteName)
-      .replace(/\{course\}/gi, r.courseName || "your course")
-      .replace(/\{batch\}/gi, r.batchName || "your batch")
-      .replace(/\{due_amount\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
-      .replace(/\{Amount\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
-      .replace(/\{Pending\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
-      .replace(/\{userid\}/gi, r.email || r.mobile)
-      .replace(/\{password\}/gi, "student123");
+  // Dispatch concurrently in chunks of 5 to maximize pooled connection reuse
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+    const chunk = recipients.slice(i, i + BATCH_SIZE);
+    await Promise.allSettled(
+      chunk.map(async (r) => {
+        const personalizedMessage = message
+          .replace(/\{Student Name\}|\{name\}/gi, r.name)
+          .replace(/\{Institute Name\}|\{institute_name\}/gi, instituteName)
+          .replace(/\{course\}/gi, r.courseName || "your course")
+          .replace(/\{batch\}/gi, r.batchName || "your batch")
+          .replace(/\{due_amount\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
+          .replace(/\{Amount\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
+          .replace(/\{Pending\}/gi, r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0")
+          .replace(/\{userid\}/gi, r.email || r.mobile)
+          .replace(/\{password\}/gi, "student123");
 
-    try {
-      if (validChannel === "WHATSAPP") {
-        const phone = r.parentMobile || r.mobile;
-        if (phone) {
-          const res = await sendCustomAlert(phone, r.name, personalizedMessage);
-          if (res.sent) sentCount++;
-          else failedCount++;
-        } else {
+        try {
+          if (validChannel === "WHATSAPP") {
+            const phone = r.parentMobile || r.mobile;
+            if (phone) {
+              const res = await sendCustomAlert(phone, r.name, personalizedMessage);
+              if (res.sent) sentCount++;
+              else failedCount++;
+            } else {
+              failedCount++;
+            }
+          } else if (validChannel === "EMAIL") {
+            if (r.email) {
+              const res = await sendBroadcastEmail({
+                to: r.email,
+                subject: `${title} — ${instituteName}`,
+                message: personalizedMessage,
+                recipientName: r.name,
+                instituteName,
+              });
+              if (res.sent) sentCount++;
+              else failedCount++;
+            } else {
+              failedCount++;
+            }
+          } else {
+            // SMS channel - BYOK provider dispatch
+            const phone = r.parentMobile || r.mobile;
+            if (phone) {
+              const res = await sendInstituteSms(ctx.instituteId, {
+                to: phone,
+                templateName: "GENERAL_BROADCAST",
+                message: personalizedMessage,
+                variables: {
+                  name: r.name,
+                  institute_name: instituteName,
+                  due_amount: r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0",
+                },
+              });
+              if (res.sent) sentCount++;
+              else failedCount++;
+            } else {
+              failedCount++;
+            }
+          }
+        } catch {
           failedCount++;
         }
-      } else if (validChannel === "EMAIL") {
-        if (r.email) {
-          const res = await sendBroadcastEmail({
-            to: r.email,
-            subject: `${title} — ${instituteName}`,
-            message: personalizedMessage,
-            recipientName: r.name,
-            instituteName,
-          });
-          if (res.sent) sentCount++;
-          else failedCount++;
-        } else {
-          failedCount++;
-        }
-      } else {
-        // SMS channel - BYOK provider dispatch
-        const phone = r.parentMobile || r.mobile;
-        if (phone) {
-          const res = await sendInstituteSms(ctx.instituteId, {
-            to: phone,
-            templateName: "GENERAL_BROADCAST",
-            message: personalizedMessage,
-            variables: {
-              name: r.name,
-              institute_name: instituteName,
-              due_amount: r.dueAmount ? `₹${r.dueAmount.toLocaleString("en-IN")}` : "₹0",
-            },
-          });
-          if (res.sent) sentCount++;
-          else failedCount++;
-        } else {
-          failedCount++;
-        }
-      }
-    } catch {
-      failedCount++;
-    }
+      })
+    );
   }
 
   const user = ctx.session.user as { id?: string };

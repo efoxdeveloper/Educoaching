@@ -9,8 +9,17 @@ export function isEmailConfigured() {
   );
 }
 
-function getTransporter() {
-  return nodemailer.createTransport({
+let cachedTransporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter {
+  if (cachedTransporter) {
+    return cachedTransporter;
+  }
+
+  cachedTransporter = nodemailer.createTransport({
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: Number(process.env.SMTP_PORT) === 465,
@@ -19,6 +28,8 @@ function getTransporter() {
       pass: process.env.SMTP_PASS,
     },
   });
+
+  return cachedTransporter;
 }
 
 async function sendMail(to: string, subject: string, html: string) {

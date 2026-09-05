@@ -246,81 +246,86 @@ export async function POST(req: Request) {
 
   const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
-  // 1. Send confirmation to the institute owner that request is in processing
-  try {
-    await sendRegistrationProcessingEmail({
-      to: institute.email,
-      ownerName: institute.ownerName,
-      instituteName: institute.name,
-    });
-  } catch (err) {
-    console.error("Failed to send processing email to institute owner:", err);
-  }
+  // Fire-and-forget: dispatch all emails and notifications in background without blocking response
+  (async () => {
+    // 1. Send confirmation to the institute owner that request is in processing
+    try {
+      await sendRegistrationProcessingEmail({
+        to: institute.email,
+        ownerName: institute.ownerName,
+        instituteName: institute.name,
+      });
+    } catch (err) {
+      console.error("Failed to send processing email to institute owner:", err);
+    }
 
-  // 1b. Send processing and credentials email to any sub-branch accounts registered
-  if (Array.isArray(branches) && branches.length > 0) {
-    for (const b of branches) {
-      if (b.email && b.email.trim()) {
-        try {
-          await sendBranchProcessingEmail({
-            to: b.email.trim(),
-            recipientName: `${b.name.trim()} Admin`,
-            branchName: b.name.trim(),
-            instituteName: institute.name,
-            city: b.city?.trim() || null,
-            loginEmail: b.email.trim(),
-          });
-        } catch (branchEmailErr) {
-          console.error(`Failed to send processing email to sub-branch ${b.email}:`, branchEmailErr);
+    // 1b. Send processing and credentials email to any sub-branch accounts registered
+    if (Array.isArray(branches) && branches.length > 0) {
+      for (const b of branches) {
+        if (b.email && b.email.trim()) {
+          try {
+            await sendBranchProcessingEmail({
+              to: b.email.trim(),
+              recipientName: `${b.name.trim()} Admin`,
+              branchName: b.name.trim(),
+              instituteName: institute.name,
+              city: b.city?.trim() || null,
+              loginEmail: b.email.trim(),
+            });
+          } catch (branchEmailErr) {
+            console.error(`Failed to send processing email to sub-branch ${b.email}:`, branchEmailErr);
+          }
         }
       }
     }
-  }
 
-  // 2. Send email notification to all platform admin(s)
-  try {
-    const platformAdmins = await prisma.user.findMany({
-      where: { role: "PLATFORM_ADMIN" },
-      select: { email: true },
-    });
-
-    const adminEmails = platformAdmins.map((a) => a.email);
-    // Fallback to SMTP_USER or EMAIL_FROM if no PLATFORM_ADMIN user in DB
-    if (adminEmails.length === 0 && process.env.SMTP_USER) {
-      adminEmails.push(process.env.SMTP_USER);
-    }
-
-    const adminPortalUrl = `${appUrl}/admin`;
-
-    for (const adminEmail of adminEmails) {
-      await sendAdminRegistrationAlertEmail({
-        to: adminEmail,
-        instituteName: institute.name,
-        ownerName: institute.ownerName,
-        instituteEmail: institute.email,
-        instituteMobile: institute.mobile,
-        adminPortalUrl,
-        address: address?.trim() || null,
-        city: city?.trim() || null,
-        state: state?.trim() || null,
+    // 2. Send email notification to all platform admin(s)
+    try {
+      const platformAdmins = await prisma.user.findMany({
+        where: { role: "PLATFORM_ADMIN" },
+        select: { email: true },
       });
-    }
-  } catch (err) {
-    console.error("Failed to send registration alert email to admin:", err);
-  }
 
-  // Record platform notification
-  try {
-    await prisma.platformNotification.create({
-      data: {
-        instituteId: institute.id,
-        type: "INSTITUTE_REGISTERED",
-        message: `${institute.name} submitted a registration request awaiting approval.`,
-      },
-    });
-  } catch {
-    // Ignore notification failure if schema doesn't mandate
-  }
+      const adminEmails = platformAdmins.map((a) => a.email);
+      // Fallback to SMTP_USER or EMAIL_FROM if no PLATFORM_ADMIN user in DB
+      if (adminEmails.length === 0 && process.env.SMTP_USER) {
+        adminEmails.push(process.env.SMTP_USER);
+      }
+
+      const adminPortalUrl = `${appUrl}/admin`;
+
+      for (const adminEmail of adminEmails) {
+        await sendAdminRegistrationAlertEmail({
+          to: adminEmail,
+          instituteName: institute.name,
+          ownerName: institute.ownerName,
+          instituteEmail: institute.email,
+          instituteMobile: institute.mobile,
+          adminPortalUrl,
+          address: address?.trim() || null,
+          city: city?.trim() || null,
+          state: state?.trim() || null,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send registration alert email to admin:", err);
+    }
+
+    // Record platform notification
+    try {
+      await prisma.platformNotification.create({
+        data: {
+          instituteId: institute.id,
+          type: "INSTITUTE_REGISTERED",
+          message: `${institute.name} submitted a registration request awaiting approval.`,
+        },
+      });
+    } catch {
+      // Ignore notification failure if schema doesn't mandate
+    }
+  })().catch((bgErr) => {
+    console.error("[signup background dispatch error]:", bgErr);
+  });
 
   return NextResponse.json({
     ...institute,

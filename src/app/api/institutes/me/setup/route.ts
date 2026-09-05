@@ -184,41 +184,45 @@ export async function POST(req: Request) {
           }
         }
 
-        // Send branch processing email & admin alert
-        try {
-          if (createdBranchUser?.email) {
-            await sendBranchProcessingEmail({
-              to: createdBranchUser.email,
-              recipientName: createdBranchUser.name,
-              branchName: createdBranch.name,
-              instituteName: institute.name,
-              city: createdBranch.city,
-              loginEmail: createdBranchUser.email,
-            });
-          }
+        // Send branch processing email & admin alert in background without blocking setup
+        (async () => {
+          try {
+            if (createdBranchUser?.email) {
+              await sendBranchProcessingEmail({
+                to: createdBranchUser.email,
+                recipientName: createdBranchUser.name,
+                branchName: createdBranch.name,
+                instituteName: institute.name,
+                city: createdBranch.city,
+                loginEmail: createdBranchUser.email,
+              }).catch((err) => console.error("Failed to send branch processing email:", err));
+            }
 
-          const platformAdmins = await prisma.user.findMany({
-            where: { role: "PLATFORM_ADMIN" },
-            select: { email: true },
-          });
-          const adminEmails = platformAdmins.map((a) => a.email);
-          const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-          for (const adminEmail of adminEmails) {
-            await sendAdminBranchAlertEmail({
-              to: adminEmail,
-              branchName: createdBranch.name,
-              instituteName: institute.name,
-              ownerName: institute.ownerName,
-              city: createdBranch.city,
-              state: createdBranch.state,
-              contact: createdBranch.contact,
-              adminPortalUrl: `${appUrl}/admin/branches`,
+            const platformAdmins = await prisma.user.findMany({
+              where: { role: "PLATFORM_ADMIN" },
+              select: { email: true },
             });
+            const adminEmails = platformAdmins.map((a) => a.email);
+            const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+            for (const adminEmail of adminEmails) {
+              await sendAdminBranchAlertEmail({
+                to: adminEmail,
+                branchName: createdBranch.name,
+                instituteName: institute.name,
+                ownerName: institute.ownerName,
+                city: createdBranch.city,
+                state: createdBranch.state,
+                contact: createdBranch.contact,
+                adminPortalUrl: `${appUrl}/admin/branches`,
+              }).catch((err) => console.error("Failed to send admin branch alert email:", err));
+            }
+          } catch (mailErr) {
+            console.error("Failed to send branch alert email:", mailErr);
           }
-        } catch (mailErr) {
-          console.error("Failed to send branch alert email:", mailErr);
-        }
+        })().catch((err) => {
+          console.error("[setup branch background notification error]:", err);
+        });
       } catch (branchErr) {
         console.error("Failed to create sub-branch in setup wizard:", branchErr);
       }
