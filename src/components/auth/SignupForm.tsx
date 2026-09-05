@@ -530,7 +530,7 @@ export function SignupForm() {
         message={
           <div className="space-y-2 text-xs text-scholar-600">
             <p>
-              We couldn't detect an active mail server (MX record) for the domain{" "}
+              We couldn&apos;t detect an active mail server (MX record) for the domain{" "}
               <strong className="text-ink font-semibold">@{email.split("@")[1] || ""}</strong>.
             </p>
             <p>

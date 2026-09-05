@@ -75,8 +75,8 @@ describe("4 & 6 — Online Exam Batch Security and Parent Role Restrictions", ()
 
     const req = new Request(`http://localhost/api/tests/${testId}/attempt?studentId=student-1`);
     const res = await GET(req, { params: { id: testId } });
-    expect(res.status).toBe(403);
-    const data = await res.json();
+    expect(res!.status).toBe(403);
+    const data = await res!.json();
     expect(data.error).toBe("Student is not enrolled in the batch for this exam");
   });
 
@@ -96,8 +96,8 @@ describe("4 & 6 — Online Exam Batch Security and Parent Role Restrictions", ()
 
     const req = new Request(`http://localhost/api/tests/${testId}/attempt?studentId=student-1`);
     const res = await GET(req, { params: { id: testId } });
-    expect(res.status).toBe(403);
-    const data = await res.json();
+    expect(res!.status).toBe(403);
+    const data = await res!.json();
     expect(data.error).toBe("Parents cannot start or take online exams");
   });
 
@@ -116,8 +116,8 @@ describe("4 & 6 — Online Exam Batch Security and Parent Role Restrictions", ()
     });
 
     const res = await POST(req, { params: { id: testId } });
-    expect(res.status).toBe(403);
-    const data = await res.json();
+    expect(res!.status).toBe(403);
+    const data = await res!.json();
     expect(data.error).toBe("Parents cannot submit exam attempts");
   });
 
@@ -164,8 +164,8 @@ describe("4 & 6 — Online Exam Batch Security and Parent Role Restrictions", ()
     });
 
     const res = await POST(req, { params: { id: testId } });
-    expect(res.status).toBe(200);
-    const data = await res.json();
+    expect(res!.status).toBe(200);
+    const data = await res!.json();
     expect(data.success).toBe(true);
     expect(data.attempt.score).toBe(4);
   });

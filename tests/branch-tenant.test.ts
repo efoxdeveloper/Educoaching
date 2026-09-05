@@ -9,7 +9,7 @@
  * - Single-branch institute → resolves correctly
  */
 
-import { describe, beforeEach, it, expect, vi as jest } from "vitest";
+import { describe, beforeEach, beforeAll, it, expect, vi as jest } from "vitest";
 
 // ─── Prisma mock ────────────────────────────────────────────────────────────
 const mockFindFirst = jest.fn();
@@ -55,7 +55,14 @@ jest.mock("@/lib/institute-settings", () => ({
 }));
 
 // ─── Import SUT ──────────────────────────────────────────────────────────────
-const { requireInstitute, BRANCH_IMPERSONATION_COOKIE } = await import("@/lib/tenant");
+let requireInstitute: typeof import("@/lib/tenant").requireInstitute;
+let BRANCH_IMPERSONATION_COOKIE: typeof import("@/lib/tenant").BRANCH_IMPERSONATION_COOKIE;
+
+beforeAll(async () => {
+  const mod = await import("@/lib/tenant");
+  requireInstitute = mod.requireInstitute;
+  BRANCH_IMPERSONATION_COOKIE = mod.BRANCH_IMPERSONATION_COOKIE;
+});
 
 // ─── Test data ───────────────────────────────────────────────────────────────
 const INST_A = "inst-a";

@@ -62,6 +62,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
   }
 
+  // Prevent account takeover: verify if a user already exists with this email
+  const existingUser = await prisma.user.findUnique({
+    where: { email: cleanEmail },
+    select: { id: true, role: true },
+  });
+
+  if (existingUser && existingUser.role !== "STUDENT") {
+    return NextResponse.json(
+      { error: "A user with this email already exists with a different role. Duplicate email cannot be used for student enrollment." },
+      { status: 409 }
+    );
+  }
+
   // Branch isolation: all creates are scoped to the caller's active branch.
   // If a branchId is explicitly passed, it must match ctx.branchId; otherwise reject.
   if (branchId && branchId !== ctx.branchId) {
@@ -238,24 +251,8 @@ export async function POST(req: Request) {
   // Create or link a User account for the student with initial password 'student123'
   const initialPassword = "student123";
   try {
-    const hashedInitialPassword = await bcrypt.hash(initialPassword, 10);
-    const existingUser = await prisma.user.findUnique({
-      where: { email: cleanEmail },
-      select: { id: true, role: true },
-    });
-
-    if (existingUser) {
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          name: student.name,
-          password: hashedInitialPassword,
-          role: "STUDENT",
-          instituteId: ctx.instituteId,
-          branchId: effectiveBranchId,
-        },
-      });
-    } else {
+    if (!existingUser) {
+      const hashedInitialPassword = await bcrypt.hash(initialPassword, 10);
       await prisma.user.create({
         data: {
           name: student.name,
@@ -268,7 +265,7 @@ export async function POST(req: Request) {
       });
     }
   } catch (err) {
-    console.error("[students] Failed to create or update student User credentials:", err);
+    console.error("[students] Failed to create student User credentials:", err);
   }
 
   // Create or link a User account for the parent & ParentStudentLink
@@ -334,7 +331,7 @@ export async function POST(req: Request) {
       paidFee: Number(student.paidFee),
       isDemo: student.plan === "DEMO",
       demoExpiresAt: student.demoExpiresAt,
-      initialPassword,
+      initialPassword: existingUser ? undefined : initialPassword,
       portalUrl,
     }).catch((err) => console.error("[students] enrollment email failed:", err));
   }

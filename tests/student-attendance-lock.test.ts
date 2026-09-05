@@ -63,8 +63,8 @@ describe("1 — Student attendance locked after save", () => {
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(400);
-    const data = await res.json();
+    expect(res!.status).toBe(400);
+    const data = await res!.json();
     expect(data.error).toBe("Attendance for this date has already been saved and cannot be changed");
     expect(prisma.attendance.upsert).not.toHaveBeenCalled();
   });
@@ -99,8 +99,8 @@ describe("1 — Student attendance locked after save", () => {
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(200);
-    const data = await res.json();
+    expect(res!.status).toBe(200);
+    const data = await res!.json();
     expect(data.ok).toBe(true);
 
     expect(prisma.attendance.upsert).toHaveBeenCalledWith(

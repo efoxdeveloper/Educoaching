@@ -30,10 +30,10 @@ npm install
 The `.env` file is already populated with the connection string you provided:
 
 ```
-DATABASE_URL="postgresql://demo_user:YourStrongPassword123!@164.52.203.52:5432/demo?schema=public"
+DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
 ```
 
-If you'd rather use the second database (`demo2`) or your own Postgres instance, just edit `.env`.
+Set your PostgreSQL connection string in `.env` (refer to `.env.example`).
 
 **Security note:** the `.env` file contains a live database password. Don't commit it to a public repo — `.gitignore` already excludes it, but double-check before pushing. Consider rotating this password since it was shared in plain text.
 

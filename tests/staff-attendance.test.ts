@@ -43,9 +43,9 @@ describe("2 — Staff/Teacher Attendance Prisma Integration", () => {
 
     const req = new Request(`http://localhost/api/faculty/attendance?date=${dateStr}`);
     const res = await GET(req);
-    expect(res.status).toBe(200);
+    expect(res!.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res!.json();
     expect(data).toHaveLength(1);
     expect(data[0].facultyId).toBe("fac-1");
     expect(data[0].status).toBe("PRESENT");
@@ -84,8 +84,8 @@ describe("2 — Staff/Teacher Attendance Prisma Integration", () => {
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(200);
-    const data = await res.json();
+    expect(res!.status).toBe(200);
+    const data = await res!.json();
     expect(data.ok).toBe(true);
     expect(data.count).toBe(1);
 

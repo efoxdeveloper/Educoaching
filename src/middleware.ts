@@ -3,13 +3,31 @@ import { NextResponse } from "next/server";
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
+
   // Allow public access to security verification routes
   if (pathname === "/settings/verify-security" || pathname.startsWith("/verify-security")) {
     return NextResponse.next();
   }
 
-  // If not logged in and accessing protected route, redirect to login
+  // Whitelisted public API routes that do not require session auth
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/institutes/signup") ||
+    pathname.startsWith("/api/public") ||
+    pathname.startsWith("/api/public-enquiry") ||
+    pathname.startsWith("/api/verify-security") ||
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/exam") ||
+    pathname.startsWith("/api/cron")
+  ) {
+    return NextResponse.next();
+  }
+
+  // If not logged in and accessing protected route:
   if (!req.auth) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", req.url);
     return NextResponse.redirect(loginUrl);
@@ -17,8 +35,8 @@ export default auth((req) => {
 
   const role = String((req.auth.user as { role?: string })?.role || "").toUpperCase();
 
-  // If role is STUDENT or PARENT, strictly confine access to /portal
-  if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal")) {
+  // If role is STUDENT or PARENT, strictly confine access to /portal (skip API requests)
+  if ((role === "STUDENT" || role === "PARENT") && !pathname.startsWith("/portal") && !pathname.startsWith("/api/")) {
     return NextResponse.redirect(new URL("/portal", req.url));
   }
 
@@ -45,6 +63,7 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     "/dashboard/:path*",
     "/students/:path*",
     "/admissions/:path*",
