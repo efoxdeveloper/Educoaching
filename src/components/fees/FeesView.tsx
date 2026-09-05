@@ -202,7 +202,26 @@ export function FeesView({ students }: { students: Student[] }) {
                     <td className="py-3 pr-4 text-scholar-500">{s.course.name}</td>
                     <td className="py-3 pr-4 tabular-nums text-scholar-500">{formatCurrency(s.totalFee)}</td>
                     <td className="py-3 pr-4 tabular-nums text-success-600">{formatCurrency(s.paidFee)}</td>
-                    <td className="py-3 pr-4 tabular-nums font-medium text-ink">{formatCurrency(s.pending)}</td>
+                    <td className="py-3 pr-4 tabular-nums font-medium text-ink">
+                      <div className="flex flex-col gap-1">
+                        <span>{formatCurrency(s.pending)}</span>
+                        {(() => {
+                          const total = Number(s.totalFee) || 0;
+                          const paid = Number(s.paidFee) || 0;
+                          const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((paid / total) * 100))) : 0;
+                          const barColor =
+                            s.status === "PAID" ? "bg-emerald-500" : s.status === "OVERDUE" ? "bg-rose-500" : s.status === "PARTIAL" ? "bg-amber-500" : "bg-scholar-400";
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-1.5 flex-1 rounded-full bg-scholar-100">
+                                <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-[10px] font-semibold text-scholar-500 tabular-nums">{pct}%</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </td>
                     <td className="py-3 pr-4 text-scholar-500">{s.dueDate ? formatDate(s.dueDate) : "—"}</td>
                     <td className="py-3 pr-4">
                       <Badge tone={feeStatusTone(s.status)} dot>{feeStatusLabel(s.status)}</Badge>
