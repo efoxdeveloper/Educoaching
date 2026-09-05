@@ -320,7 +320,7 @@ export function EditCourseDrawer({
 
           {availableBranches.length === 0 ? (
             <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
-              No additional branches configured yet. Course offered at Main Institute campus.
+              This institute has only one branch (Main Branch) — no branch selection needed.
             </p>
           ) : (
             <div className="space-y-2.5">

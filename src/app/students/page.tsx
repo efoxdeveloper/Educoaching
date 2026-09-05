@@ -3,7 +3,7 @@ import { Shell } from "@/components/layout/Shell";
 import { StudentsTable } from "@/components/students/StudentsTable";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState, getSubBranches } from "@/lib/tenant";
 
 export default async function StudentsPage() {
   const session = await auth();
@@ -37,7 +37,7 @@ export default async function StudentsPage() {
         branches: { select: { id: true, name: true, city: true } },
       },
     }),
-    prisma.branch.findMany({ where: { instituteId }, orderBy: { name: "asc" } }),
+    getSubBranches(instituteId),
   ]);
 
   const serialized = students.map((s) => ({

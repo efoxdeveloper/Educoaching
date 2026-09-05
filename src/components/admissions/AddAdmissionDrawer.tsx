@@ -204,20 +204,25 @@ export function AddAdmissionDrawer({
             </Field>
           </div>
         ) : (
-          <Field label="Course / Offering *">
-            <select
-              required
-              className={inputClass}
-              value={form.courseId}
-              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-            >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} — {formatCurrency(c.fee)}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div className="space-y-3">
+            <Field label="Course / Offering *">
+              <select
+                required
+                className={inputClass}
+                value={form.courseId}
+                onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — {formatCurrency(c.fee)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+              This institute has only one branch (Main Branch) — no branch selection needed.
+            </p>
+          </div>
         )}
 
         <Field label="Assigned Counsellor">

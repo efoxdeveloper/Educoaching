@@ -1,0 +1,2 @@
+export { getSubBranches } from './tenant';
+

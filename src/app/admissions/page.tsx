@@ -3,7 +3,7 @@ import { Shell } from "@/components/layout/Shell";
 import { AdmissionsTable } from "@/components/admissions/AdmissionsTable";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId } from "@/lib/tenant";
+import { getInstituteId, getSubBranches } from "@/lib/tenant";
 
 export default async function AdmissionsPage() {
   const session = await auth();
@@ -31,7 +31,7 @@ export default async function AdmissionsPage() {
     }),
     prisma.course.findMany({ where: { instituteId }, select: { id: true, name: true, fee: true }, orderBy: { name: "asc" } }),
     prisma.batch.findMany({ where: { instituteId }, select: { id: true, name: true, courseId: true } }),
-    prisma.branch.findMany({ where: { instituteId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    getSubBranches(instituteId),
     prisma.faculty.findMany({
       where: { instituteId, status: "ACTIVE" },
       select: { id: true, name: true, roleType: true, email: true, userId: true },

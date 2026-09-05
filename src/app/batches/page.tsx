@@ -3,7 +3,7 @@ import { Shell } from "@/components/layout/Shell";
 import { BatchesView } from "@/components/batches/BatchesView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState, getSubBranches } from "@/lib/tenant";
 
 export default async function BatchesPage() {
   const session = await auth();
@@ -48,7 +48,7 @@ export default async function BatchesPage() {
     delete batchWhere.branchId;
   }
 
-  const [batches, courses, branches] = await Promise.all([
+  const [batches, courses, allSubBranches] = await Promise.all([
     prisma.batch.findMany({
       where: batchWhere,
       include: {
@@ -60,16 +60,14 @@ export default async function BatchesPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.course.findMany({ where: { instituteId }, orderBy: { name: "asc" } }),
-    prisma.branch.findMany({
-      where: {
-        instituteId,
-        ...(userRole === "FACULTY" && !isFacultyAllBranches && facultyBranchIds.length > 0
-          ? { id: { in: facultyBranchIds } }
-          : {}),
-      },
-      orderBy: { name: "asc" },
-    }),
+    getSubBranches(instituteId),
   ]);
+
+  const branches =
+    userRole === "FACULTY" && !isFacultyAllBranches && facultyBranchIds.length > 0
+      ? allSubBranches.filter((b) => facultyBranchIds.includes(b.id))
+      : allSubBranches;
+
 
   const serializedBatches = batches.map((b) => ({
     ...b,

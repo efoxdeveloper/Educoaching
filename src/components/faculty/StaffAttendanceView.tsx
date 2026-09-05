@@ -334,22 +334,24 @@ export function StaffAttendanceView({
             </select>
 
             {/* Campus Filter */}
-            <div className="flex items-center gap-1.5">
-              <Filter size={14} className="text-scholar-400" />
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-semibold text-scholar-700 outline-none"
-              >
-                <option value="ALL">All Branches</option>
-                <option value="MAIN">Main Branch / Unallocated</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {branches.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Filter size={14} className="text-scholar-400" />
+                <select
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                  className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-semibold text-scholar-700 outline-none"
+                >
+                  <option value="ALL">All Branches</option>
+                  <option value="MAIN">Main Branch / Unallocated</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Quick Mark & Save Buttons */}

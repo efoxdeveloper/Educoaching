@@ -3,7 +3,7 @@ import { Shell } from "@/components/layout/Shell";
 import { FacultyManagerView } from "@/components/faculty/FacultyManagerView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState, getSubBranches } from "@/lib/tenant";
 
 export default async function FacultyPage() {
   const session = await auth();
@@ -46,10 +46,7 @@ export default async function FacultyPage() {
       select: { id: true, name: true, duration: true },
       orderBy: { name: "asc" },
     }),
-    prisma.branch.findMany({
-      where: { instituteId },
-      orderBy: { name: "asc" },
-    }),
+    getSubBranches(instituteId),
   ]);
 
   const serialized = staffList.map((f) => ({

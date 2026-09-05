@@ -112,13 +112,15 @@ export function AddFacultyDrawer({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (initialBranches.length > 0) {
+    if (initialBranches !== undefined) {
       setBranches(initialBranches);
     } else {
       fetch("/api/branches")
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => {
-          if (Array.isArray(data)) setBranches(data);
+          if (Array.isArray(data)) {
+            setBranches(data.filter((b: any) => !b.isMainBranch && b.status === "ACTIVE"));
+          }
         })
         .catch(() => {});
     }
@@ -515,69 +517,73 @@ export function AddFacultyDrawer({
               <Building2 size={14} className="text-scholar-600" />
               <span>Multi-Branch Campus Allocation</span>
             </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={selectAllBranches}
-                className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-              >
-                Select All
-              </button>
-              <span>•</span>
-              <button
-                type="button"
-                onClick={clearAllBranches}
-                className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-              >
-                Clear
-              </button>
-            </div>
+            {branches.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllBranches}
+                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Select All
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={clearAllBranches}
+                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
 
-          <label className="flex items-center gap-2 text-xs font-semibold text-scholar-700 cursor-pointer bg-white p-2.5 rounded-lg border border-scholar-200">
-            <input
-              type="checkbox"
-              checked={isAllBranches}
-              onChange={(e) => setIsAllBranches(e.target.checked)}
-              className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
-            />
-            <span>All Branches / Visiting Star Faculty (Conducts lectures across all campuses)</span>
-          </label>
-
-          {!isAllBranches && branches.length > 0 && (
-            <div className="space-y-1.5 pt-1">
-              <p className="text-[11px] text-scholar-500">
-                Allocate campuses where this staff member operates:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
-                {branches.map((b) => {
-                  const isSelected = selectedBranchIds.includes(b.id);
-                  return (
-                    <button
-                      type="button"
-                      key={b.id}
-                      onClick={() => toggleBranch(b.id)}
-                      className={`flex items-center justify-between p-2 rounded-lg border text-left text-xs transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-scholar-600 text-white border-scholar-600 font-semibold shadow-xs"
-                          : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-                      }`}
-                    >
-                      <span className="truncate">
-                        {b.name} {b.city ? `(${b.city})` : ""}
-                      </span>
-                      {isSelected && <Check size={14} className="shrink-0 ml-1" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {!isAllBranches && branches.length === 0 && (
-            <p className="text-[11px] text-scholar-500 italic">
-              No branches configured yet. Faculty will be assigned to Main Branch.
+          {branches.length === 0 ? (
+            <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+              This institute has only one branch (Main Branch) — no branch selection needed.
             </p>
+          ) : (
+            <>
+              <label className="flex items-center gap-2 text-xs font-semibold text-scholar-700 cursor-pointer bg-white p-2.5 rounded-lg border border-scholar-200">
+                <input
+                  type="checkbox"
+                  checked={isAllBranches}
+                  onChange={(e) => setIsAllBranches(e.target.checked)}
+                  className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
+                />
+                <span>All Branches / Visiting Star Faculty (Conducts lectures across all campuses)</span>
+              </label>
+
+              {!isAllBranches && (
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[11px] text-scholar-500">
+                    Allocate campuses where this staff member operates:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                    {branches.map((b) => {
+                      const isSelected = selectedBranchIds.includes(b.id);
+                      return (
+                        <button
+                          type="button"
+                          key={b.id}
+                          onClick={() => toggleBranch(b.id)}
+                          className={`flex items-center justify-between p-2 rounded-lg border text-left text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-scholar-600 text-white border-scholar-600 font-semibold shadow-xs"
+                              : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
+                          }`}
+                        >
+                          <span className="truncate">
+                            {b.name} {b.city ? `(${b.city})` : ""}
+                          </span>
+                          {isSelected && <Check size={14} className="shrink-0 ml-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

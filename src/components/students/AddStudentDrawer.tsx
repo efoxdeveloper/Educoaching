@@ -492,41 +492,65 @@ export function AddStudentDrawer({
             <span className="text-[10px] text-scholar-500">Batches & timings vary by branch</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Course Program *">
-              <select
-                required
-                className={inputClass}
-                value={form.courseId}
-                onChange={(e) => {
-                  setForm({ ...form, courseId: e.target.value, batchId: "" });
-                }}
-              >
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
-                  </option>
-                ))}
-              </select>
-            </Field>
+          {branches.length === 0 ? (
+            <div className="space-y-3">
+              <Field label="Course Program *">
+                <select
+                  required
+                  className={inputClass}
+                  value={form.courseId}
+                  onChange={(e) => {
+                    setForm({ ...form, courseId: e.target.value, batchId: "" });
+                  }}
+                >
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+                This institute has only one branch (Main Branch) — no branch selection needed.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Course Program *">
+                <select
+                  required
+                  className={inputClass}
+                  value={form.courseId}
+                  onChange={(e) => {
+                    setForm({ ...form, courseId: e.target.value, batchId: "" });
+                  }}
+                >
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-            <Field label="Branch / Campus Location">
-              <select
-                className={inputClass}
-                value={form.branchId}
-                onChange={(e) => {
-                  setForm({ ...form, branchId: e.target.value, batchId: "" });
-                }}
-              >
-                <option value="">All Branches / Main Branch</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} {b.city ? `(${b.city})` : ""}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
+              <Field label="Branch / Campus Location">
+                <select
+                  className={inputClass}
+                  value={form.branchId}
+                  onChange={(e) => {
+                    setForm({ ...form, branchId: e.target.value, batchId: "" });
+                  }}
+                >
+                  <option value="">All Branches / Main Branch</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.city ? `(${b.city})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          )}
 
           <Field label="Assigned Batch & Timing">
             <select

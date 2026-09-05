@@ -316,3 +316,14 @@ export async function requireFeature(feature: keyof FeatureFlags) {
 
   return ctx;
 }
+
+/**
+ * Returns only real sub-branches for an institute (excluding Main Branch), with ACTIVE status.
+ * Used to feed multi-branch/branch-picker UI in create/edit forms.
+ */
+export async function getSubBranches(instituteId: string) {
+  return prisma.branch.findMany({
+    where: { instituteId, isMainBranch: false, status: "ACTIVE" },
+    orderBy: { name: "asc" },
+  });
+}
