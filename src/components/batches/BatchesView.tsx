@@ -8,6 +8,12 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { AddBatchDrawer } from "./AddBatchDrawer";
 import { EditBatchDrawer, type EditableBatch } from "./EditBatchDrawer";
 import { formatDate } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
 
 type Batch = {
   id: string;
@@ -110,69 +116,85 @@ export function BatchesView({
       )}
 
       {/* Top Filter Tabs: Active vs Completed/Expired */}
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-scholar-100 pb-3">
+      <Box sx={{ mb: 2, display: "flex", flexWrap: "wrap", gap: 1, borderBottom: "1px solid #D6E0EB", pb: 1.5 }}>
         {[
           { id: "ALL", label: `All Batches (${counts.total})` },
           { id: "ACTIVE", label: `Active Batches (${counts.active})` },
           { id: "UPCOMING", label: `Upcoming (${counts.upcoming})` },
           { id: "EXPIRED_COMPLETED", label: `Completed / Expired (${counts.expired})` },
         ].map((tab) => (
-          <button
+          <Button
             key={tab.id}
-            type="button"
+            variant={statusFilter === tab.id ? "contained" : "text"}
             onClick={() => setStatusFilter(tab.id)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-              statusFilter === tab.id
-                ? "bg-scholar-600 text-white shadow-xs"
-                : "text-scholar-600 hover:bg-scholar-50"
-            }`}
+            size="small"
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              px: 1.5,
+              py: 0.75,
+              bgcolor: statusFilter === tab.id ? "#1E3A5F" : "transparent",
+              color: statusFilter === tab.id ? "white" : "#4E6E93",
+              "&:hover": { bgcolor: statusFilter === tab.id ? "#182F4C" : "#EEF2F7" },
+              boxShadow: statusFilter === tab.id ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+            }}
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
-      </div>
+      </Box>
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-paper px-3 py-2 sm:max-w-xs sm:flex-1">
-            <Search size={16} className="text-scholar-300" />
-            <input
-              placeholder="Search batches, course, campus..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-scholar-300"
-            />
-          </div>
-
+      <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
+          <TextField
+            size="small"
+            placeholder="Search batches, course, campus..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: 1, maxWidth: { sm: 320 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" } }}
+          />
           {branches.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Filter size={14} className="text-scholar-400" />
-              <select
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Filter size={14} style={{ color: "#94A3B8" }} />
+              <Select
+                size="small"
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-semibold text-scholar-700 outline-none"
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600, minWidth: 160, "& .MuiOutlinedInput-notchedOutline": { borderColor: "#D6E0EB" } }}
               >
-                <option value="ALL">All Branches ({batches.length})</option>
-                <option value="MAIN">Main Branch / Unallocated</option>
+                <MenuItem value="ALL">All Branches ({batches.length})</MenuItem>
+                <MenuItem value="MAIN">Main Branch / Unallocated</MenuItem>
                 {branches.map((br) => (
-                  <option key={br.id} value={br.id}>
+                  <MenuItem key={br.id} value={br.id}>
                     {br.name} {br.city ? `(${br.city})` : ""}
-                  </option>
+                  </MenuItem>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </Box>
           )}
-        </div>
-
+        </Box>
         {canEdit && (
-          <button
+          <Button
+            variant="contained"
+            startIcon={<Plus size={15} />}
             onClick={() => setOpenAdd(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-scholar-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 transition-colors shadow-xs"
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.75rem", px: 2, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
-            <Plus size={15} /> Add Batch
-          </button>
+            Add Batch
+          </Button>
         )}
-      </div>
+      </Box>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredBatches.map((b) => {

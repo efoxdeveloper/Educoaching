@@ -2,23 +2,33 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  Plus,
-  Trash2,
-  Building2,
-  Clock,
-  Info,
-  Pencil,
-  Calendar,
-} from "lucide-react";
-
+import { Search, Plus, Trash2, Building2, Clock, Info, Pencil, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AddCourseDrawer } from "./AddCourseDrawer";
 import { EditCourseDrawer } from "./EditCourseDrawer";
 import { formatDate } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 
 export type CourseItem = {
   id: string;
@@ -68,10 +78,7 @@ export function CoursesTable({
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.targetExam?.toLowerCase().includes(query.toLowerCase()) ||
         c.branches?.some((b) => b.name.toLowerCase().includes(query.toLowerCase()));
-
-      const matchFeeType =
-        feeTypeFilter === "ALL" || (c.feeType || "ONE_TIME") === feeTypeFilter;
-
+      const matchFeeType = feeTypeFilter === "ALL" || (c.feeType || "ONE_TIME") === feeTypeFilter;
       return matchQuery && matchFeeType;
     });
   }, [courses, query, feeTypeFilter]);
@@ -98,369 +105,228 @@ export function CoursesTable({
   return (
     <>
       <Card className="p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2 sm:flex-1">
-            <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 sm:max-w-xs flex-1">
-              <Search size={16} className="text-scholar-300" />
-              <input
-                placeholder="Search courses, exams, branches..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-scholar-300"
-              />
-            </div>
-
-            {/* Filter by Fee Type */}
-            <select
-              value={feeTypeFilter}
-              onChange={(e) => setFeeTypeFilter(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-xs font-semibold text-scholar-700 outline-none"
-            >
-              <option value="ALL">All Fee Types</option>
-              <option value="ONE_TIME">Full Course Fee</option>
-              <option value="MONTHLY">Monthly Recurring</option>
-              <option value="QUARTERLY">Quarterly Recurring</option>
-              <option value="ANNUAL">Annual Fee</option>
-            </select>
-          </div>
-
-          <button
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mb: 2.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", flex: 1, gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+            <TextField
+              size="small"
+              placeholder="Search courses, exams, branches..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} style={{ color: "#7E9BBC" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{
+                flex: 1,
+                maxWidth: { sm: 320 },
+                "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" },
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="fee-type-label" sx={{ fontSize: "0.75rem" }}>Fee Type</InputLabel>
+              <Select
+                labelId="fee-type-label"
+                value={feeTypeFilter}
+                label="Fee Type"
+                onChange={(e) => setFeeTypeFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="ALL">All Fee Types</MenuItem>
+                <MenuItem value="ONE_TIME">Full Course Fee</MenuItem>
+                <MenuItem value="MONTHLY">Monthly Recurring</MenuItem>
+                <MenuItem value="QUARTERLY">Quarterly Recurring</MenuItem>
+                <MenuItem value="ANNUAL">Annual Fee</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={16} />}
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-scholar-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 shadow-xs"
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.875rem", px: 2, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
-            <Plus size={16} />
             Add Course
-          </button>
-        </div>
+          </Button>
+        </Box>
 
         {deleteError && (
-          <p className="mb-4 rounded-xl bg-danger-50 px-3 py-2.5 text-sm text-danger-600 font-medium">
+          <Alert severity="error" sx={{ mb: 2, borderRadius: "12px", fontSize: "0.875rem", fontWeight: 500 }}>
             {deleteError}
-          </p>
+          </Alert>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[750px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-scholar-100 text-left text-xs font-medium uppercase tracking-wide text-scholar-400">
-                <th className="py-3 pr-4">Course & Target Exam</th>
-                <th className="py-3 pr-4">Fee Structure</th>
-                <th className="py-3 pr-4">Branch Allocation</th>
-                <th className="py-3 pr-4">Duration</th>
-                <th className="py-3 pr-4">Batches</th>
-                <th className="py-3 pr-4">Students</th>
-                <th className="py-3 pr-2 text-right">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none", overflowX: "auto" }}>
+          <Table sx={{ minWidth: 750 }} size="small">
+            <TableHead>
+              <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.75rem", fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
+                <TableCell>Course & Target Exam</TableCell>
+                <TableCell>Fee Structure</TableCell>
+                <TableCell>Branch Allocation</TableCell>
+                <TableCell>Duration</TableCell>
+                <TableCell align="center">Batches</TableCell>
+                <TableCell align="center">Students</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-xs text-scholar-400">
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4, fontSize: "0.75rem", color: "#7E9BBC" }}>
                     No courses found. Click &quot;Add Course&quot; to create one.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filtered.map((c) => {
                   const isMonthly = c.feeType === "MONTHLY";
                   const isQuarterly = c.feeType === "QUARTERLY";
                   const isAnnual = c.feeType === "ANNUAL";
-
                   return (
-                    <tr key={c.id} className="border-b border-scholar-50 last:border-0 hover:bg-paper/60 transition-colors">
-                      {/* Course Name & Exam */}
-                      <td className="py-3.5 pr-4">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-ink text-sm">{c.name}</span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            {c.targetExam && (
-                              <span className="inline-flex items-center rounded-md bg-scholar-50 px-1.5 py-0.5 text-[11px] font-bold text-scholar-700 border border-scholar-200">
-                                {c.targetExam}
-                              </span>
-                            )}
-                            {c.academicYear && (
-                              <span className="inline-flex items-center rounded-md bg-indigo-50 px-1.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
-                                {c.academicYear}
-                              </span>
-                            )}
-                            {c.eligibility && (
-                              <span className="text-[11px] text-scholar-400 truncate max-w-[150px]">
-                                • {c.eligibility}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Fee Structure */}
-                      <td className="py-3.5 pr-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-ink">
-                            ₹{Number(c.fee).toLocaleString("en-IN")}
-                          </span>
-                          <span className="mt-0.5">
-                            {isMonthly ? (
-                              <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
-                                Monthly Recurring
-                              </span>
-                            ) : isQuarterly ? (
-                              <span className="inline-flex rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-cyan-700 border border-cyan-200">
-                                Quarterly Recurring
-                              </span>
-                            ) : isAnnual ? (
-                              <span className="inline-flex rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
-                                Annual Fee
-                              </span>
-                            ) : (
-                              <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                                Full Course (One-Time / Installments)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Branch Allocation */}
-                      <td className="py-3.5 pr-4">
+                    <TableRow key={c.id} hover sx={{ "&:last-child td": { borderBottom: 0 }, "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75, pr: 2 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{c.name}</Typography>
+                          <Stack direction="row" spacing={0.75} sx={{ mt: 0.5, flexWrap: "wrap", alignItems: "center" }}>
+                            {c.targetExam && <Chip label={c.targetExam} size="small" variant="outlined" sx={{ fontSize: "11px", fontWeight: 700, bgcolor: "#EEF2F7", borderColor: "#D6E0EB", height: 20, borderRadius: "6px" }} />}
+                            {c.academicYear && <Chip label={c.academicYear} size="small" variant="outlined" sx={{ fontSize: "11px", fontWeight: 700, bgcolor: "#e0e7ff", color: "#4338ca", borderColor: "#c7d2fe", height: 20, borderRadius: "6px" }} />}
+                            {c.eligibility && <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>• {c.eligibility}</Typography>}
+                          </Stack>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21" }}>₹{Number(c.fee).toLocaleString("en-IN")}</Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            {isMonthly ? <Chip label="Monthly Recurring" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", height: 20, borderRadius: "9999px" }} />
+                              : isQuarterly ? <Chip label="Quarterly Recurring" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#ecfeff", color: "#0e7490", border: "1px solid #a5f3fc", height: 20, borderRadius: "9999px" }} />
+                              : isAnnual ? <Chip label="Annual Fee" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#faf5ff", color: "#7e22ce", border: "1px solid #e9d5ff", height: 20, borderRadius: "9999px" }} />
+                              : <Chip label="Full Course (One-Time / Installments)" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", height: 20, borderRadius: "9999px" }} />}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
                         {c.isAllBranches !== false || !c.branches || c.branches.length === 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-scholar-50 px-2 py-1 text-xs font-semibold text-scholar-700 border border-scholar-200">
-                            <Building2 size={12} className="text-scholar-500" /> All Branches
-                          </span>
+                          <Chip icon={<Building2 size={12} style={{ color: "#64748b" }} />} label="All Branches" size="small" variant="outlined" sx={{ fontSize: "0.75rem", fontWeight: 600, bgcolor: "#EEF2F7", borderColor: "#D6E0EB", height: 28, borderRadius: "8px" }} />
                         ) : (
-                          <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 border border-amber-200 w-fit">
-                              <Building2 size={12} className="text-amber-600" />
-                              {c.branches.length} {c.branches.length === 1 ? "Branch" : "Branches"}
-                            </span>
-                            <span className="text-[11px] text-scholar-400 truncate max-w-[160px] mt-0.5">
-                              {c.branches.map((b) => b.name).join(", ")}
-                            </span>
-                          </div>
+                          <Box sx={{ display: "flex", flexDirection: "column" }}>
+                            <Chip icon={<Building2 size={12} style={{ color: "#d97706" }} />} label={`${c.branches.length} ${c.branches.length === 1 ? "Branch" : "Branches"}`} size="small" sx={{ fontSize: "0.75rem", fontWeight: 600, bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #fde68a", height: 28, borderRadius: "8px", width: "fit-content" }} />
+                            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", mt: 0.5 }}>{c.branches.map((b) => b.name).join(", ")}</Typography>
+                          </Box>
                         )}
-                      </td>
-
-                      {/* Duration */}
-                      <td className="py-3.5 pr-4 text-scholar-600 text-xs">
-                        <div className="flex flex-col gap-0.5">
-                          {c.duration ? (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-scholar-50 px-2 py-0.5 text-xs font-semibold text-scholar-800 border border-scholar-200 w-fit">
-                              <Clock size={11} className="text-scholar-600" /> {c.duration}
-                            </span>
-                          ) : (
-                            <span className="text-scholar-300">—</span>
-                          )}
-
-                          {c.startDate && (
-                            <span className="text-[10px] text-scholar-500">
-                              Starts: {formatDate(c.startDate)}
-                            </span>
-                          )}
-
-                          {c.endDate && (
-                            <span
-                              className={`text-[10px] font-semibold ${
-                                new Date() > new Date(c.endDate)
-                                  ? "text-danger-600"
-                                  : "text-emerald-700"
-                              }`}
-                            >
-                              {new Date() > new Date(c.endDate)
-                                ? "⏳ Expired / Completed"
-                                : `Ends: ${formatDate(c.endDate)}`}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Batches & Students */}
-                      <td className="py-3.5 pr-4 text-scholar-700 tabular-nums font-medium">
-                        {c._count.batches}
-                      </td>
-                      <td className="py-3.5 pr-4 text-scholar-700 tabular-nums font-medium">
-                        {c._count.students}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3.5 pr-2 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => setEditCourse(c)}
-                            className="rounded-lg p-1.5 text-scholar-500 hover:bg-scholar-100 hover:text-scholar-800 transition-colors"
-                            title="Edit Course & Duration"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={() => setSelectedCourse(c)}
-                            className="rounded-lg p-1.5 text-scholar-400 hover:bg-scholar-50 hover:text-scholar-700 transition-colors"
-                            title="View Syllabus & Course Details"
-                          >
-                            <Info size={15} />
-                          </button>
-                          <button
-                            onClick={() => setCourseToDelete(c)}
-                            className="rounded-lg p-1.5 text-scholar-400 hover:bg-danger-50 hover:text-danger-600 transition-colors"
-                            title="Delete course"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell sx={{ color: "#4E6E93", fontSize: "0.75rem" }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                          {c.duration ? <Chip icon={<Clock size={11} style={{ color: "#475569" }} />} label={c.duration} size="small" variant="outlined" sx={{ fontSize: "0.75rem", fontWeight: 600, bgcolor: "#EEF2F7", borderColor: "#D6E0EB", height: 22, borderRadius: "6px", width: "fit-content" }} /> : <Typography variant="caption" sx={{ color: "#94A3B8" }}>—</Typography>}
+                          {c.startDate && <Typography variant="caption" sx={{ fontSize: "10px", color: "#64748b" }}>Starts: {formatDate(c.startDate)}</Typography>}
+                          {c.endDate && <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: new Date() > new Date(c.endDate) ? "#D64545" : "#1F9D66" }}>{new Date() > new Date(c.endDate) ? "⏳ Expired / Completed" : `Ends: ${formatDate(c.endDate)}`}</Typography>}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500, color: "#334155" }}>{c._count.batches}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500, color: "#334155" }}>{c._count.students}</TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                          <IconButton size="small" onClick={() => setEditCourse(c)} title="Edit Course & Duration" sx={{ color: "#64748b", "&:hover": { bgcolor: "#EEF2F7", color: "#1E3A5F" } }}><Pencil size={15} /></IconButton>
+                          <IconButton size="small" onClick={() => setSelectedCourse(c)} title="View Syllabus & Course Details" sx={{ color: "#94A3B8", "&:hover": { bgcolor: "#EEF2F7", color: "#334155" } }}><Info size={15} /></IconButton>
+                          <IconButton size="small" onClick={() => setCourseToDelete(c)} title="Delete course" sx={{ color: "#94A3B8", "&:hover": { bgcolor: "#FCEBEA", color: "#D64545" } }}><Trash2 size={15} /></IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
 
-      {/* Add Course Drawer */}
-      <AddCourseDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        availableBranches={availableBranches}
-      />
+      <AddCourseDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} availableBranches={availableBranches} />
 
-      {/* Course Details Modal/Drawer */}
       {selectedCourse && (
-        <Drawer
-          open={!!selectedCourse}
-          onClose={() => setSelectedCourse(null)}
-          title={selectedCourse.name}
-        >
-          <div className="space-y-4 text-sm pb-6">
-            {/* Header info */}
-            <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-scholar-500 uppercase tracking-wider">
-                  Target Exam
-                </span>
-                <span className="rounded-md bg-scholar-600 text-white px-2 py-0.5 text-xs font-bold">
-                  {selectedCourse.targetExam || "General Academic"}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pt-1 border-t border-scholar-200/60">
-                <span className="text-xs font-bold text-scholar-500 uppercase tracking-wider">
-                  Fee Structure
-                </span>
-                <span className="font-bold text-ink text-base">
-                  ₹{Number(selectedCourse.fee).toLocaleString("en-IN")}{" "}
-                  <span className="text-xs font-semibold text-scholar-500">
-                    {selectedCourse.feeType === "MONTHLY"
-                      ? "/ month"
-                      : selectedCourse.feeType === "QUARTERLY"
-                      ? "/ quarter (every 3 months)"
-                      : selectedCourse.feeType === "ANNUAL"
-                      ? "/ year"
-                      : "(Full Course / Installments)"}
-                  </span>
-                </span>
-              </div>
-
+        <Drawer open={!!selectedCourse} onClose={() => setSelectedCourse(null)} title={selectedCourse.name}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, fontSize: "0.875rem", pb: 3 }}>
+            <Box sx={{ border: "1px solid #D6E0EB", borderRadius: "12px", bgcolor: "rgba(238,242,247,0.6)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>Target Exam</Typography>
+                <Chip label={selectedCourse.targetExam || "General Academic"} size="small" sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 22, borderRadius: "6px" }} />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pt: 1, borderTop: "1px solid rgba(214,224,235,0.6)" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", fontSize: "0.75rem" }}>Fee Structure</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1rem" }}>
+                  ₹{Number(selectedCourse.fee).toLocaleString("en-IN")} <Box component="span" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b" }}>{selectedCourse.feeType === "MONTHLY" ? "/ month" : selectedCourse.feeType === "QUARTERLY" ? "/ quarter (every 3 months)" : selectedCourse.feeType === "ANNUAL" ? "/ year" : "(Full Course / Installments)"}</Box>
+                </Typography>
+              </Box>
               {selectedCourse.duration && (
-                <div className="flex items-center justify-between pt-1 border-t border-scholar-200/60 text-xs">
-                  <span className="font-bold text-scholar-500 uppercase tracking-wider">Duration</span>
-                  <span className="font-semibold text-scholar-800 flex items-center gap-1">
-                    <Clock size={12} className="text-scholar-500" /> {selectedCourse.duration}
-                  </span>
-                </div>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pt: 1, borderTop: "1px solid rgba(214,224,235,0.6)", fontSize: "0.75rem" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", fontSize: "0.75rem" }}>Duration</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#1E3A5F", display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem" }}><Clock size={12} style={{ color: "#64748b" }} /> {selectedCourse.duration}</Typography>
+                </Box>
               )}
-
               {selectedCourse.eligibility && (
-                <div className="flex items-center justify-between pt-1 border-t border-scholar-200/60 text-xs">
-                  <span className="font-bold text-scholar-500 uppercase tracking-wider">Eligibility</span>
-                  <span className="font-semibold text-scholar-800">{selectedCourse.eligibility}</span>
-                </div>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pt: 1, borderTop: "1px solid rgba(214,224,235,0.6)", fontSize: "0.75rem" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", textTransform: "uppercase", fontSize: "0.75rem" }}>Eligibility</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#1E3A5F", fontSize: "0.75rem" }}>{selectedCourse.eligibility}</Typography>
+                </Box>
               )}
-            </div>
+            </Box>
 
-            {/* Branch Allocation Breakdown */}
-            <div className="rounded-xl border border-scholar-200 bg-white p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-                <Building2 size={15} className="text-scholar-600" /> Branch Allocation
-              </h4>
+            <Box sx={{ border: "1px solid #D6E0EB", borderRadius: "12px", bgcolor: "white", p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}><Building2 size={15} style={{ color: "#475569" }} /> Branch Allocation</Typography>
               {selectedCourse.isAllBranches !== false || !selectedCourse.branches || selectedCourse.branches.length === 0 ? (
-                <p className="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 font-semibold">
-                  ✓ Available across all branches of the institute.
-                </p>
+                <Alert severity="success" variant="outlined" sx={{ fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px", bgcolor: "#ecfdf5", borderColor: "#a7f3d0", color: "#047857" }}>✓ Available across all branches of the institute.</Alert>
               ) : (
-                <div className="space-y-1.5 pt-1">
-                  <p className="text-xs text-scholar-600">
-                    This course is exclusively delivered at the following {selectedCourse.branches.length} branches:
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, pt: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>This course is exclusively delivered at the following {selectedCourse.branches.length} branches:</Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                     {selectedCourse.branches.map((b) => (
-                      <span
-                        key={b.id}
-                        className="rounded-lg bg-scholar-100 border border-scholar-200 px-2.5 py-1 text-xs font-bold text-scholar-800"
-                      >
-                        {b.name} {b.city ? `(${b.city})` : ""}
-                      </span>
+                      <Chip key={b.id} label={`${b.name} ${b.city ? `(${b.city})` : ""}`} size="small" sx={{ bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", fontWeight: 700, fontSize: "0.75rem", borderRadius: "8px", height: 24 }} />
                     ))}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               )}
-            </div>
+            </Box>
 
-            {/* Course Description & Syllabus Details */}
-            <div className="rounded-xl border border-scholar-200 bg-white p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-scholar-800">
-                Course Inclusions & Syllabus Overview
-              </h4>
-              {selectedCourse.description ? (
-                <p className="text-xs text-scholar-700 whitespace-pre-line leading-relaxed">
-                  {selectedCourse.description}
-                </p>
-              ) : (
-                <p className="text-xs text-scholar-400 italic">
-                  No syllabus description entered for this course yet.
-                </p>
-              )}
-            </div>
+            <Box sx={{ border: "1px solid #D6E0EB", borderRadius: "12px", bgcolor: "white", p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b" }}>Course Inclusions & Syllabus Overview</Typography>
+              {selectedCourse.description ? <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#334155", whiteSpace: "pre-line", lineHeight: 1.6 }}>{selectedCourse.description}</Typography> : <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#94A3B8", fontStyle: "italic" }}>No syllabus description entered for this course yet.</Typography>}
+            </Box>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 text-center pt-1">
-              <div className="rounded-lg bg-scholar-50 border border-scholar-100 p-2.5">
-                <p className="text-lg font-bold text-scholar-900 tabular-nums">{selectedCourse._count.batches}</p>
-                <p className="text-[10px] uppercase font-bold text-scholar-500">Batches</p>
-              </div>
-              <div className="rounded-lg bg-scholar-50 border border-scholar-100 p-2.5">
-                <p className="text-lg font-bold text-scholar-900 tabular-nums">{selectedCourse._count.students}</p>
-                <p className="text-[10px] uppercase font-bold text-scholar-500">Students</p>
-              </div>
-              <div className="rounded-lg bg-scholar-50 border border-scholar-100 p-2.5">
-                <p className="text-lg font-bold text-scholar-900 tabular-nums">{selectedCourse._count.subjects}</p>
-                <p className="text-[10px] uppercase font-bold text-scholar-500">Subjects</p>
-              </div>
-            </div>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, pt: 0.5 }}>
+              <Box sx={{ borderRadius: "8px", bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", p: 1.25, textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1E293b", fontSize: "1.125rem" }}>{selectedCourse._count.batches}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>Batches</Typography>
+              </Box>
+              <Box sx={{ borderRadius: "8px", bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", p: 1.25, textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1E293b", fontSize: "1.125rem" }}>{selectedCourse._count.students}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>Students</Typography>
+              </Box>
+              <Box sx={{ borderRadius: "8px", bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", p: 1.25, textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1E293b", fontSize: "1.125rem" }}>{selectedCourse._count.subjects}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>Subjects</Typography>
+              </Box>
+            </Box>
 
-            <div className="pt-2 border-t border-scholar-100 flex justify-end">
-              <button
-                type="button"
+            <Box sx={{ pt: 1, borderTop: "1px solid #D6E0EB", display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                startIcon={<Pencil size={13} />}
                 onClick={() => {
                   setEditCourse(selectedCourse);
                   setSelectedCourse(null);
                 }}
-                className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-scholar-700 transition-colors shadow-xs"
+                sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.75rem", px: 2, py: 1, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
               >
-                <Pencil size={13} />
                 Edit Course & Duration
-              </button>
-            </div>
-          </div>
+              </Button>
+            </Box>
+          </Box>
         </Drawer>
       )}
 
-      {/* Edit Course Drawer */}
-      <EditCourseDrawer
-        open={!!editCourse}
-        onClose={() => setEditCourse(null)}
-        course={editCourse}
-        availableBranches={availableBranches}
-        onUpdated={() => router.refresh()}
-      />
+      <EditCourseDrawer open={!!editCourse} onClose={() => setEditCourse(null)} course={editCourse} availableBranches={availableBranches} onUpdated={() => router.refresh()} />
 
       <ConfirmDialog
         open={!!courseToDelete}
@@ -473,8 +339,7 @@ export function CoursesTable({
               Are you sure you want to delete course <strong>&ldquo;{courseToDelete.name}&rdquo;</strong>?{" "}
               {courseToDelete._count.students > 0 && (
                 <span className="block mt-1 text-rose-600 font-semibold">
-                  ⚠️ Note: This course currently has {courseToDelete._count.students} enrolled students and{" "}
-                  {courseToDelete._count.batches} active batches.
+                  ⚠️ Note: This course currently has {courseToDelete._count.students} enrolled students and {courseToDelete._count.batches} active batches.
                 </span>
               )}
             </span>

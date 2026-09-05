@@ -1,9 +1,20 @@
+"use client";
+
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
-      {children}
-    </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+      <Typography
+        component="label"
+        variant="body2"
+        sx={{ fontSize: "0.875rem", fontWeight: 500, color: "text.primary", lineHeight: 1.4 }}
+      >
+        {label}
+      </Typography>
+      <Box>{children}</Box>
+    </Box>
   );
 }
 

@@ -1,7 +1,11 @@
 "use client";
 
+import DrawerMUI from "@mui/material/Drawer";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function Drawer({
   open,
@@ -16,29 +20,47 @@ export function Drawer({
   children: React.ReactNode;
   maxWidth?: string;
 }) {
+  // Map Tailwind max-w-* to pixel widths for MUI Drawer Paper
+  const widthMap: Record<string, number> = {
+    "max-w-sm": 380,
+    "max-w-md": 448,
+    "max-w-lg": 512,
+    "max-w-xl": 576,
+    "max-w-2xl": 672,
+  };
+  const paperWidth = widthMap[maxWidth] || 448;
+
   return (
-    <div
-      className={cn(
-        "fixed inset-0 z-50 transition-opacity",
-        open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-      )}
+    <DrawerMUI
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      slotProps={{
+        backdrop: { sx: { bgcolor: "rgba(13,26,42,0.4)" } },
+      }}
+      sx={{
+        zIndex: 50,
+        "& .MuiDrawer-paper": {
+          width: "100%",
+          maxWidth: paperWidth,
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+          boxShadow: "0 8px 30px rgba(13,26,42,0.12)",
+          borderLeft: "1px solid #D6E0EB",
+          boxSizing: "border-box",
+        },
+      }}
     >
-      <div className="absolute inset-0 bg-scholar-900/40" onClick={onClose} />
-      <div
-        className={cn(
-          "absolute right-0 top-0 flex h-full w-full flex-col bg-white shadow-popover transition-transform duration-200",
-          maxWidth,
-          open ? "translate-x-0" : "translate-x-full"
-        )}
-      >
-        <div className="flex items-center justify-between border-b border-scholar-100 px-6 py-4">
-          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
-          <button onClick={onClose} className="text-scholar-400 hover:text-ink" aria-label="Close">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-      </div>
-    </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", px: 3, py: 2 }}>
+        <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontSize: "1.125rem", fontWeight: 600, color: "text.primary" }}>
+          {title}
+        </Typography>
+        <IconButton onClick={onClose} aria-label="Close" size="small" sx={{ color: "text.secondary", "&:hover": { color: "text.primary", bgcolor: "rgba(0,0,0,0.04)" } }}>
+          <X size={20} />
+        </IconButton>
+      </Box>
+      <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 2.5 }}>{children}</Box>
+    </DrawerMUI>
   );
 }
