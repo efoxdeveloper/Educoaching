@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { Mail, Lock, GraduationCap, AlertCircle, Phone, ArrowRight, Clock, Eye, EyeOff } from "lucide-react";
+import { TRIAL_DAYS } from "@/lib/pricing";
 
 export function LoginForm() {
   const router = useRouter();
@@ -420,7 +421,7 @@ export function LoginForm() {
               <p className="text-center text-xs text-scholar-500">
                 New institute owner?{" "}
                 <Link href="/signup" className="font-bold text-scholar-700 hover:underline">
-                  Register your Institute (14-day Free Trial)
+                  Register your Institute ({TRIAL_DAYS}-day Free Trial)
                 </Link>
               </p>
             </div>
