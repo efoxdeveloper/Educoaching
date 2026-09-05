@@ -23,7 +23,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-scholar-900 text-scholar-50 transition-transform duration-200 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-scholar-900 text-scholar-50 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:overflow-hidden lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -42,7 +42,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href + "/"));
             return (
