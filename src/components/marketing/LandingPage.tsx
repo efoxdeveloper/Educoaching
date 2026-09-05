@@ -22,40 +22,31 @@ export function LandingPage() {
       {/* Top bar */}
       <header className="border-b border-scholar-100 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-marigold-400 text-scholar-900">
-                <GraduationCap size={20} strokeWidth={2.5} />
-              </div>
-
-              <span className="font-display text-lg font-semibold text-ink">
-                Vidyalaya
-              </span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-marigold-400 text-scholar-900">
+              <GraduationCap size={20} strokeWidth={2.5} />
             </div>
 
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/login?portal=institute"
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
-              >
-                Institute
-              </Link>
-
-              <Link
-                href="/login?portal=admin"
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
-              >
-                Admin
-              </Link>
-            </nav>
+            <span className="font-display text-lg font-semibold text-ink">
+              Vidyalaya
+            </span>
           </div>
 
-          <Link
-            href="/signup"
-            className="rounded-xl bg-scholar-600 px-4 py-2 text-sm font-semibold text-white hover:bg-scholar-700"
-          >
-            Start free trial
-          </Link>
+          <nav className="flex items-center gap-1">
+            <Link
+              href="/login?portal=institute"
+              className="rounded-lg px-3 py-1.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
+            >
+              Institute
+            </Link>
+
+            <Link
+              href="/login?portal=admin"
+              className="rounded-lg px-3 py-1.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
+            >
+              Admin
+            </Link>
+          </nav>
         </div>
       </header>
 
