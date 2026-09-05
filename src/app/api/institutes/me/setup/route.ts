@@ -24,7 +24,10 @@ interface CourseInput {
   name: string;
   code?: string;
   fee: number;
+  duration?: string;
   durationMonths?: number;
+  // Structured alternative: { years, months, days }
+  durationParts?: { years?: number; months?: number; days?: number };
   feeType?: "ONE_TIME" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
   academicYear?: string;
 }
@@ -229,18 +232,43 @@ export async function POST(req: Request) {
     }
   }
 
-  // 5. Create initial courses
+  // 5. Create initial courses — supports new flexible duration (Days / Months / Years / Custom)
   if (Array.isArray(courses) && courses.length > 0) {
+    const { parseCourseDuration, formatCourseDuration } = await import("@/lib/course-duration");
     for (const c of courses) {
       if (!c.name || !c.name.trim()) continue;
       try {
+        let durationToStore: string | null = null;
+        if (c.duration && String(c.duration).trim()) {
+          const raw = String(c.duration).trim();
+          const parts = parseCourseDuration(raw);
+          // Validation: at least one >0, no negatives (parse already clamps negatives via Math.max)
+          if (parts.years === 0 && parts.months === 0 && parts.days === 0) {
+            durationToStore = "1 Year"; // fallback to prevent blank/invalid
+          } else {
+            durationToStore = formatCourseDuration(parts); // canonical, unambiguous
+          }
+        } else if (c.durationParts && typeof c.durationParts === "object") {
+          const y = Math.max(0, Math.floor(Number(c.durationParts.years) || 0));
+          const m = Math.max(0, Math.floor(Number(c.durationParts.months) || 0));
+          const d = Math.max(0, Math.floor(Number(c.durationParts.days) || 0));
+          if (y === 0 && m === 0 && d === 0) durationToStore = "1 Year";
+          else durationToStore = formatCourseDuration({ years: y, months: m, days: d });
+        } else if (c.durationMonths) {
+          // Backward-compat: legacy months-only number
+          const parts = parseCourseDuration(`${c.durationMonths} months`);
+          durationToStore = formatCourseDuration(parts);
+        } else {
+          durationToStore = null;
+        }
+
         await prisma.course.create({
           data: {
             instituteId: ctx.instituteId,
             name: c.name.trim(),
             fee: Number(c.fee) || 0,
             feeType: c.feeType || "ONE_TIME",
-            duration: c.durationMonths ? `${c.durationMonths} months` : null,
+            duration: durationToStore,
             targetExam: c.code?.trim() || null,
             academicYear: c.academicYear?.trim() || academicYearLabel?.trim() || institute.academicYearLabel || null,
             isAllBranches: true,

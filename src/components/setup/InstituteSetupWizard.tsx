@@ -26,7 +26,13 @@ import {
   Eye,
   EyeOff,
   Pencil,
+  Clock,
 } from "lucide-react";
+import {
+  parseCourseDuration,
+  formatCourseDuration,
+  calculateCourseEndDate,
+} from "@/lib/course-duration";
 
 interface SubBranchItem {
   name: string;
@@ -44,7 +50,9 @@ interface CourseItem {
   name: string;
   code: string;
   fee: number | string;
-  durationMonths: number;
+  duration: string;
+  // Legacy field for backward-compat reads (old courses stored as months number)
+  durationMonths?: number;
   feeType: "ONE_TIME" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
   academicYear?: string;
 }
@@ -113,7 +121,7 @@ export function InstituteSetupWizard({
   });
   const [showBranchPassword, setShowBranchPassword] = useState(false);
 
-  // Step 4: Initial Courses
+  // Step 4: Initial Courses — flexible duration (Days / Months / Years / Custom)
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [isAddingCourse, setIsAddingCourse] = useState(false);
   const [editingCourseIndex, setEditingCourseIndex] = useState<number | null>(null);
@@ -121,10 +129,83 @@ export function InstituteSetupWizard({
     name: "",
     code: "",
     fee: "",
-    durationMonths: 12,
+    duration: "1 Year",
     feeType: "ONE_TIME",
     academicYear: "",
   });
+
+  // Duration builder state — supports Days / Months / Years + Custom (years+months+days)
+  const [durationValue, setDurationValue] = useState<number>(1);
+  const [durationUnit, setDurationUnit] = useState<"Days" | "Months" | "Years" | "Custom">("Years");
+  const [customYears, setCustomYears] = useState(1);
+  const [customMonths, setCustomMonths] = useState(6);
+  const [customDays, setCustomDays] = useState(0);
+
+  // Keep derived duration string in sync with builder UI
+  const buildDurationString = (
+    val: number,
+    unit: "Days" | "Months" | "Years" | "Custom",
+    cY: number,
+    cM: number,
+    cD: number
+  ): string => {
+    const clean = (n: number) => Math.max(0, Math.floor(n));
+    if (unit === "Custom") {
+      const y = clean(cY);
+      const m = clean(cM);
+      const d = clean(cD);
+      // At least one must be >0 enforced by validation; default to 0,0,0 -> will be caught
+      return formatCourseDuration({ years: y, months: m, days: d });
+    }
+    const v = clean(val);
+    if (unit === "Days") return formatCourseDuration({ years: 0, months: 0, days: v });
+    if (unit === "Months") return formatCourseDuration({ years: 0, months: v, days: 0 });
+    return formatCourseDuration({ years: v, months: 0, days: 0 });
+  };
+
+  // When builder changes, push to newCourse.duration
+  const syncDurationFromBuilder = (
+    val: number = durationValue,
+    unit: "Days" | "Months" | "Years" | "Custom" = durationUnit,
+    cY: number = customYears,
+    cM: number = customMonths,
+    cD: number = customDays
+  ) => {
+    const str = buildDurationString(val, unit, cY, cM, cD);
+    setNewCourse((prev) => ({ ...prev, duration: str }));
+  };
+
+  // Populate builder from an existing duration string (for edit)
+  const populateBuilderFromDuration = (durationStr: string) => {
+    const parts = parseCourseDuration(durationStr);
+    // Heuristic: if more than one part non-zero -> Custom, else single unit
+    const nonZero = [parts.years > 0, parts.months > 0, parts.days > 0].filter(Boolean).length;
+    if (nonZero > 1) {
+      setDurationUnit("Custom");
+      setCustomYears(parts.years);
+      setCustomMonths(parts.months);
+      setCustomDays(parts.days);
+      setDurationValue(1);
+    } else if (parts.days > 0) {
+      setDurationUnit("Days");
+      setDurationValue(parts.days);
+      setCustomYears(parts.years);
+      setCustomMonths(parts.months);
+      setCustomDays(parts.days);
+    } else if (parts.months > 0) {
+      setDurationUnit("Months");
+      setDurationValue(parts.months);
+      setCustomYears(parts.years);
+      setCustomMonths(parts.months);
+      setCustomDays(parts.days);
+    } else {
+      setDurationUnit("Years");
+      setDurationValue(parts.years || 1);
+      setCustomYears(parts.years);
+      setCustomMonths(parts.months);
+      setCustomDays(parts.days);
+    }
+  };
 
   // UI status
   const [error, setError] = useState("");
@@ -213,7 +294,15 @@ export function InstituteSetupWizard({
 
   const handleEditCourse = (index: number) => {
     setEditingCourseIndex(index);
-    setNewCourse({ ...courses[index] });
+    const existing = courses[index];
+    // Backward-compat: if old course had durationMonths, convert to duration string
+    let durationStr = existing.duration;
+    if (!durationStr && existing.durationMonths) {
+      durationStr = formatCourseDuration({ years: 0, months: existing.durationMonths, days: 0 });
+    }
+    if (!durationStr) durationStr = "1 Year";
+    setNewCourse({ ...existing, duration: durationStr });
+    populateBuilderFromDuration(durationStr);
     setIsAddingCourse(true);
     setError("");
   };
@@ -225,10 +314,16 @@ export function InstituteSetupWizard({
       name: "",
       code: "",
       fee: "",
-      durationMonths: 12,
+      duration: "1 Year",
       feeType: "ONE_TIME",
       academicYear: academicYearLabel || "2026-2027",
     });
+    // Reset builder to default 1 Year
+    setDurationValue(1);
+    setDurationUnit("Years");
+    setCustomYears(1);
+    setCustomMonths(6);
+    setCustomDays(0);
     setError("");
   };
 
@@ -248,11 +343,28 @@ export function InstituteSetupWizard({
       return;
     }
 
+    // Validate duration: at least one of years/months/days > 0, no negatives
+    // Ensure newCourse.duration is synced from builder
+    const currentDurationStr = newCourse.duration || buildDurationString(durationValue, durationUnit, customYears, customMonths, customDays);
+    const parts = parseCourseDuration(currentDurationStr);
+    if (parts.years < 0 || parts.months < 0 || parts.days < 0) {
+      setError("Duration values cannot be negative.");
+      return;
+    }
+    if (parts.years === 0 && parts.months === 0 && parts.days === 0) {
+      setError("Please specify a valid duration — at least one of Days, Months, or Years must be greater than zero.");
+      return;
+    }
+    const normalizedDuration = formatCourseDuration(parts);
+
     const itemToSave: CourseItem = {
       ...newCourse,
+      duration: normalizedDuration,
       fee: feeNum,
       academicYear: newCourse.academicYear?.trim() || academicYearLabel || "2026-2027",
     };
+    // Remove legacy field if present
+    delete (itemToSave as any).durationMonths;
 
     if (editingCourseIndex !== null) {
       setCourses((prev) => prev.map((c, i) => (i === editingCourseIndex ? itemToSave : c)));
@@ -265,10 +377,15 @@ export function InstituteSetupWizard({
       name: "",
       code: "",
       fee: "",
-      durationMonths: 12,
+      duration: "1 Year",
       feeType: "ONE_TIME",
       academicYear: academicYearLabel || "2026-2027",
     });
+    setDurationValue(1);
+    setDurationUnit("Years");
+    setCustomYears(1);
+    setCustomMonths(6);
+    setCustomDays(0);
     setIsAddingCourse(false);
     setError("");
   };
@@ -857,7 +974,7 @@ export function InstituteSetupWizard({
                           )}
                         </div>
                         <p className="text-[11px] text-scholar-500 mt-0.5">
-                          Fee: ₹{Number(c.fee).toLocaleString("en-IN")} • Duration: {c.durationMonths} months • {c.feeType}
+                          Fee: ₹{Number(c.fee).toLocaleString("en-IN")} • Duration: {c.duration || (c.durationMonths ? `${c.durationMonths} months` : "—")} • {c.feeType}
                           {c.academicYear && <span> • Session: {c.academicYear}</span>}
                         </p>
                       </div>
@@ -959,16 +1076,120 @@ export function InstituteSetupWizard({
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-ink">Duration (Months)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={newCourse.durationMonths}
-                        onChange={(e) => setNewCourse({ ...newCourse, durationMonths: Number(e.target.value) || 12 })}
-                        className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
-                      />
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-[11px] font-semibold text-ink flex items-center gap-1.5">
+                        <Clock size={12} className="text-scholar-500" /> Course Duration
+                      </label>
+                      <div className="rounded-xl border border-scholar-200 bg-white p-3 space-y-2.5">
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={durationUnit === "Custom" ? "" : durationValue}
+                            disabled={durationUnit === "Custom"}
+                            onChange={(e) => {
+                              const v = Math.max(0, parseInt(e.target.value) || 0);
+                              setDurationValue(v);
+                              syncDurationFromBuilder(v, durationUnit, customYears, customMonths, customDays);
+                            }}
+                            placeholder={durationUnit === "Custom" ? "—" : "e.g. 15"}
+                            className="flex-1 rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500 disabled:bg-scholar-50"
+                          />
+                          <select
+                            value={durationUnit}
+                            onChange={(e) => {
+                              const unit = e.target.value as "Days" | "Months" | "Years" | "Custom";
+                              setDurationUnit(unit);
+                              // When switching to Custom, keep custom values; sync immediately
+                              if (unit === "Custom") {
+                                syncDurationFromBuilder(durationValue, unit, customYears, customMonths, customDays);
+                              } else {
+                                syncDurationFromBuilder(durationValue, unit, customYears, customMonths, customDays);
+                              }
+                            }}
+                            className="w-36 rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500"
+                          >
+                            <option value="Days">Days</option>
+                            <option value="Months">Months</option>
+                            <option value="Years">Years</option>
+                            <option value="Custom">Custom</option>
+                          </select>
+                        </div>
+
+                        {durationUnit === "Custom" ? (
+                          <div className="space-y-1.5">
+                            <p className="text-[11px] font-semibold text-scholar-600">Combine units — e.g. 1 Year 6 Months</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">Years</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={10}
+                                  value={customYears}
+                                  onChange={(e) => {
+                                    const v = Math.max(0, parseInt(e.target.value) || 0);
+                                    setCustomYears(v);
+                                    syncDurationFromBuilder(durationValue, "Custom", v, customMonths, customDays);
+                                  }}
+                                  className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">Months</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={24}
+                                  value={customMonths}
+                                  onChange={(e) => {
+                                    const v = Math.max(0, parseInt(e.target.value) || 0);
+                                    setCustomMonths(v);
+                                    syncDurationFromBuilder(durationValue, "Custom", customYears, v, customDays);
+                                  }}
+                                  className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">Days</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={365}
+                                  value={customDays}
+                                  onChange={(e) => {
+                                    const v = Math.max(0, parseInt(e.target.value) || 0);
+                                    setCustomDays(v);
+                                    syncDurationFromBuilder(durationValue, "Custom", customYears, customMonths, v);
+                                  }}
+                                  className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            {(customYears === 0 && customMonths === 0 && customDays === 0) && (
+                              <p className="text-[11px] text-rose-600 font-medium">At least one of Years/Months/Days must be &gt; 0</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-scholar-500">
+                            {durationUnit === "Days" && "Short durations — e.g. 15 Days without converting to months"}
+                            {durationUnit === "Months" && "Standard term — e.g. 3 Months, 6 Months"}
+                            {durationUnit === "Years" && "Long programs — e.g. 1 Year, 2 Years"}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between rounded-lg bg-scholar-50 p-2 border border-scholar-200 text-xs">
+                          <span className="font-bold text-scholar-900 flex items-center gap-1.5">
+                            <Clock size={12} className="text-scholar-600" /> {newCourse.duration || "1 Year"}
+                          </span>
+                          <span className="text-[11px] text-scholar-500">
+                            Ends: ~{(() => { try { return new Date(calculateCourseEndDate(new Date(), newCourse.duration || "1 Year")).toLocaleDateString("en-IN"); } catch { return "—"; } })()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="sm:col-span-2">
