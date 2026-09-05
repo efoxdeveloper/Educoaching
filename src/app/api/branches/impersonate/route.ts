@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       action: "BRANCH_IMPERSONATION_ENDED",
       entityType: "Branch",
       entityId: branch.id,
-      metadata: { branchName: branch.name, reason: "Switched to Main Campus" },
+      metadata: { branchName: branch.name, reason: "Switched to Main Branch" },
     });
 
     return NextResponse.json({

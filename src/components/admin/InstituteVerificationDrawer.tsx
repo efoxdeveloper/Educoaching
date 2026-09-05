@@ -169,18 +169,18 @@ Address: ${institute.address || "N/A"}, ${institute.city || "N/A"}, ${institute.
 GSTIN / Tax ID: ${taxNumber || "N/A"}
 Academic Session: ${institute.academicYearLabel || "N/A"}
 
-BRANCH CAMPUSES:
+BRANCHES:
 ${
   institute.branches && institute.branches.length > 0
     ? institute.branches
         .map(
           (b, idx) =>
-            `${idx + 1}. ${b.name} (${b.isMainBranch ? "Main Campus" : "Sub-Branch"}) - ${b.city || "N/A"}, Contact: ${
+            `${idx + 1}. ${b.name} (${b.isMainBranch ? "Main Branch" : "Sub-Branch"}) - ${b.city || "N/A"}, Contact: ${
               b.contact || "N/A"
             }`
         )
         .join("\n")
-    : "Main Campus only"
+    : "Main Branch only"
 }
 ---------------------------------------------`;
     copyToClipboard(summary, "fullSummary");
@@ -400,19 +400,34 @@ ${
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Address */}
+            {/* Address & City */}
             <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100 sm:col-span-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Physical Campus Address
-              </span>
-              <p className="font-semibold text-ink text-xs flex items-start gap-1.5">
-                <MapPin size={14} className="text-scholar-500 shrink-0 mt-0.5" />
-                <span>
-                  {institute.address ? `${institute.address}, ` : ""}
-                  {institute.city ? `${institute.city}, ` : ""}
-                  {institute.state || "Location not specified"}
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400">
+                  Physical Campus Address & City
                 </span>
-              </p>
+                {institute.address && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(institute.address || "", "address")}
+                    className="text-scholar-400 hover:text-scholar-700 cursor-pointer p-0.5"
+                    title="Copy Address"
+                  >
+                    {copiedField === "address" ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                  </button>
+                )}
+              </div>
+              <div className="font-semibold text-ink text-xs flex items-start gap-1.5">
+                <MapPin size={14} className="text-scholar-500 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold text-ink text-sm">
+                    {institute.address || <span className="text-scholar-400 italic font-normal text-xs">No address specified</span>}
+                  </p>
+                  <p className="text-scholar-600 text-xs">
+                    {[institute.city, institute.state].filter(Boolean).join(", ") || (!institute.address ? "Location not specified" : "")}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* GSTIN / Tax ID */}
@@ -497,7 +512,7 @@ ${
                   <div className="flex items-center gap-1.5 shrink-0">
                     {b.isMainBranch && (
                       <span className="rounded bg-scholar-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                        Main Campus
+                        Main Branch
                       </span>
                     )}
                     <span

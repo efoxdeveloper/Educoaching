@@ -226,7 +226,7 @@ export function CreateBranchDrawer({
               ⏳ Platform Admin Access Approval Workflow
             </p>
             <p className="text-[11px] leading-relaxed text-amber-700">
-              When this sub-branch is added, an access request is dispatched to the Platform Administrator. Confirmation emails will be sent to you and the Main Campus owner. Access unlocks immediately upon platform administrator approval.
+              When this sub-branch is added, an access request is dispatched to the Platform Administrator. Confirmation emails will be sent to you and the Main Branch owner. Access unlocks immediately upon platform administrator approval.
             </p>
           </div>
         )}

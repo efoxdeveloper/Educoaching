@@ -137,7 +137,7 @@ export function Topbar({
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.isMainBranch ? `🏛️ ${b.name} (Main Campus)` : `📍 ${b.name}`}
+                    {b.isMainBranch ? `🏛️ ${b.name.replace(/\(Main Campus\)/, "(Main Branch)")}` : `📍 ${b.name}`}
                   </option>
                 ))}
               </select>

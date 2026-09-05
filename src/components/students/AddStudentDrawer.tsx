@@ -518,7 +518,7 @@ export function AddStudentDrawer({
                   setForm({ ...form, branchId: e.target.value, batchId: "" });
                 }}
               >
-                <option value="">All Branches / Main Campus</option>
+                <option value="">All Branches / Main Branch</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name} {b.city ? `(${b.city})` : ""}

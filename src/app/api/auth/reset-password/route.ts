@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { sendPasswordChangedConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,15 @@ export async function POST(request: Request) {
         token,
         expiresAt: {
           gt: new Date(),
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
         },
       },
     });
@@ -63,6 +73,18 @@ export async function POST(request: Request) {
         },
       }),
     ]);
+
+    // Send confirmation email to user/owner
+    if (resetToken.user?.email) {
+      try {
+        await sendPasswordChangedConfirmationEmail({
+          to: resetToken.user.email,
+          userName: resetToken.user.name || "there",
+        });
+      } catch (emailError) {
+        console.error("Failed to send password changed confirmation email:", emailError);
+      }
+    }
 
     return NextResponse.json({
       message:

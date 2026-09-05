@@ -152,7 +152,7 @@ export function BatchesView({
               className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-semibold text-scholar-700 outline-none"
             >
               <option value="ALL">All Branches ({batches.length})</option>
-              <option value="MAIN">Main Campus / Unallocated</option>
+              <option value="MAIN">Main Branch / Unallocated</option>
               {branches.map((br) => (
                 <option key={br.id} value={br.id}>
                   {br.name} {br.city ? `(${br.city})` : ""}
@@ -236,7 +236,7 @@ export function BatchesView({
                     </div>
                   ) : (
                     <span className="text-[11px] text-scholar-500 italic">
-                      Main Campus / Unallocated
+                      Main Branch / Unallocated
                     </span>
                   )}
                 </div>

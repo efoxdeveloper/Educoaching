@@ -30,6 +30,7 @@ export type CourseItem = {
   startDate?: string | null;
   endDate?: string | null;
   targetExam?: string | null;
+  academicYear?: string | null;
   eligibility?: string | null;
   isAllBranches?: boolean;
   branches?: { id: string; name: string; city?: string | null }[];
@@ -175,6 +176,11 @@ export function CoursesTable({
                             {c.targetExam && (
                               <span className="inline-flex items-center rounded-md bg-scholar-50 px-1.5 py-0.5 text-[11px] font-bold text-scholar-700 border border-scholar-200">
                                 {c.targetExam}
+                              </span>
+                            )}
+                            {c.academicYear && (
+                              <span className="inline-flex items-center rounded-md bg-indigo-50 px-1.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+                                {c.academicYear}
                               </span>
                             )}
                             {c.eligibility && (

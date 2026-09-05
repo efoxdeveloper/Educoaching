@@ -13,6 +13,7 @@ import { DEFAULT_INSTITUTE_SETTINGS } from "@/lib/institute-settings";
 
 interface BranchSignupInput {
   name: string;
+  inChargeName?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -63,8 +64,16 @@ export async function POST(req: Request) {
     branches?: BranchSignupInput[];
   };
 
-  if (!instituteName || !ownerName || !email || !mobile || !password) {
+  if (!instituteName || !ownerName || !email || !mobile || !password || !address || !city) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!EMAIL_REGEX.test(email.trim())) {
+    return NextResponse.json(
+      { error: "Please provide a valid email address format." },
+      { status: 400 }
+    );
   }
 
   if (password.length < 8) {
@@ -132,13 +141,13 @@ export async function POST(req: Request) {
 
   const ownerUserId = institute.users[0]?.id;
 
-  // Auto-create the Main Campus branch for the new Institute
+  // Auto-create the Main Branch for the new Institute
   let mainBranchId: string | null = null;
   try {
     const mainBranch = await prisma.branch.create({
       data: {
         instituteId: institute.id,
-        name: `${instituteName.trim()} (Main Campus)`,
+        name: `${instituteName.trim()} (Main Branch)`,
         address: address?.trim() || null,
         city: city?.trim() || null,
         state: state?.trim() || null,
@@ -200,6 +209,7 @@ export async function POST(req: Request) {
           data: {
             instituteId: institute.id,
             name: b.name.trim(),
+            inChargeName: b.inChargeName?.trim() || null,
             address: b.address?.trim() || null,
             city: b.city?.trim() || null,
             state: b.state?.trim() || null,
@@ -290,6 +300,9 @@ export async function POST(req: Request) {
         instituteEmail: institute.email,
         instituteMobile: institute.mobile,
         adminPortalUrl,
+        address: address?.trim() || null,
+        city: city?.trim() || null,
+        state: state?.trim() || null,
       });
     }
   } catch (err) {

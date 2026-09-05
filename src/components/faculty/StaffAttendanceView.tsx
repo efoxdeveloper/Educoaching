@@ -341,8 +341,8 @@ export function StaffAttendanceView({
                 onChange={(e) => setBranchFilter(e.target.value)}
                 className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-semibold text-scholar-700 outline-none"
               >
-                <option value="ALL">All Campuses</option>
-                <option value="MAIN">Main Campus / Unallocated</option>
+                <option value="ALL">All Branches</option>
+                <option value="MAIN">Main Branch / Unallocated</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -411,10 +411,10 @@ export function StaffAttendanceView({
                 filteredFaculty.map((f) => {
                   const currentStatus = marks[f.id] || "PRESENT";
                   const campusName = f.isAllBranches
-                    ? "All Campuses"
+                    ? "All Branches"
                     : f.branches && f.branches.length > 0
                     ? f.branches.map((b) => b.name).join(", ")
-                    : f.branch?.name || "Main Campus";
+                    : f.branch?.name || "Main Branch";
 
                   return (
                     <tr key={f.id} className="hover:bg-scholar-50/40 transition-colors">

@@ -218,8 +218,8 @@ export function FacultyTable({
                 onChange={(e) => setBranchFilter(e.target.value)}
                 className="rounded-xl border border-scholar-100 bg-paper px-3 py-2 text-xs font-medium text-scholar-600 outline-none"
               >
-                <option value="ALL">All Campuses</option>
-                <option value="MAIN">Main Campus / Unallocated</option>
+                <option value="ALL">All Branches</option>
+                <option value="MAIN">Main Branch / Unallocated</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name} {b.city ? `(${b.city})` : ""}
@@ -344,7 +344,7 @@ export function FacultyTable({
                         ) : (
                           <span className="flex items-center gap-1 text-xs text-scholar-600">
                             <Building size={12} className="text-scholar-400" />
-                            Main Campus
+                            Main Branch
                           </span>
                         )}
                       </td>

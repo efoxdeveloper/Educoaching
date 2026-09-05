@@ -576,7 +576,7 @@ export function AddFacultyDrawer({
 
           {!isAllBranches && branches.length === 0 && (
             <p className="text-[11px] text-scholar-500 italic">
-              No branch campuses configured yet. Faculty will be assigned to Main Campus.
+              No branches configured yet. Faculty will be assigned to Main Branch.
             </p>
           )}
         </div>
@@ -905,7 +905,7 @@ export function AddFacultyDrawer({
                             }`}
                           >
                             <Building2 size={11} />
-                            {b.branchName || "Main Campus"}
+                            {b.branchName || "Main Branch"}
                           </span>
                           {checked && <Check size={14} className="text-white shrink-0" />}
                         </div>

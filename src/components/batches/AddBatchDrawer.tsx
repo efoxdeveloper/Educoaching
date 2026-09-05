@@ -281,7 +281,7 @@ export function AddBatchDrawer({
 
           {!isAllBranches && branches.length === 0 && (
             <p className="text-[11px] text-scholar-500 italic">
-              No branch campuses configured yet. Batch will default to Main Campus.
+              No branches configured yet. Batch will default to Main Branch.
             </p>
           )}
         </div>

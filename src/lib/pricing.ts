@@ -2,7 +2,14 @@
 // page now, and by the Razorpay Subscription creation logic later - keep
 // them in sync by editing only here.
 
-export const TRIAL_DAYS = 7;
+export const TRIAL_DAYS = 14;
+
+export const BRANCH_LIMITS_BY_PLAN: Record<string, number> = {
+  TRIAL: 10,
+  MONTHLY: 3,
+  QUARTERLY: 6,
+  YEARLY: 15,
+};
 
 export const PLATFORM_PLANS = {
   MONTHLY: {

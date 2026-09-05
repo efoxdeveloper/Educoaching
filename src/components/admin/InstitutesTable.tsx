@@ -53,7 +53,9 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
         i.ownerName.toLowerCase().includes(q) ||
         i.email.toLowerCase().includes(q) ||
         i.mobile.toLowerCase().includes(q) ||
-        (i.city && i.city.toLowerCase().includes(q));
+        (i.city && i.city.toLowerCase().includes(q)) ||
+        (i.address && i.address.toLowerCase().includes(q)) ||
+        (i.state && i.state.toLowerCase().includes(q));
       const matchesStatus = !statusFilter || i.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
@@ -177,10 +179,17 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
                 </td>
 
                 <td className="py-3 pr-4 text-xs text-scholar-600">
-                  {i.city || i.state ? (
-                    <div className="flex items-center gap-1">
-                      <MapPin size={12} className="text-scholar-400 shrink-0" />
-                      <span>{i.city ? `${i.city}` : ""}{i.city && i.state ? `, ${i.state}` : i.state}</span>
+                  {i.city || i.state || i.address ? (
+                    <div className="space-y-0.5 max-w-[220px]">
+                      <div className="flex items-center gap-1 font-medium text-ink">
+                        <MapPin size={12} className="text-scholar-400 shrink-0" />
+                        <span>{[i.city, i.state].filter(Boolean).join(", ") || "Location set"}</span>
+                      </div>
+                      {i.address && (
+                        <p className="text-[11px] text-scholar-500 truncate" title={i.address}>
+                          {i.address}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <span className="text-scholar-300 italic">Not set</span>

@@ -17,14 +17,21 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  MapPin,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { TRIAL_DAYS } from "@/lib/pricing";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function SignupForm() {
   const [instituteName, setInstituteName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,13 +40,85 @@ export function SignupForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showDeliverabilityWarning, setShowDeliverabilityWarning] = useState(false);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+
+  const handleEmailBlur = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
+      setEmailNotice(null);
+      return;
+    }
+    try {
+      const res = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      const data = await res.json();
+      if (data.validFormat && !data.mxValid) {
+        setEmailNotice(`No active mail server detected for @${cleanEmail.split("@")[1] || ""}`);
+      } else {
+        setEmailNotice(null);
+      }
+    } catch {
+      setEmailNotice(null);
+    }
+  };
+
+  const executeSignup = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/institutes/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instituteName: instituteName.trim(),
+          ownerName: ownerName.trim(),
+          email: email.trim().toLowerCase(),
+          mobile: mobile.replace(/\D/g, ""),
+          address: address.trim(),
+          city: city.trim(),
+          state: state.trim() || undefined,
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit registration request.");
+      }
+
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!instituteName.trim() || !ownerName.trim() || !email.trim() || !mobile.trim() || !password) {
+    if (
+      !instituteName.trim() ||
+      !ownerName.trim() ||
+      !email.trim() ||
+      !mobile.trim() ||
+      !address.trim() ||
+      !city.trim() ||
+      !password
+    ) {
       setError("Please fill out all required fields.");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError("Please enter a valid email address format (e.g. name@example.com).");
       return;
     }
 
@@ -58,33 +137,25 @@ export function SignupForm() {
       return;
     }
 
+    // Deliverability check on domain MX records
     setLoading(true);
-
     try {
-      const res = await fetch("/api/institutes/signup", {
+      const checkRes = await fetch("/api/auth/check-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instituteName: instituteName.trim(),
-          ownerName: ownerName.trim(),
-          email: email.trim().toLowerCase(),
-          mobile: mobile.replace(/\D/g, ""),
-          password,
-        }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit registration request.");
+      const checkData = await checkRes.json();
+      if (checkData.validFormat && !checkData.mxValid) {
+        setLoading(false);
+        setShowDeliverabilityWarning(true);
+        return;
       }
-
-      setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    } catch {
+      // Proceed if deliverability check call fails
     }
+
+    await executeSignup();
   };
 
   // If successfully submitted, show processing screen
@@ -286,11 +357,21 @@ export function SignupForm() {
                     type="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailNotice) setEmailNotice(null);
+                    }}
+                    onBlur={handleEmailBlur}
                     placeholder="owner@apexcoaching.com"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
+                {emailNotice && (
+                  <p className="mt-1 text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                    <AlertCircle size={12} className="shrink-0 text-amber-500" />
+                    <span>{emailNotice}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -307,6 +388,60 @@ export function SignupForm() {
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
                     placeholder="9876543210"
+                    className="w-full bg-transparent text-xs text-ink outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Physical Address */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-ink">
+                Campus / Institute Address <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex items-center gap-2 rounded-xl border border-scholar-200 bg-white px-3 py-2.5 focus-within:border-scholar-500 focus-within:ring-2 focus-within:ring-scholar-100">
+                <MapPin size={16} className="text-scholar-400 shrink-0" />
+                <input
+                  type="text"
+                  required
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. 402 Prestige Plaza, MG Road"
+                  className="w-full bg-transparent text-xs text-ink outline-none"
+                />
+              </div>
+            </div>
+
+            {/* City & State */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-ink">
+                  City <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-scholar-200 bg-white px-3 py-2.5 focus-within:border-scholar-500 focus-within:ring-2 focus-within:ring-scholar-100">
+                  <MapPin size={16} className="text-scholar-400 shrink-0" />
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Pune"
+                    className="w-full bg-transparent text-xs text-ink outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-ink">
+                  State / Province
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-scholar-200 bg-white px-3 py-2.5 focus-within:border-scholar-500 focus-within:ring-2 focus-within:ring-scholar-100">
+                  <MapPin size={16} className="text-scholar-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="e.g. Maharashtra"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
@@ -390,6 +525,33 @@ export function SignupForm() {
           </p>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeliverabilityWarning}
+        onClose={() => setShowDeliverabilityWarning(false)}
+        onConfirm={() => {
+          setShowDeliverabilityWarning(false);
+          executeSignup();
+        }}
+        title="Email Domain Unreachable"
+        message={
+          <div className="space-y-2 text-xs text-scholar-600">
+            <p>
+              We couldn't detect an active mail server (MX record) for the domain{" "}
+              <strong className="text-ink font-semibold">@{email.split("@")[1] || ""}</strong>.
+            </p>
+            <p>
+              This email looks unreachable. You will not be able to log in until you click the verification link sent to that address.
+            </p>
+            <p className="font-semibold text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+              Are you sure you want to proceed with this email, or would you like to go back and fix it?
+            </p>
+          </div>
+        }
+        confirmLabel="Continue Anyway"
+        cancelLabel="Go Back & Fix"
+        tone="warn"
+      />
     </div>
   );
 }

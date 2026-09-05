@@ -25,6 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     eligibility,
     isAllBranches,
     branchIds,
+    academicYear,
   } = body;
 
   if (name !== undefined && !String(name).trim()) {
@@ -86,6 +87,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(courseEndDateUpdate !== undefined ? { endDate: courseEndDateUpdate } : {}),
       ...(targetExam !== undefined ? { targetExam: targetExam ? String(targetExam).trim() : null } : {}),
       ...(eligibility !== undefined ? { eligibility: eligibility ? String(eligibility).trim() : null } : {}),
+      ...(academicYear !== undefined ? { academicYear: academicYear ? String(academicYear).trim() : null } : {}),
       ...(isAllBranches !== undefined ? { isAllBranches: Boolean(isAllBranches) } : {}),
       ...(branchUpdate !== undefined ? { branches: branchUpdate } : {}),
     },

@@ -10,6 +10,7 @@ import { sendBranchProcessingEmail, sendAdminBranchAlertEmail } from "@/lib/emai
 
 interface BranchInput {
   name: string;
+  inChargeName?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -25,6 +26,7 @@ interface CourseInput {
   fee: number;
   durationMonths?: number;
   feeType?: "ONE_TIME" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
+  academicYear?: string;
 }
 
 interface LogoInput {
@@ -94,7 +96,7 @@ export async function POST(req: Request) {
     },
   });
 
-  // 2. Update Main Campus address & city & state
+  // 2. Update Main Branch address & city & state
   try {
     await prisma.branch.updateMany({
       where: { instituteId: ctx.instituteId, isMainBranch: true },
@@ -141,6 +143,10 @@ export async function POST(req: Request) {
 
   // 4. Create any sub-branches
   if (Array.isArray(branches) && branches.length > 0) {
+    const now = new Date();
+    const isTrialActive = institute.trialEndsAt ? new Date(institute.trialEndsAt) > now : true;
+    const initialBranchStatus = isTrialActive ? "ACTIVE" : "PENDING_APPROVAL";
+
     for (const b of branches) {
       if (!b.name || !b.name.trim()) continue;
       try {
@@ -148,12 +154,13 @@ export async function POST(req: Request) {
           data: {
             instituteId: ctx.instituteId,
             name: b.name.trim(),
+            inChargeName: b.inChargeName?.trim() || null,
             address: b.address?.trim() || null,
             city: b.city?.trim() || null,
             state: b.state?.trim() || null,
             contact: b.contact?.trim() || null,
             guidePhone: b.guidePhone?.trim() || null,
-            status: "PENDING_APPROVAL",
+            status: initialBranchStatus,
             isMainBranch: false,
           },
         });
@@ -231,6 +238,7 @@ export async function POST(req: Request) {
             feeType: c.feeType || "ONE_TIME",
             duration: c.durationMonths ? `${c.durationMonths} months` : null,
             targetExam: c.code?.trim() || null,
+            academicYear: c.academicYear?.trim() || academicYearLabel?.trim() || institute.academicYearLabel || null,
             isAllBranches: true,
           },
         });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { BranchStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireInstitute, requirePermission } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
@@ -7,6 +8,7 @@ import {
   sendBranchProcessingEmail,
   sendAdminBranchAlertEmail,
 } from "@/lib/email";
+import { BRANCH_LIMITS_BY_PLAN } from "@/lib/pricing";
 
 // Reading branches is available to any logged-in Institute user (Owner,
 // Admin, Staff) - same convention as courses.
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, city, state, address, contact, guidePhone, isMainBranch, email, password } = body;
+    const { name, city, state, address, contact, guidePhone, inChargeName, isMainBranch, email, password } = body;
 
     if (!name || !String(name).trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "A branch with this name already exists" }, { status: 409 });
     }
 
-    // Fetch the institute with its owner & main campus info
+    // Fetch the institute with its owner & main branch info
     const institute = await prisma.institute.findUnique({
       where: { id: ctx.instituteId },
       include: {
@@ -106,9 +108,49 @@ export async function POST(req: Request) {
     });
   }
 
-  // Sub-branches require platform admin approval before they can be accessed.
-  // Main branches created during initial setup or explicitly designated remain ACTIVE.
-  const initialStatus = isMainBranch ? "ACTIVE" : "PENDING_APPROVAL";
+  // Check if institute is currently within its free trial period
+  const now = new Date();
+  const isTrialActive = institute.trialEndsAt ? new Date(institute.trialEndsAt) > now : false;
+
+  let initialStatus: BranchStatus = BranchStatus.PENDING_APPROVAL;
+
+  if (isMainBranch || isTrialActive) {
+    // Main branch or during free trial period, creating new branches is automatically ACTIVE
+    initialStatus = BranchStatus.ACTIVE;
+  } else {
+    // Free trial has ended: enforce active subscription plan and branch limits
+    const currentBranchCount = await prisma.branch.count({
+      where: { instituteId: ctx.instituteId },
+    });
+
+    const isPaidActive =
+      institute.platformSubscriptionStatus === "ACTIVE" &&
+      institute.billingCycle &&
+      institute.billingCycle !== "TRIAL";
+
+    if (!isPaidActive) {
+      return NextResponse.json(
+        {
+          error:
+            "Your free trial has ended. Please subscribe to an active platform plan to add new branches.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const planLimit = BRANCH_LIMITS_BY_PLAN[institute.billingCycle] ?? 3;
+    if (currentBranchCount >= planLimit) {
+      return NextResponse.json(
+        {
+          error: `You have reached the maximum limit of ${planLimit} branches for your ${institute.billingCycle} plan. Please upgrade your subscription plan to add more branches.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Within paid plan limit: active if institute is active, otherwise pending
+    initialStatus = institute.status === "ACTIVE" ? BranchStatus.ACTIVE : BranchStatus.PENDING_APPROVAL;
+  }
 
   const branch = await prisma.branch.create({
     data: {
@@ -119,6 +161,7 @@ export async function POST(req: Request) {
       address: address ? String(address).trim() : null,
       contact: contact ? String(contact).trim() : null,
       guidePhone: guidePhone ? String(guidePhone).trim() : null,
+      inChargeName: inChargeName ? String(inChargeName).trim() : null,
       isMainBranch: Boolean(isMainBranch),
       status: initialStatus,
     },
@@ -150,7 +193,7 @@ export async function POST(req: Request) {
   await logAudit({
     instituteId: ctx.instituteId,
     actor: actorFromSession(ctx.session),
-    action: initialStatus === "PENDING_APPROVAL" ? "BRANCH_REQUESTED" : "BRANCH_CREATED",
+    action: initialStatus === BranchStatus.PENDING_APPROVAL ? "BRANCH_REQUESTED" : "BRANCH_CREATED",
     entityType: "Branch",
     entityId: branch.id,
     metadata: {
@@ -163,20 +206,20 @@ export async function POST(req: Request) {
   });
 
   // If sub-branch requires approval, dispatch emails
-  if (initialStatus === "PENDING_APPROVAL") {
+  if (initialStatus === BranchStatus.PENDING_APPROVAL) {
     const appUrl =
       process.env.NEXTAUTH_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-    // 1. Send processing email to Institute Owner & Main Campus Owner / Admins
+    // 1. Send processing email to Institute Owner & Main Branch Owner / Admins
     try {
       const recipients = new Map<string, string>(); // email -> name
       // Institute Owner email
       if (institute.email) {
         recipients.set(institute.email.toLowerCase(), institute.ownerName);
       }
-      // Main campus users / Institute Admins
+      // Main branch users / Institute Admins
       for (const u of institute.users) {
         if (u.email && (u.role === "OWNER" || u.role === "ADMIN")) {
           recipients.set(u.email.toLowerCase(), u.name || "Administrator");
@@ -250,7 +293,7 @@ export async function POST(req: Request) {
     {
       ...branch,
       message:
-        initialStatus === "PENDING_APPROVAL"
+        initialStatus === BranchStatus.PENDING_APPROVAL
           ? "Branch access request submitted. Your request is in processing and platform admin has been notified."
           : "Branch created successfully.",
     },

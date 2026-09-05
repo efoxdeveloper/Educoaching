@@ -53,7 +53,6 @@ export function AddAdmissionDrawer({
     source: "WALK_IN",
     priority: "WARM",
     assignedToId: defaultCounsellorId || "",
-    nextFollowUpDate: "",
     note: "",
   });
   const [loading, setLoading] = useState(false);
@@ -79,7 +78,6 @@ export function AddAdmissionDrawer({
           ...form,
           assignedToId: form.assignedToId || null,
           feePlan: Number(selectedCourse?.fee || 0),
-          nextFollowUpDate: form.nextFollowUpDate || null,
         }),
       });
       if (!res.ok) {
@@ -95,7 +93,6 @@ export function AddAdmissionDrawer({
         source: "WALK_IN",
         priority: "WARM",
         assignedToId: defaultCounsellorId || "",
-        nextFollowUpDate: "",
         note: "",
       });
       onClose();
@@ -174,23 +171,23 @@ export function AddAdmissionDrawer({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Course / Offering *">
-            <select
-              required
-              className={inputClass}
-              value={form.courseId}
-              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-            >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} — {formatCurrency(c.fee)}
-                </option>
-              ))}
-            </select>
-          </Field>
+        {branches.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Course / Offering *">
+              <select
+                required
+                className={inputClass}
+                value={form.courseId}
+                onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — {formatCurrency(c.fee)}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
-          {branches.length > 0 ? (
             <Field label="Branch / Campus">
               <select
                 className={inputClass}
@@ -205,26 +202,21 @@ export function AddAdmissionDrawer({
                 ))}
               </select>
             </Field>
-          ) : (
-            <Field label="First Follow-up Date">
-              <input
-                type="date"
-                className={inputClass}
-                value={form.nextFollowUpDate}
-                onChange={(e) => setForm({ ...form, nextFollowUpDate: e.target.value })}
-              />
-            </Field>
-          )}
-        </div>
-
-        {branches.length > 0 && (
-          <Field label="First Follow-up Date">
-            <input
-              type="date"
+          </div>
+        ) : (
+          <Field label="Course / Offering *">
+            <select
+              required
               className={inputClass}
-              value={form.nextFollowUpDate}
-              onChange={(e) => setForm({ ...form, nextFollowUpDate: e.target.value })}
-            />
+              value={form.courseId}
+              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {formatCurrency(c.fee)}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
 

@@ -237,7 +237,7 @@ Created: ${formatDate(branch.createdAt)}
                 </Badge>
                 {branch.isMainBranch && (
                   <span className="rounded bg-scholar-200/70 px-1.5 py-0.5 text-[10px] font-bold text-scholar-800">
-                    Main Campus
+                    Main Branch
                   </span>
                 )}
               </div>
@@ -560,7 +560,7 @@ Created: ${formatDate(branch.createdAt)}
             </div>
           ) : (
             <p className="text-xs text-scholar-500 italic bg-scholar-50/50 p-3 rounded-xl border border-dashed border-scholar-200">
-              No dedicated sub-branch login created yet. Main campus administrators will manage this branch via campus impersonation.
+              No dedicated sub-branch login created yet. Main branch administrators will manage this branch via branch impersonation.
             </p>
           )}
         </div>

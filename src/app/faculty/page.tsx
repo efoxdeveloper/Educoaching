@@ -73,12 +73,12 @@ export default async function FacultyPage() {
 
   const serializedBatches = batches.map((b) => {
     const branchLabel = b.isAllBranches
-      ? "All Campuses"
+      ? "All Branches"
       : b.branches && b.branches.length > 0
       ? b.branches.map((br) => br.name).join(", ")
       : b.branch
       ? b.branch.name
-      : "Main Campus";
+      : "Main Branch";
 
     return {
       id: b.id,

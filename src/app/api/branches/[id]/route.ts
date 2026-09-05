@@ -13,7 +13,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!existing) return NextResponse.json({ error: "Branch not found" }, { status: 404 });
 
   const body = await req.json();
-  const { name, city, state, address, contact, guidePhone, status, isMainBranch } = body;
+  const { name, city, state, address, contact, guidePhone, inChargeName, status, isMainBranch } = body;
 
   if (name !== undefined && !String(name).trim()) {
     return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
@@ -35,6 +35,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(address !== undefined ? { address: address ? String(address).trim() : null } : {}),
       ...(contact !== undefined ? { contact: contact ? String(contact).trim() : null } : {}),
       ...(guidePhone !== undefined ? { guidePhone: guidePhone ? String(guidePhone).trim() : null } : {}),
+      ...(inChargeName !== undefined ? { inChargeName: inChargeName ? String(inChargeName).trim() : null } : {}),
       ...(status !== undefined ? { status } : {}),
       ...(isMainBranch !== undefined ? { isMainBranch: Boolean(isMainBranch) } : {}),
     },

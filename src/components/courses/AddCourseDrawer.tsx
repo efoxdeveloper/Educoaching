@@ -46,6 +46,7 @@ export function AddCourseDrawer({
     startDate: "",
     eligibility: "",
     description: "",
+    academicYear: "",
     isAllBranches: true,
     branchIds: [] as string[],
   });
@@ -84,6 +85,7 @@ export function AddCourseDrawer({
           fee: Number(form.fee),
           feeType: form.feeType,
           targetExam: form.targetExam || null,
+          academicYear: form.academicYear || null,
           duration: form.duration || null,
           startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
           eligibility: form.eligibility || null,
@@ -103,6 +105,7 @@ export function AddCourseDrawer({
         fee: "",
         feeType: "ONE_TIME",
         targetExam: "",
+        academicYear: "",
         duration: "1 Year",
         startDate: "",
         eligibility: "",
@@ -153,6 +156,16 @@ export function AddCourseDrawer({
               <option key={ex} value={ex} />
             ))}
           </datalist>
+        </Field>
+
+        {/* Academic Session / Year */}
+        <Field label="Academic Session / Year (Optional)">
+          <input
+            className={inputClass}
+            value={form.academicYear}
+            onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
+            placeholder="e.g. 2026-2027 or Session 2026-27"
+          />
         </Field>
 
         {/* Course Duration with Days, Months, Years */}

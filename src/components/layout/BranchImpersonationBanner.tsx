@@ -36,7 +36,7 @@ export function BranchImpersonationBanner() {
       await fetch("/api/branches/impersonate/exit", { method: "POST" });
       window.location.reload();
     } catch {
-      alert("Failed to return to Main Campus");
+      alert("Failed to return to Main Branch");
       setExiting(false);
     }
   };
@@ -48,7 +48,7 @@ export function BranchImpersonationBanner() {
       <div className="flex items-center gap-2.5">
         <span className="flex items-center gap-1 rounded bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
           <Building2 size={13} />
-          Main Campus Impersonation
+          Main Branch Impersonation
         </span>
         <span className="text-purple-100">
           Viewing and managing as{" "}
@@ -69,7 +69,7 @@ export function BranchImpersonationBanner() {
         ) : (
           <LogOut size={14} className="text-rose-600" />
         )}
-        <span>Exit Branch View & Return to Main Campus</span>
+        <span>Exit Branch View & Return to Main Branch</span>
       </button>
     </div>
   );

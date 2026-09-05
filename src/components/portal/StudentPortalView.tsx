@@ -517,7 +517,7 @@ export function StudentPortalView({
                 Student & Parent Portal
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-scholar-100">
-                <Building2 size={11} /> {student.branchName || "Main Campus"}
+                <Building2 size={11} /> {student.branchName || "Main Branch"}
               </span>
               {student.photoUrl ? (
                 <span className="inline-flex items-center gap-1 rounded bg-emerald-500/30 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
@@ -736,10 +736,10 @@ export function StudentPortalView({
               </div>
 
               <div className="rounded-xl bg-scholar-50 p-3 border border-scholar-200 text-left sm:text-right">
-                <span className="text-[11px] text-scholar-500 font-medium">Campus Branch</span>
+                <span className="text-[11px] text-scholar-500 font-medium">Branch</span>
                 <p className="font-bold text-ink text-sm flex items-center gap-1 sm:justify-end">
                   <Building2 size={13} className="text-scholar-500" />
-                  {student.batch?.branchName || student.branchName || "Main Campus"}
+                  {student.batch?.branchName || student.branchName || "Main Branch"}
                 </p>
               </div>
             </div>

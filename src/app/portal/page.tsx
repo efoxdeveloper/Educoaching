@@ -178,7 +178,7 @@ export default async function StudentPortalPage({
       courseDuration: s.course.duration,
       batchId: s.batchId,
       batchName: s.batch?.name || "General Batch",
-      branchName: s.branch?.name || "Main Campus",
+      branchName: s.branch?.name || "Main Branch",
       totalFee,
       paidFee,
       pendingFee: Math.max(0, totalFee - paidFee),
@@ -196,10 +196,10 @@ export default async function StudentPortalPage({
             timing: s.batch.timing,
             status: s.batch.status,
             branchName: s.batch.isAllBranches
-              ? "All Campuses (Central Program)"
+              ? "All Branches (Central Program)"
               : s.batch.branches && s.batch.branches.length > 0
               ? s.batch.branches.map((b) => b.name).join(", ")
-              : s.batch.branch?.name || "Main Campus",
+              : s.batch.branch?.name || "Main Branch",
             facultyMembers: s.batch.faculty.map((f) => `${f.faculty.name} (${f.faculty.subject || "Faculty"})`),
           }
         : null,

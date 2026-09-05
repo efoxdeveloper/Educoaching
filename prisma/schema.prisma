@@ -150,6 +150,7 @@ model Course {
   name           String
   fee            Decimal         @db.Decimal(10, 2)
   feeType        CourseFeeType   @default(ONE_TIME)
+  academicYear   String?
   description    String?
   duration       String?
   startDate      DateTime?
@@ -182,6 +183,7 @@ model Branch {
   address          String?
   contact          String?
   guidePhone       String?
+  inChargeName     String?
   isMainBranch     Boolean      @default(false)
   status           BranchStatus @default(ACTIVE)
   createdAt        DateTime     @default(now())

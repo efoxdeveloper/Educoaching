@@ -66,7 +66,7 @@ export async function generateReceiptPdfBuffer(data: ReceiptData, instituteInfo:
         .fillColor("#4B5563")
         .fontSize(9)
         .font("Helvetica")
-        .text(addressParts.join(", ") || "Main Campus", 55, 76, { width: 330 });
+        .text(addressParts.join(", ") || "Main Branch", 55, 76, { width: 330 });
 
       const contactParts = [
         instituteInfo.mobile ? `Tel: ${instituteInfo.mobile}` : null,

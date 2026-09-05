@@ -466,7 +466,7 @@ export function BranchesView({
                         onClick={handleExitImpersonation}
                         className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer"
                       >
-                        <LogOut size={12} className="text-amber-700" /> Active Impersonation • Exit to Main Campus
+                        <LogOut size={12} className="text-amber-700" /> Active Impersonation • Exit to Main Branch
                       </button>
                     ) : (
                       <button
@@ -534,7 +534,7 @@ export function BranchesView({
         open={!!mainBranchNotice}
         onClose={() => setMainBranchNotice(null)}
         onConfirm={() => setMainBranchNotice(null)}
-        title="Cannot Delete Main Campus"
+        title="Cannot Delete Main Branch"
         message={mainBranchNotice}
         confirmLabel="Understood"
         cancelLabel="Close"

@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     eligibility,
     isAllBranches = true,
     branchIds = [],
+    academicYear,
   } = body;
 
   if (!name || !String(name).trim()) {
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
       endDate: courseEndDate,
       targetExam: targetExam ? String(targetExam).trim() : null,
       eligibility: eligibility ? String(eligibility).trim() : null,
+      academicYear: academicYear ? String(academicYear).trim() : null,
       isAllBranches: Boolean(isAllBranches),
       branches: !isAllBranches && validBranchIds.length > 0
         ? { connect: validBranchIds.map((id) => ({ id })) }

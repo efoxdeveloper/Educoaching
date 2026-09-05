@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   GraduationCap,
@@ -25,10 +25,12 @@ import {
   IndianRupee,
   Eye,
   EyeOff,
+  Pencil,
 } from "lucide-react";
 
 interface SubBranchItem {
   name: string;
+  inChargeName: string;
   address: string;
   city: string;
   state: string;
@@ -41,9 +43,10 @@ interface SubBranchItem {
 interface CourseItem {
   name: string;
   code: string;
-  fee: number;
+  fee: number | string;
   durationMonths: number;
   feeType: "ONE_TIME" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
+  academicYear?: string;
 }
 
 interface InstituteSetupWizardProps {
@@ -96,8 +99,10 @@ export function InstituteSetupWizard({
   // Step 3: Sub-Branches
   const [branches, setBranches] = useState<SubBranchItem[]>([]);
   const [isAddingBranch, setIsAddingBranch] = useState(false);
+  const [editingBranchIndex, setEditingBranchIndex] = useState<number | null>(null);
   const [newBranch, setNewBranch] = useState<SubBranchItem>({
     name: "",
+    inChargeName: "",
     address: "",
     city: "",
     state: "",
@@ -111,12 +116,14 @@ export function InstituteSetupWizard({
   // Step 4: Initial Courses
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [isAddingCourse, setIsAddingCourse] = useState(false);
+  const [editingCourseIndex, setEditingCourseIndex] = useState<number | null>(null);
   const [newCourse, setNewCourse] = useState<CourseItem>({
     name: "",
     code: "",
-    fee: 15000,
+    fee: "",
     durationMonths: 12,
     feeType: "ONE_TIME",
+    academicYear: "",
   });
 
   // UI status
@@ -149,15 +156,49 @@ export function InstituteSetupWizard({
     reader.readAsDataURL(file);
   };
 
+  const handleEditBranch = (index: number) => {
+    setEditingBranchIndex(index);
+    setNewBranch({ ...branches[index] });
+    setIsAddingBranch(true);
+    setError("");
+  };
+
+  const handleCancelBranch = () => {
+    setIsAddingBranch(false);
+    setEditingBranchIndex(null);
+    setNewBranch({
+      name: "",
+      inChargeName: "",
+      address: "",
+      city: "",
+      state: "",
+      contact: "",
+      guidePhone: "",
+      email: "",
+      password: "",
+    });
+    setError("");
+  };
+
   const handleAddBranch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranch.name.trim()) {
       setError("Sub-branch name is required.");
       return;
     }
-    setBranches((prev) => [...prev, { ...newBranch }]);
+    if (!newBranch.inChargeName.trim()) {
+      setError("Branch In-Charge Name is required.");
+      return;
+    }
+    if (editingBranchIndex !== null) {
+      setBranches((prev) => prev.map((b, i) => (i === editingBranchIndex ? { ...newBranch } : b)));
+      setEditingBranchIndex(null);
+    } else {
+      setBranches((prev) => [...prev, { ...newBranch }]);
+    }
     setNewBranch({
       name: "",
+      inChargeName: "",
       address: "",
       city: "",
       state: "",
@@ -170,19 +211,63 @@ export function InstituteSetupWizard({
     setError("");
   };
 
+  const handleEditCourse = (index: number) => {
+    setEditingCourseIndex(index);
+    setNewCourse({ ...courses[index] });
+    setIsAddingCourse(true);
+    setError("");
+  };
+
+  const handleCancelCourse = () => {
+    setIsAddingCourse(false);
+    setEditingCourseIndex(null);
+    setNewCourse({
+      name: "",
+      code: "",
+      fee: "",
+      durationMonths: 12,
+      feeType: "ONE_TIME",
+      academicYear: academicYearLabel || "2026-2027",
+    });
+    setError("");
+  };
+
   const handleAddCourse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCourse.name.trim()) {
       setError("Course name is required.");
       return;
     }
-    setCourses((prev) => [...prev, { ...newCourse }]);
+    if (newCourse.fee === "" || newCourse.fee === undefined) {
+      setError("Please specify a course fee.");
+      return;
+    }
+    const feeNum = Number(newCourse.fee);
+    if (isNaN(feeNum) || feeNum < 0) {
+      setError("Please enter a valid course fee amount.");
+      return;
+    }
+
+    const itemToSave: CourseItem = {
+      ...newCourse,
+      fee: feeNum,
+      academicYear: newCourse.academicYear?.trim() || academicYearLabel || "2026-2027",
+    };
+
+    if (editingCourseIndex !== null) {
+      setCourses((prev) => prev.map((c, i) => (i === editingCourseIndex ? itemToSave : c)));
+      setEditingCourseIndex(null);
+    } else {
+      setCourses((prev) => [...prev, itemToSave]);
+    }
+
     setNewCourse({
       name: "",
       code: "",
-      fee: 15000,
+      fee: "",
       durationMonths: 12,
       feeType: "ONE_TIME",
+      academicYear: academicYearLabel || "2026-2027",
     });
     setIsAddingCourse(false);
     setError("");
@@ -238,18 +323,33 @@ export function InstituteSetupWizard({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const steps = [
-    { num: 1, title: "Campus & Branding", icon: Building2 },
+    { num: 1, title: "Main Branch", icon: Building2 },
     { num: 2, title: "Academic Session", icon: Calendar },
     { num: 3, title: "Sub-Branches", icon: GitBranch },
     { num: 4, title: "Courses & Fees", icon: BookOpen },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scholar-950/60 backdrop-blur-xs p-4 sm:p-6 overflow-y-auto">
-      <div className="relative flex w-full max-w-4xl flex-col rounded-2xl border border-scholar-200 bg-white shadow-popover max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {/* Full-screen backdrop blur and dark overlay */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-all"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 flex w-full max-w-4xl flex-col rounded-2xl border border-scholar-200 bg-white shadow-popover max-h-[92vh] overflow-hidden">
         {/* Header with Progress Steps */}
         <div className="border-b border-scholar-100 bg-scholar-50/70 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -333,23 +433,23 @@ export function InstituteSetupWizard({
             </div>
           )}
 
-          {/* STEP 1: Campus Location & Branding */}
+          {/* STEP 1: Main Branch Location & Branding */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="border-b border-scholar-100 pb-3">
                 <h3 className="font-display text-sm font-bold text-ink flex items-center gap-2">
                   <Building2 size={16} className="text-scholar-600" />
-                  Campus Address &amp; Branding Profile
+                  Main Branch Address &amp; Branding Profile
                 </h3>
                 <p className="text-xs text-scholar-500 mt-0.5">
-                  Set the physical location of your Main Campus and upload your coaching center logo.
+                  Set the physical location of your Main Branch and upload your coaching center logo.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-semibold text-ink">
-                    Physical Campus Street Address
+                    Physical Branch Street Address
                   </label>
                   <input
                     type="text"
@@ -515,17 +615,17 @@ export function InstituteSetupWizard({
             </div>
           )}
 
-          {/* STEP 3: Sub-Branches / Satellite Campuses */}
+          {/* STEP 3: Sub-Branches */}
           {currentStep === 3 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-scholar-100 pb-3">
                 <div>
                   <h3 className="font-display text-sm font-bold text-ink flex items-center gap-2">
                     <GitBranch size={16} className="text-scholar-600" />
-                    Sub-Branches &amp; Campuses
+                    Sub-Branches
                   </h3>
                   <p className="text-xs text-scholar-500 mt-0.5">
-                    Your Main Campus is already created. Add any additional satellite branches if applicable.
+                    Your Main Branch is already created. Add any additional satellite branches if applicable.
                   </p>
                 </div>
                 {!isAddingBranch && (
@@ -540,17 +640,17 @@ export function InstituteSetupWizard({
                 )}
               </div>
 
-              {/* Main campus tile */}
+              {/* Main branch tile */}
               <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-scholar-200 text-scholar-800 font-bold text-xs">
-                    MC
+                    MB
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-ink">{instituteName} (Main Campus)</p>
+                      <p className="text-xs font-bold text-ink">{instituteName} (Main Branch)</p>
                       <span className="rounded bg-scholar-200/80 px-1.5 py-0.2 text-[10px] font-bold text-scholar-800">
-                        Primary Campus
+                        Primary Branch
                       </span>
                     </div>
                     <p className="text-[11px] text-scholar-500">
@@ -577,29 +677,45 @@ export function InstituteSetupWizard({
                           </span>
                         </div>
                         <p className="text-[11px] text-scholar-500 mt-0.5">
-                          {b.city ? `${b.city}, ${b.state}` : "No address specified"} • Admin: {b.email || "N/A"}
+                          <span className="font-semibold text-ink">In-Charge: {b.inChargeName}</span> • {b.city ? `${b.city}, ${b.state}` : "No address specified"} • Admin: {b.email || "N/A"}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setBranches(branches.filter((_, i) => i !== idx))}
-                        className="text-scholar-400 hover:text-rose-600 transition p-1"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditBranch(idx)}
+                          className="text-scholar-400 hover:text-scholar-700 transition p-1"
+                          title="Edit branch"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (editingBranchIndex === idx) handleCancelBranch();
+                            setBranches(branches.filter((_, i) => i !== idx));
+                          }}
+                          className="text-scholar-400 hover:text-rose-600 transition p-1"
+                          title="Remove branch"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Add branch form modal/block */}
+              {/* Add/Edit branch form modal/block */}
               {isAddingBranch && (
                 <form onSubmit={handleAddBranch} className="rounded-xl border border-scholar-300 bg-scholar-50/50 p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-ink">New Sub-Branch Details</p>
+                    <p className="text-xs font-bold text-ink">
+                      {editingBranchIndex !== null ? "Edit Sub-Branch Details" : "New Sub-Branch Details"}
+                    </p>
                     <button
                       type="button"
-                      onClick={() => setIsAddingBranch(false)}
+                      onClick={handleCancelBranch}
                       className="text-scholar-400 hover:text-ink"
                     >
                       <X size={15} />
@@ -607,7 +723,7 @@ export function InstituteSetupWizard({
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className="mb-1 block text-[11px] font-semibold text-ink">
                         Branch Name <span className="text-rose-500">*</span>
                       </label>
@@ -616,7 +732,21 @@ export function InstituteSetupWizard({
                         required
                         value={newBranch.name}
                         onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
-                        placeholder="e.g. South Extension Campus"
+                        placeholder="e.g. South Extension Branch"
+                        className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-ink">
+                        Branch In-Charge Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newBranch.inChargeName}
+                        onChange={(e) => setNewBranch({ ...newBranch, inChargeName: e.target.value })}
+                        placeholder="e.g. Prof. Arvind Saxena"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -679,7 +809,7 @@ export function InstituteSetupWizard({
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => setIsAddingBranch(false)}
+                      onClick={handleCancelBranch}
                       className="rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
                     >
                       Cancel
@@ -688,7 +818,7 @@ export function InstituteSetupWizard({
                       type="submit"
                       className="rounded-lg bg-scholar-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-scholar-800"
                     >
-                      Save Sub-Branch
+                      {editingBranchIndex !== null ? "Update Sub-Branch" : "Save Sub-Branch"}
                     </button>
                   </div>
                 </form>
@@ -738,16 +868,31 @@ export function InstituteSetupWizard({
                           )}
                         </div>
                         <p className="text-[11px] text-scholar-500 mt-0.5">
-                          Fee: ₹{c.fee.toLocaleString("en-IN")} • Duration: {c.durationMonths} months • {c.feeType}
+                          Fee: ₹{Number(c.fee).toLocaleString("en-IN")} • Duration: {c.durationMonths} months • {c.feeType}
+                          {c.academicYear && <span> • Session: {c.academicYear}</span>}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setCourses(courses.filter((_, i) => i !== idx))}
-                        className="text-scholar-400 hover:text-rose-600 transition p-1"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditCourse(idx)}
+                          className="text-scholar-400 hover:text-scholar-700 transition p-1"
+                          title="Edit course"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (editingCourseIndex === idx) handleCancelCourse();
+                            setCourses(courses.filter((_, i) => i !== idx));
+                          }}
+                          className="text-scholar-400 hover:text-rose-600 transition p-1"
+                          title="Remove course"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -761,14 +906,16 @@ export function InstituteSetupWizard({
                 </div>
               )}
 
-              {/* Add course form */}
+              {/* Add/Edit course form */}
               {isAddingCourse && (
                 <form onSubmit={handleAddCourse} className="rounded-xl border border-scholar-300 bg-scholar-50/50 p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-ink">New Course Starter</p>
+                    <p className="text-xs font-bold text-ink">
+                      {editingCourseIndex !== null ? "Edit Course Details" : "New Course Starter"}
+                    </p>
                     <button
                       type="button"
-                      onClick={() => setIsAddingCourse(false)}
+                      onClick={handleCancelCourse}
                       className="text-scholar-400 hover:text-ink"
                     >
                       <X size={15} />
@@ -802,13 +949,27 @@ export function InstituteSetupWizard({
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-ink">Total Target Fee (₹)</label>
+                      <label className="mb-1 block text-[11px] font-semibold text-ink">Academic Session / Year</label>
+                      <input
+                        type="text"
+                        value={newCourse.academicYear || ""}
+                        onChange={(e) => setNewCourse({ ...newCourse, academicYear: e.target.value })}
+                        placeholder={academicYearLabel || "e.g. 2026-2027"}
+                        className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-ink">
+                        Total Target Fee (₹) <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="number"
+                        required
                         min={0}
                         value={newCourse.fee}
-                        onChange={(e) => setNewCourse({ ...newCourse, fee: Number(e.target.value) || 0 })}
-                        placeholder="e.g. 50000"
+                        onChange={(e) => setNewCourse({ ...newCourse, fee: e.target.value === "" ? "" : Number(e.target.value) })}
+                        placeholder="e.g. 25000"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -825,7 +986,7 @@ export function InstituteSetupWizard({
                       />
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="mb-1 block text-[11px] font-semibold text-ink">Billing Mode</label>
                       <select
                         value={newCourse.feeType}
@@ -843,7 +1004,7 @@ export function InstituteSetupWizard({
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => setIsAddingCourse(false)}
+                      onClick={handleCancelCourse}
                       className="rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
                     >
                       Cancel
@@ -852,7 +1013,7 @@ export function InstituteSetupWizard({
                       type="submit"
                       className="rounded-lg bg-scholar-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-scholar-800"
                     >
-                      Save Course
+                      {editingCourseIndex !== null ? "Update Course" : "Save Course"}
                     </button>
                   </div>
                 </form>

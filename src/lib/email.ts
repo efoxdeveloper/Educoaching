@@ -373,6 +373,68 @@ export async function sendPasswordResetEmail(params: {
   );
 }
 
+export async function sendPasswordChangedConfirmationEmail(params: {
+  to: string;
+  userName: string;
+  loginUrl?: string;
+  supportEmail?: string;
+}) {
+  const {
+    to,
+    userName,
+    loginUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/login`,
+    supportEmail = process.env.SUPPORT_EMAIL || "support@vidyalaya.in",
+  } = params;
+
+  const html = emailShell(
+    "Password Changed Successfully",
+    `
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Hi ${userName},
+    </p>
+
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Your Vidyalaya account password was recently changed. You can now sign in using your new password.
+    </p>
+
+    <div style="text-align: center; margin: 28px 0;">
+      <a
+        href="${loginUrl}"
+        style="
+          display: inline-block;
+          background: #1E3A5F;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 12px 22px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+        "
+      >
+        Sign In to Your Account
+      </a>
+    </div>
+
+    <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 14px; margin: 20px 0;">
+      <p style="color: #991B1B; font-size: 13px; line-height: 1.5; margin: 0; font-weight: 600;">
+        Did not make this change?
+      </p>
+      <p style="color: #B91C1C; font-size: 12px; line-height: 1.5; margin: 4px 0 0;">
+        If this wasn't you, your account may be compromised. Please contact support immediately at
+        <a href="mailto:${supportEmail}" style="color: #991B1B; font-weight: 700; text-decoration: underline;">${supportEmail}</a>
+        or use the "Forgot Password" option on the sign-in screen to recover access.
+      </p>
+    </div>
+    `
+  );
+
+  return sendMail(
+    to,
+    "Your Vidyalaya password was changed",
+    html
+  );
+}
+
 export async function sendVerificationEmail(params: {
   to: string;
   ownerName: string;
@@ -545,8 +607,13 @@ export async function sendAdminRegistrationAlertEmail(params: {
   instituteEmail: string;
   instituteMobile: string;
   adminPortalUrl: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
 }) {
-  const { to, instituteName, ownerName, instituteEmail, instituteMobile, adminPortalUrl } = params;
+  const { to, instituteName, ownerName, instituteEmail, instituteMobile, adminPortalUrl, address, city, state } = params;
+  const locationParts = [address, city, state].filter(Boolean);
+  const locationText = locationParts.length > 0 ? locationParts.join(", ") : null;
 
   const html = emailShell(
     "New Institute Registration Request",
@@ -559,6 +626,11 @@ export async function sendAdminRegistrationAlertEmail(params: {
       <tr><td style="padding: 6px 0; color: #4E6E93;">Owner / Director</td><td style="padding: 6px 0; text-align: right; font-weight: 600; color: #171A21;">${ownerName}</td></tr>
       <tr><td style="padding: 6px 0; color: #4E6E93;">Email</td><td style="padding: 6px 0; text-align: right; font-weight: 600; color: #171A21;">${instituteEmail}</td></tr>
       <tr><td style="padding: 6px 0; color: #4E6E93;">Mobile</td><td style="padding: 6px 0; text-align: right; font-weight: 600; color: #171A21;">${instituteMobile}</td></tr>
+      ${
+        locationText
+          ? `<tr><td style="padding: 6px 0; color: #4E6E93;">Location</td><td style="padding: 6px 0; text-align: right; font-weight: 600; color: #171A21;">${locationText}</td></tr>`
+          : ""
+      }
     </table>
     <div style="text-align: center; margin: 24px 0;">
       <a

@@ -51,6 +51,7 @@ export function EditCourseDrawer({
     startDate: "",
     eligibility: "",
     description: "",
+    academicYear: "",
     isAllBranches: true,
     branchIds: [] as string[],
   });
@@ -65,6 +66,7 @@ export function EditCourseDrawer({
         fee: course.fee.toString(),
         feeType: (course.feeType as "ONE_TIME" | "MONTHLY" | "QUARTERLY" | "ANNUAL") || "ONE_TIME",
         targetExam: course.targetExam || "",
+        academicYear: (course as { academicYear?: string | null }).academicYear || "",
         duration: course.duration || "1 Year",
         startDate: course.startDate ? course.startDate.slice(0, 10) : "",
         eligibility: course.eligibility || "",
@@ -108,6 +110,7 @@ export function EditCourseDrawer({
           fee: Number(form.fee),
           feeType: form.feeType,
           targetExam: form.targetExam ? form.targetExam.trim() : null,
+          academicYear: form.academicYear ? form.academicYear.trim() : null,
           duration: form.duration ? form.duration.trim() : null,
           startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
           eligibility: form.eligibility ? form.eligibility.trim() : null,
@@ -166,6 +169,16 @@ export function EditCourseDrawer({
               <option key={ex} value={ex} />
             ))}
           </datalist>
+        </Field>
+
+        {/* Academic Session / Year */}
+        <Field label="Academic Session / Year (Optional)">
+          <input
+            className={inputClass}
+            value={form.academicYear}
+            onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
+            placeholder="e.g. 2026-2027 or Session 2026-27"
+          />
         </Field>
 
         {/* Course Duration with Days, Months, Years */}

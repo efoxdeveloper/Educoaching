@@ -164,7 +164,7 @@ export function AdminBranchesTable({
                         <span className="group-hover:underline">{b.name}</span>
                         {b.isMainBranch && (
                           <span className="rounded bg-purple-100 px-1.5 py-0.2 text-[9px] font-bold text-purple-900 border border-purple-200">
-                            Main Campus
+                            Main Branch
                           </span>
                         )}
                       </button>

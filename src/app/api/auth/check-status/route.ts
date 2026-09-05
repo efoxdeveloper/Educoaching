@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         status: "INACTIVE",
         type: "branch",
         title: "Sub-Branch Currently Inactive",
-        message: `Sub-branch "${user.branch.name}" is currently inactive. Please contact your main campus administrator.`,
+        message: `Sub-branch "${user.branch.name}" is currently inactive. Please contact your main branch administrator.`,
       });
     }
 
