@@ -23,6 +23,7 @@ import {
   AttendanceChart,
   LeadFunnelChart,
   LeadSourceBarChart,
+  AgingDonut,
 } from "@/components/dashboard/Charts";
 import { SpecialDiscountApprovals } from "@/components/dashboard/SpecialDiscountApprovals";
 import { auth } from "@/lib/auth";
@@ -405,6 +406,16 @@ export default async function DashboardPage() {
             <p className="mt-1 text-xs text-scholar-400">
               Outstanding receivables and upcoming payment schedules
             </p>
+
+            {/* D2: Aging donut — visual part-to-whole for Pending / Overdue / Due Soon; keeps exact numbers below */}
+            <div className="mt-4">
+              <AgingDonut
+                pending={data.pendingFees}
+                overdue={data.overdueAmount}
+                dueSoon={data.dueSoonAmount}
+                recoveryRate={data.feeRecoveryRate}
+              />
+            </div>
 
             <div className="mt-5 space-y-3.5">
               <div className="flex items-center justify-between rounded-xl bg-scholar-50/70 p-3">

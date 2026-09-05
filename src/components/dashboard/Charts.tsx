@@ -11,6 +11,8 @@ import {
   BarChart,
   Bar,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
 import { Card } from "@/components/ui/Card";
 
@@ -265,5 +267,81 @@ export function LeadSourceBarChart({
         </BarChart>
       </ResponsiveContainer>
     </Card>
+  );
+}
+
+export function AgingDonut({
+  pending,
+  overdue,
+  dueSoon,
+  recoveryRate,
+}: {
+  pending: number;
+  overdue: number;
+  dueSoon: number;
+  recoveryRate: number;
+}) {
+  const otherPending = Math.max(0, pending - overdue - dueSoon);
+  const hasData = pending > 0;
+  const data = hasData
+    ? [
+        { name: "Overdue", value: overdue, color: "#DC2626" },
+        { name: "Due Soon (7d)", value: dueSoon, color: "#F59E0B" },
+        { name: "Other Pending", value: otherPending, color: "#94A3B8" },
+      ].filter((d) => d.value > 0)
+    : [];
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-full h-[160px]">
+        {hasData && data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                innerRadius={56}
+                outerRadius={72}
+                paddingAngle={data.length > 1 ? 3 : 0}
+                stroke="none"
+              >
+                {data.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                formatter={(value: any) => [`₹${Number(value ?? 0).toLocaleString("en-IN")}`, ""]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center rounded-full border border-dashed border-scholar-200 bg-scholar-50/50 text-xs text-scholar-400">
+            No pending dues
+          </div>
+        )}
+        {hasData && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-scholar-400">Recovered</span>
+            <span className="font-display text-lg font-bold text-emerald-700">{recoveryRate}%</span>
+          </div>
+        )}
+      </div>
+      {hasData && data.length > 0 && (
+        <div className="mt-2 flex flex-wrap justify-center gap-3 text-[11px]">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: "#DC2626" }} /> Overdue
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: "#F59E0B" }} /> Due Soon
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: "#94A3B8" }} /> Other Pending
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
