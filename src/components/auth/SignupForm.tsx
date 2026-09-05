@@ -321,7 +321,6 @@ export function SignupForm() {
                   required
                   value={instituteName}
                   onChange={(e) => setInstituteName(e.target.value)}
-                  placeholder="e.g. Apex Coaching Institute"
                   className="w-full bg-transparent text-xs text-ink outline-none"
                 />
               </div>
@@ -339,7 +338,6 @@ export function SignupForm() {
                   required
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="e.g. Dr. Rajesh Sharma"
                   className="w-full bg-transparent text-xs text-ink outline-none"
                 />
               </div>
@@ -362,7 +360,6 @@ export function SignupForm() {
                       if (emailNotice) setEmailNotice(null);
                     }}
                     onBlur={handleEmailBlur}
-                    placeholder="owner@apexcoaching.com"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
@@ -387,7 +384,6 @@ export function SignupForm() {
                     required
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="9876543210"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
@@ -406,7 +402,6 @@ export function SignupForm() {
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. 402 Prestige Plaza, MG Road"
                   className="w-full bg-transparent text-xs text-ink outline-none"
                 />
               </div>
@@ -425,7 +420,6 @@ export function SignupForm() {
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. Pune"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
@@ -441,7 +435,6 @@ export function SignupForm() {
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g. Maharashtra"
                     className="w-full bg-transparent text-xs text-ink outline-none"
                   />
                 </div>
