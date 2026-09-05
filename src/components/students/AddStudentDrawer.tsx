@@ -428,7 +428,7 @@ export function AddStudentDrawer({
             className={inputClass}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Sarthak Yadav"
+            placeholder="e.g. Student Name"
           />
         </Field>
 
