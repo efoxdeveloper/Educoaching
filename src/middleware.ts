@@ -5,7 +5,12 @@ export default auth((req) => {
   const pathname = req.nextUrl.pathname;
 
   // Allow public access to security verification routes
-  if (pathname === "/settings/verify-security" || pathname.startsWith("/verify-security")) {
+  if (
+    pathname === "/settings/verify-security" ||
+    pathname.startsWith("/verify-security") ||
+    pathname === "/admin/verify-email" ||
+    pathname.startsWith("/admin/verify-email")
+  ) {
     return NextResponse.next();
   }
 
@@ -16,6 +21,7 @@ export default auth((req) => {
     pathname.startsWith("/api/public") ||
     pathname.startsWith("/api/public-enquiry") ||
     pathname.startsWith("/api/verify-security") ||
+    pathname.startsWith("/api/admin/me/verify-email-change") ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/exam") ||
     pathname.startsWith("/api/cron")

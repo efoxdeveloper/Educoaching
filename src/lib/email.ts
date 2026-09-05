@@ -1116,3 +1116,90 @@ export async function sendPaymentReceiptEmail(params: {
 
   return sendMail(to, `${title} [${receiptNumber}] — ${instituteName}`, html);
 }
+
+export async function sendAdminEmailChangeConfirmationEmail(params: {
+  to: string;
+  newEmail: string;
+  verifyUrl: string;
+  adminName?: string;
+}) {
+  const { to, newEmail, verifyUrl, adminName } = params;
+  const name = adminName || "Platform Admin";
+  // Exact flow wording required by spec:
+  // "A request was made to change your account email to [new email]. Click below to approve this change. If you did not request this, ignore this email and your account will remain unchanged."
+  const html = emailShell(
+    "Confirm your email change request",
+    `
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Hi <strong>${name}</strong>,
+    </p>
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      A request was made to change your account email to <span style="color: #1E3A5F; font-weight: 700;">${newEmail}</span>. Click below to approve this change. If you did not request this, ignore this email and your account will remain unchanged.
+    </p>
+    <div style="text-align: center; margin: 28px 0;">
+      <a
+        href="${verifyUrl}"
+        style="
+          display: inline-block;
+          background: #1E3A5F;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 13px 28px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+        "
+      >
+        Approve Email Change
+      </a>
+    </div>
+    <p style="color: #4E6E93; font-size: 12px; line-height: 1.6;">
+      This approval link will expire in <strong>1 hour</strong> and can be used only once. It is tied to your account and cannot be reused or guessed.
+    </p>
+    <p style="color: #7E9BBC; font-size: 12px; line-height: 1.6; margin-top: 12px;">
+      For your security this verification was sent to your <strong>current</strong> email address (<span style="font-family: monospace;">${to}</span>), not the new one.
+    </p>
+    `
+  );
+  return sendMail(to, "Confirm your email change request — Vidyalaya Platform Admin", html);
+}
+
+export async function sendAdminEmailChangeCompletedEmail(params: {
+  to: string;
+  oldEmail: string;
+  newEmail: string;
+  isOldAddress: boolean;
+  adminName?: string;
+}) {
+  const { to, oldEmail, newEmail, isOldAddress, adminName } = params;
+  const name = adminName || "Platform Admin";
+  const title = "Your platform admin email has been changed";
+  const html = emailShell(
+    title,
+    `
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Hi <strong>${name}</strong>,
+    </p>
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Your Vidyalaya Platform Admin account email has been successfully changed from <span style="font-family: monospace; font-weight: 600; color: #1E3A5F;">${oldEmail}</span> to <span style="font-family: monospace; font-weight: 600; color: #059669;">${newEmail}</span>.
+    </p>
+    ${
+      isOldAddress
+        ? `<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
+        <p style="color: #991B1B; font-size: 12px; line-height: 1.5; margin: 0;">
+          This is a confirmation sent to your <strong>previous</strong> email address for your records. If you did not approve this change, please contact platform support immediately.
+        </p>
+      </div>`
+        : `<div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
+        <p style="color: #065F46; font-size: 12px; line-height: 1.5; margin: 0;">
+          Future login and notification emails will now be sent to this new address. Please use <span style="font-family: monospace; font-weight: 700;">${newEmail}</span> to sign in going forward.
+        </p>
+      </div>`
+    }
+    <p style="color: #4E6E93; font-size: 12px; line-height: 1.6;">
+      A record of this change has been sent to both your old and new email addresses.
+    </p>
+    `
+  );
+  return sendMail(to, title + " — Vidyalaya Platform Admin", html);
+}

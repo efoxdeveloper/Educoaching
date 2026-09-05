@@ -66,6 +66,7 @@ model Institute {
   tests                      Test[]
   timetableSlots             TimetableSlot[]
   users                      User[]
+  securityVerifications      SecurityVerificationRequest[]
 }
 
 model EmailVerificationToken {
@@ -106,27 +107,28 @@ model PlatformNotification {
 }
 
 model User {
-  id                     String               @id @default(cuid())
-  name                   String
-  email                  String               @unique
-  password               String
-  role                   Role                 @default(ADMIN)
-  instituteId            String?
-  branchId               String?
-  createdAt              DateTime             @default(now())
-  auditLogs              AuditLog[]
-  sentBulkCommunications BulkCommunication[]
-  createdExpenses        Expense[]
-  facultyProfiles        Faculty[]
-  uploadedFiles          FileAsset[]
-  createdIncomes         Income[]
-  parentLinks            ParentStudentLink[]
-  passwordResetTokens    PasswordResetToken[]
-  uploadedStudyMaterials StudyMaterial[]
-  supportTickets         SupportTicket[]
-  supportReplies         SupportTicketReply[]
-  branch                 Branch?              @relation(fields: [branchId], references: [id])
-  institute              Institute?           @relation(fields: [instituteId], references: [id])
+  id                        String                        @id @default(cuid())
+  name                      String
+  email                     String                        @unique
+  password                  String
+  role                      Role                          @default(ADMIN)
+  instituteId               String?
+  branchId                  String?
+  createdAt                 DateTime                      @default(now())
+  auditLogs                 AuditLog[]
+  sentBulkCommunications    BulkCommunication[]
+  createdExpenses           Expense[]
+  facultyProfiles           Faculty[]
+  uploadedFiles             FileAsset[]
+  createdIncomes            Income[]
+  parentLinks               ParentStudentLink[]
+  passwordResetTokens       PasswordResetToken[]
+  securityVerifications     SecurityVerificationRequest[]
+  uploadedStudyMaterials    StudyMaterial[]
+  supportTickets            SupportTicket[]
+  supportReplies            SupportTicketReply[]
+  branch                    Branch?                       @relation(fields: [branchId], references: [id])
+  institute                 Institute?                    @relation(fields: [instituteId], references: [id])
 
   @@index([instituteId])
   @@index([branchId])
@@ -142,6 +144,25 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model SecurityVerificationRequest {
+  id          String    @id @default(cuid())
+  instituteId String?
+  userId      String
+  type        String
+  token       String    @unique
+  targetEmail String?
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institute   Institute? @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([instituteId])
+  @@index([expiresAt])
+  @@index([type])
 }
 
 model Course {

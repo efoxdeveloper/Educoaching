@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShieldCheck, ScrollText, GitBranch, Ticket, X } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, ScrollText, GitBranch, Ticket, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -10,6 +10,7 @@ const nav = [
   { href: "/admin/tickets", label: "Support Tickets", icon: Ticket },
   { href: "/admin/branches", label: "Branch Requests", icon: GitBranch },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
+  { href: "/admin/settings", label: "Account Settings", icon: Settings },
 ];
 
 export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
