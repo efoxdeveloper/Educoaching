@@ -6,7 +6,7 @@ import { requireInstitute } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 import { parseInstituteSettings } from "@/lib/institute-settings";
 import { buildStorageKey, getStorageProvider, ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/storage";
-import { sendBranchProcessingEmail, sendAdminBranchAlertEmail } from "@/lib/email";
+import { sendBranchProcessingEmail, sendAdminBranchAlertEmail, sendBranchApprovedEmail } from "@/lib/email";
 
 interface BranchInput {
   name: string;
@@ -207,45 +207,74 @@ export async function POST(req: Request) {
           }
         }
 
-        // Send branch processing email & admin alert in background without blocking setup
-        (async () => {
-          try {
-            if (createdBranchUser?.email) {
-              await sendBranchProcessingEmail({
-                to: createdBranchUser.email,
-                recipientName: createdBranchUser.name,
-                branchName: createdBranch.name,
-                instituteName: institute.name,
-                city: createdBranch.city,
-                loginEmail: createdBranchUser.email,
-              }).catch((err) => console.error("Failed to send branch processing email:", err));
-            }
-
-            const platformAdmins = await prisma.user.findMany({
-              where: { role: "PLATFORM_ADMIN" },
-              select: { email: true },
-            });
-            const adminEmails = platformAdmins.map((a) => a.email);
+        // Branch email handling gated by trial period (same source: institute.trialEndsAt)
+        // - Trial ACTIVE (initialBranchStatus === "ACTIVE"): immediate ACTIVE, NO admin
+        //   approval needed, send welcome email directly via sendBranchApprovedEmail
+        //   (reuses SAME template as post-trial admin-approved flow at
+        //   src/app/api/admin/branches/[id]/route.ts:146)
+        // - Trial EXPIRED (PENDING_APPROVAL): requires admin approval, send
+        //   processing email + admin alert (existing behavior preserved)
+        if (initialBranchStatus === "ACTIVE") {
+          // Trial auto-activated — welcome email directly to sub-branch email
+          if (createdBranchUser?.email) {
             const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-            for (const adminEmail of adminEmails) {
-              await sendAdminBranchAlertEmail({
-                to: adminEmail,
-                branchName: createdBranch.name,
-                instituteName: institute.name,
-                ownerName: institute.ownerName,
-                city: createdBranch.city,
-                state: createdBranch.state,
-                contact: createdBranch.contact,
-                adminPortalUrl: `${appUrl}/admin/branches`,
-              }).catch((err) => console.error("Failed to send admin branch alert email:", err));
-            }
-          } catch (mailErr) {
-            console.error("Failed to send branch alert email:", mailErr);
+            const portalUrl = `${appUrl}/login?portal=institute`;
+            (async () => {
+              try {
+                await sendBranchApprovedEmail({
+                  to: createdBranchUser.email,
+                  recipientName: createdBranchUser.name,
+                  branchName: createdBranch.name,
+                  instituteName: institute.name,
+                  portalUrl,
+                  loginEmail: createdBranchUser.email,
+                }).catch((err) => console.error("Failed to send trial branch welcome email:", err));
+              } catch (err) {
+                console.error("Failed to send trial branch welcome email:", err);
+              }
+            })().catch((err) => console.error("[setup branch welcome email error]:", err));
           }
-        })().catch((err) => {
-          console.error("[setup branch background notification error]:", err);
-        });
+        } else {
+          // Post-trial: requires approval — existing processing + admin alert flow
+          (async () => {
+            try {
+              if (createdBranchUser?.email) {
+                await sendBranchProcessingEmail({
+                  to: createdBranchUser.email,
+                  recipientName: createdBranchUser.name,
+                  branchName: createdBranch.name,
+                  instituteName: institute.name,
+                  city: createdBranch.city,
+                  loginEmail: createdBranchUser.email,
+                }).catch((err) => console.error("Failed to send branch processing email:", err));
+              }
+
+              const platformAdmins = await prisma.user.findMany({
+                where: { role: "PLATFORM_ADMIN" },
+                select: { email: true },
+              });
+              const adminEmails = platformAdmins.map((a) => a.email);
+              const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+              for (const adminEmail of adminEmails) {
+                await sendAdminBranchAlertEmail({
+                  to: adminEmail,
+                  branchName: createdBranch.name,
+                  instituteName: institute.name,
+                  ownerName: institute.ownerName,
+                  city: createdBranch.city,
+                  state: createdBranch.state,
+                  contact: createdBranch.contact,
+                  adminPortalUrl: `${appUrl}/admin/branches`,
+                }).catch((err) => console.error("Failed to send admin branch alert email:", err));
+              }
+            } catch (mailErr) {
+              console.error("Failed to send branch alert email:", mailErr);
+            }
+          })().catch((err) => {
+            console.error("[setup branch background notification error]:", err);
+          });
+        }
       } catch (branchErr) {
         console.error("Failed to create sub-branch in setup wizard:", branchErr);
       }

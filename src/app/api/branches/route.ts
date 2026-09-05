@@ -7,6 +7,7 @@ import { logAudit, actorFromSession } from "@/lib/audit";
 import {
   sendBranchProcessingEmail,
   sendAdminBranchAlertEmail,
+  sendBranchApprovedEmail,
 } from "@/lib/email";
 import { BRANCH_LIMITS_BY_PLAN } from "@/lib/pricing";
 
@@ -205,6 +206,13 @@ export async function POST(req: Request) {
     },
   });
 
+  // Approval gating based on trial period (same source of truth: institute.trialEndsAt)
+  // isTrialActive is computed above at line 113 using trialEndsAt > now.
+  // Trial active  → ACTIVE (no approval, welcome email directly)
+  // Trial expired → PENDING_APPROVAL (requires admin, processing email + admin alert)
+  // Welcome email for trial path reuses sendBranchApprovedEmail — same template
+  // as post-trial admin-approved flow (src/app/api/admin/branches/[id]/route.ts:145)
+
   // If sub-branch requires approval, dispatch emails in background without blocking response
   if (initialStatus === BranchStatus.PENDING_APPROVAL) {
     const appUrl =
@@ -291,6 +299,29 @@ export async function POST(req: Request) {
     })().catch((err) => {
       console.error("[branch background notification error]:", err);
     });
+  } else if (initialStatus === BranchStatus.ACTIVE && createdUser?.email) {
+    // Trial auto-activated (or main branch / paid-active): send welcome email
+    // immediately, reusing the SAME template as admin-approved flow.
+    // Requirement #4: welcome email must fire for trial ACTIVE path too.
+    const appUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const portalUrl = `${appUrl}/login?portal=institute`;
+    (async () => {
+      try {
+        await sendBranchApprovedEmail({
+          to: createdUser.email,
+          recipientName: createdUser.name || `${branch.name} Admin`,
+          branchName: branch.name,
+          instituteName: institute.name,
+          portalUrl,
+          loginEmail: createdUser.email,
+        }).catch((err) => console.error("Failed to send trial branch welcome email:", err));
+      } catch (err) {
+        console.error("Failed to send trial branch welcome email:", err);
+      }
+    })().catch((err) => console.error("[branch welcome email error]:", err));
   }
 
   return NextResponse.json(
