@@ -79,10 +79,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Institute not found" }, { status: 404 });
   }
 
+  // Mandatory vs Optional (see wizard header comment):
+  // MANDATORY: academicYearLabel (Step 2) — must be non-empty to complete setup.
+  // OPTIONAL: address, city, state, guidePhone, taxNumber, logo, branches, courses.
+  // Wizard should complete even if optional are blank/skipped; optional can be
+  // filled later via Settings/Profile pages without re-triggering wizard.
+  const mandatoryMissing: string[] = [];
+  // academicYearLabel may come from payload or already be stored on institute
+  const effectiveAcademicYear = (academicYearLabel !== undefined ? academicYearLabel : institute.academicYearLabel) as string | null | undefined;
+  if (!effectiveAcademicYear || !String(effectiveAcademicYear).trim()) {
+    mandatoryMissing.push("Academic Session / Year Label (Step 2)");
+  }
+  if (mandatoryMissing.length > 0) {
+    return NextResponse.json(
+      { error: `Please fill all mandatory fields to complete setup: ${mandatoryMissing.join(", ")}. Optional fields (address, city, state, guidePhone, taxNumber, logo, branches, courses) may be left blank and filled later via Settings.` },
+      { status: 400 }
+    );
+  }
+
   const currentSettings = parseInstituteSettings(institute.settings);
   const updatedSettings = {
     ...currentSettings,
     taxNumber: taxNumber !== undefined ? (taxNumber.trim() || undefined) : currentSettings.taxNumber,
+    // Persisted flag — once true, wizard never reappears (see dashboard page).
+    // Optional-field emptiness must NOT reset this.
     setupCompleted: true,
   };
 

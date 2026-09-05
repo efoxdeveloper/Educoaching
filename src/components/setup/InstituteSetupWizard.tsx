@@ -34,6 +34,27 @@ import {
   calculateCourseEndDate,
 } from "@/lib/course-duration";
 
+/**
+ * MANDATORY vs OPTIONAL fields for setup wizard completion.
+ *
+ * MANDATORY (wizard cannot complete without these):
+ * - academicYearLabel (Step 2: Academic Session / Year Label) — the only
+ *   required field. Without it, certificates, batches, and reports have no
+ *   session context.
+ *
+ * OPTIONAL (may be skipped; wizard still completes; editable later via
+ * normal settings pages — NOT by re-triggering wizard):
+ * - Step 1: address, city, state, guidePhone, taxNumber, logo (Branding)
+ * - Step 3: sub-branches (entire step optional; if a branch is added, its
+ *   own name/inChargeName are required, but zero branches is valid)
+ * - Step 4: courses (entire step optional; if a course is added, its name
+ *   + fee + duration are required, but zero courses is valid)
+ *
+ * Completion rule: setupCompleted = true iff all MANDATORY fields are
+ * filled, regardless of optional skipped. See handleSaveSetup and
+ * src/app/api/institutes/me/setup/route.ts for server-side enforcement.
+ */
+
 interface SubBranchItem {
   name: string;
   inChargeName: string;
@@ -392,6 +413,13 @@ export function InstituteSetupWizard({
 
   const handleSaveSetup = async () => {
     setError("");
+    // Client-side mandatory check: only academicYearLabel is mandatory.
+    // Optional fields (address, city, state, guidePhone, taxNumber, logo,
+    // branches, courses) may be empty/skipped — wizard should still complete.
+    if (!academicYearLabel.trim()) {
+      setError("Please enter your Academic Session / Year Label (e.g. 2026-27) — this is the only mandatory field to complete setup. Optional fields can be filled later via Settings.");
+      return;
+    }
     setSaving(true);
 
     try {

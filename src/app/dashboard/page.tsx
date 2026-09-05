@@ -226,6 +226,13 @@ export default async function DashboardPage() {
   ]);
 
   const parsedSettings = parseInstituteSettings(instituteRecord?.settings);
+  // Wizard visibility depends ONLY on persistent flags, not field completeness.
+  // - MANDATORY field(s): academicYearLabel (Step 2) — checked server-side in
+  //   src/app/api/institutes/me/setup/route.ts before setting setupCompleted.
+  // - OPTIONAL fields (address, city, state, guidePhone, taxNumber, logo,
+  //   branches, courses) may remain empty; once setupCompleted=true, wizard
+  //   never reappears on refresh/navigation/optional emptiness. Optional
+  //   fields are editable later via Settings ( /settings ) — not via wizard.
   const showSetupWizard =
     !parsedSettings.setupCompleted &&
     !parsedSettings.setupWizardDismissed &&
