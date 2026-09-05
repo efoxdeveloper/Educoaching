@@ -455,7 +455,6 @@ export function InstituteSetupWizard({
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="e.g. 104, Education Hub, Near Metro Pillar 42"
                     className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs text-ink outline-none focus:border-scholar-500"
                   />
                 </div>
@@ -466,7 +465,6 @@ export function InstituteSetupWizard({
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. Kota / Delhi / Jaipur"
                     className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs text-ink outline-none focus:border-scholar-500"
                   />
                 </div>
@@ -477,7 +475,6 @@ export function InstituteSetupWizard({
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g. Rajasthan"
                     className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs text-ink outline-none focus:border-scholar-500"
                   />
                 </div>
@@ -490,7 +487,6 @@ export function InstituteSetupWizard({
                     type="tel"
                     value={guidePhone}
                     onChange={(e) => setGuidePhone(e.target.value)}
-                    placeholder="e.g. 011-23456789 or 9876543210"
                     className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs text-ink outline-none focus:border-scholar-500"
                   />
                 </div>
@@ -503,7 +499,6 @@ export function InstituteSetupWizard({
                     type="text"
                     value={taxNumber}
                     onChange={(e) => setTaxNumber(e.target.value)}
-                    placeholder="e.g. 08AAAAA0000A1Z5"
                     className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs text-ink outline-none focus:border-scholar-500"
                   />
                 </div>
@@ -588,7 +583,6 @@ export function InstituteSetupWizard({
                     required
                     value={academicYearLabel}
                     onChange={(e) => setAcademicYearLabel(e.target.value)}
-                    placeholder="e.g. 2026-2027 or 2026-27 or Session 2026-27"
                     className="w-full rounded-xl border border-scholar-300 bg-white px-3.5 py-2.5 text-xs text-ink outline-none focus:border-scholar-600 focus:ring-2 focus:ring-scholar-100 font-medium"
                   />
                   <p className="mt-1.5 text-[11px] text-scholar-500 leading-relaxed">
@@ -732,7 +726,6 @@ export function InstituteSetupWizard({
                         required
                         value={newBranch.name}
                         onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
-                        placeholder="e.g. South Extension Branch"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -746,7 +739,6 @@ export function InstituteSetupWizard({
                         required
                         value={newBranch.inChargeName}
                         onChange={(e) => setNewBranch({ ...newBranch, inChargeName: e.target.value })}
-                        placeholder="e.g. Prof. Arvind Saxena"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -757,7 +749,6 @@ export function InstituteSetupWizard({
                         type="text"
                         value={newBranch.city}
                         onChange={(e) => setNewBranch({ ...newBranch, city: e.target.value })}
-                        placeholder="e.g. New Delhi"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -768,7 +759,6 @@ export function InstituteSetupWizard({
                         type="tel"
                         value={newBranch.contact}
                         onChange={(e) => setNewBranch({ ...newBranch, contact: e.target.value })}
-                        placeholder="e.g. 9876543210"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -779,7 +769,6 @@ export function InstituteSetupWizard({
                         type="email"
                         value={newBranch.email}
                         onChange={(e) => setNewBranch({ ...newBranch, email: e.target.value })}
-                        placeholder="branch@apexcoaching.com"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -932,7 +921,6 @@ export function InstituteSetupWizard({
                         required
                         value={newCourse.name}
                         onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                        placeholder="e.g. JEE Advanced 2-Year Program"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -943,7 +931,6 @@ export function InstituteSetupWizard({
                         type="text"
                         value={newCourse.code}
                         onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
-                        placeholder="e.g. JEE-ADV-26"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -954,7 +941,6 @@ export function InstituteSetupWizard({
                         type="text"
                         value={newCourse.academicYear || ""}
                         onChange={(e) => setNewCourse({ ...newCourse, academicYear: e.target.value })}
-                        placeholder={academicYearLabel || "e.g. 2026-2027"}
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
@@ -969,7 +955,6 @@ export function InstituteSetupWizard({
                         min={0}
                         value={newCourse.fee}
                         onChange={(e) => setNewCourse({ ...newCourse, fee: e.target.value === "" ? "" : Number(e.target.value) })}
-                        placeholder="e.g. 25000"
                         className="w-full rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs text-ink outline-none focus:border-scholar-500"
                       />
                     </div>
