@@ -1,10 +1,25 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
-import { Building2, Check, Clock, Users, ArrowRight, Copy } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import InputAdornment from "@mui/material/InputAdornment";
+import { Building2, Clock, Users } from "lucide-react";
 
 type Course = { id: string; name: string };
 type Branch = { id: string; name: string; city?: string | null };
@@ -41,7 +56,6 @@ export function AddBatchDrawer({
     status: "Active",
   });
 
-  // Base Clock Time Picker state (24-hour format for input type="time")
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("10:00");
 
@@ -50,15 +64,12 @@ export function AddBatchDrawer({
     branches[0]?.id ? [branches[0].id] : []
   );
 
-  // Branch-specific capacity map: { [branchId]: string }
   const [branchCapacities, setBranchCapacities] = useState<Record<string, string>>({});
-  // Branch-specific timing map: { [branchId]: string }
   const [branchTimings, setBranchTimings] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Sync formatted timing when startTime or endTime changes
   const updateTimingFromClocks = (newStart: string, newEnd: string) => {
     setStartTime(newStart);
     setEndTime(newEnd);
@@ -73,7 +84,6 @@ export function AddBatchDrawer({
     return branches.filter((b) => selectedBranchIds.includes(b.id));
   }, [branches, isAllBranches, selectedBranchIds]);
 
-  // Compute total capacity when multi-branch is used
   const totalCapacity = useMemo(() => {
     if (activeBranchList.length <= 1) {
       return Number(form.capacity) || 40;
@@ -135,7 +145,6 @@ export function AddBatchDrawer({
 
     setLoading(true);
     try {
-      // Build branchCapacities & branchTimings objects
       const finalBranchCapacities: Record<string, number> = {};
       const finalBranchTimings: Record<string, string> = {};
 
@@ -185,308 +194,344 @@ export function AddBatchDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Add Batch (Multi-Branch Allocation)">
-      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        {error && <p className="rounded-xl bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-600">{error}</p>}
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
+        {error && (
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.75rem" }}>
+            {error}
+          </Alert>
+        )}
 
-        <Field label="Batch Name *">
-          <input
-            required
-            className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Morning Batch A / JEE Droppers"
-          />
-        </Field>
+        <TextField
+          label="Batch Name *"
+          required
+          fullWidth
+          size="small"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="e.g. Morning Batch A / JEE Droppers"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        <Field label="Course Program *">
-          <select
-            required
-            className={inputClass}
+        <FormControl fullWidth size="small" required sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}>
+          <InputLabel id="add-batch-course-label">Course Program *</InputLabel>
+          <Select
+            labelId="add-batch-course-label"
+            label="Course Program *"
             value={form.courseId}
             onChange={(e) => setForm({ ...form, courseId: e.target.value })}
           >
             {courses.map((c) => (
-              <option key={c.id} value={c.id}>
+              <MenuItem key={c.id} value={c.id}>
                 {c.name}
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </Field>
+          </Select>
+        </FormControl>
 
-        {/* Multi-Branch Campus Allocation */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-              <Building2 size={14} className="text-scholar-600" />
-              <span>Campus Branch Allocation</span>
-            </label>
+        <Paper
+          variant="outlined"
+          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Building2 size={14} style={{ color: "#475569" }} />
+              Campus Branch Allocation
+            </Typography>
             {branches.length > 0 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={selectAllBranches}
-                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-                >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Button variant="text" size="small" onClick={selectAllBranches} sx={{ fontSize: "10px", fontWeight: 600, color: "#64748b", textTransform: "none", p: 0, minWidth: "auto" }}>
                   Select All
-                </button>
-                <span>•</span>
-                <button
-                  type="button"
-                  onClick={clearAllBranches}
-                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-                >
+                </Button>
+                <Typography variant="caption" sx={{ color: "#94A3B8" }}>
+                  •
+                </Typography>
+                <Button variant="text" size="small" onClick={clearAllBranches} sx={{ fontSize: "10px", fontWeight: 600, color: "#64748b", textTransform: "none", p: 0, minWidth: "auto" }}>
                   Clear
-                </button>
-              </div>
+                </Button>
+              </Box>
             )}
-          </div>
+          </Box>
 
           {branches.length === 0 ? (
-            <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+            <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "white", borderColor: "#D6E0EB" }}>
               This institute has only one branch (Main Branch) — no branch selection needed.
-            </p>
+            </Alert>
           ) : (
             <>
-              <label className="flex items-center gap-2 text-xs font-semibold text-scholar-700 cursor-pointer bg-white p-2 rounded-lg border border-scholar-200 shadow-2xs">
-                <input
-                  type="checkbox"
-                  checked={isAllBranches}
-                  onChange={(e) => setIsAllBranches(e.target.checked)}
-                  className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.25,
+                  borderRadius: "12px",
+                  borderColor: isAllBranches ? "#1E3A5F" : "#D6E0EB",
+                  bgcolor: isAllBranches ? "#EEF2F7" : "white",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isAllBranches}
+                      onChange={(e) => setIsAllBranches(e.target.checked)}
+                      size="small"
+                      sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }}
+                    />
+                  }
+                  label={
+                    <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#334155" }}>
+                      All Branches / Central Hybrid Program (Conduct in all campuses)
+                    </Typography>
+                  }
+                  sx={{ m: 0 }}
                 />
-                <span>All Branches / Central Hybrid Program (Conduct in all campuses)</span>
-              </label>
+              </Paper>
 
               {!isAllBranches && (
-                <div className="space-y-1.5 pt-1">
-                  <p className="text-[11px] text-scholar-500">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b" }}>
                     Select the branches conducting this batch:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1, maxHeight: 144, overflowY: "auto" }}>
                     {branches.map((b) => {
                       const isSelected = selectedBranchIds.includes(b.id);
                       return (
-                        <button
-                          type="button"
+                        <Paper
                           key={b.id}
+                          variant="outlined"
                           onClick={() => toggleBranch(b.id)}
-                          className={`flex items-center justify-between p-2 rounded-lg border text-left text-xs transition-all cursor-pointer ${
-                            isSelected
-                              ? "bg-scholar-600 text-white border-scholar-600 font-semibold shadow-xs"
-                              : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-                          }`}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            p: 1.25,
+                            borderRadius: "12px",
+                            cursor: "pointer",
+                            borderColor: isSelected ? "#1E3A5F" : "#D6E0EB",
+                            bgcolor: isSelected ? "#1E3A5F" : "white",
+                            color: isSelected ? "white" : "#334155",
+                            transition: "all 0.15s",
+                            "&:hover": { bgcolor: isSelected ? "#182F4C" : "#F8FAFC" },
+                          }}
                         >
-                          <span className="truncate">
+                          <Typography
+                            variant="caption"
+                            sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 600 : 500, color: isSelected ? "white" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
                             {b.name} {b.city ? `(${b.city})` : ""}
-                          </span>
-                          {isSelected && <Check size={14} className="shrink-0 ml-1" />}
-                        </button>
+                          </Typography>
+                          {isSelected && (
+                            <Box sx={{ width: 16, height: 16, borderRadius: "9999px", bgcolor: "white", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, flexShrink: 0, ml: 1 }}>
+                              ✓
+                            </Box>
+                          )}
+                        </Paper>
                       );
                     })}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               )}
             </>
           )}
-        </div>
+        </Paper>
 
-        {/* Primary Clock Time Picker */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-              <Clock size={14} className="text-scholar-600" />
-              <span>Batch Timing (Clock Time Setter) *</span>
-            </label>
-            <span className="rounded-md bg-scholar-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-2xs">
-              {form.timing || "Set Time"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] font-semibold text-scholar-600 mb-1 block">Start Time (Clock)</label>
-              <div className="relative">
-                <input
-                  type="time"
-                  required
-                  className={`${inputClass} font-semibold`}
-                  value={startTime}
-                  onChange={(e) => updateTimingFromClocks(e.target.value, endTime)}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-scholar-600 mb-1 block">End Time (Clock)</label>
-              <div className="relative">
-                <input
-                  type="time"
-                  required
-                  className={`${inputClass} font-semibold`}
-                  value={endTime}
-                  onChange={(e) => updateTimingFromClocks(startTime, e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-1">
-            <label className="text-[10px] text-scholar-500 mb-0.5 block">Formatted Schedule Label (or fine-tune text):</label>
-            <input
-              required
-              className={inputClass}
-              value={form.timing}
-              onChange={(e) => setForm({ ...form, timing: e.target.value })}
-              placeholder="e.g. 08:00 AM - 10:00 AM"
+        <Paper
+          variant="outlined"
+          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Clock size={14} style={{ color: "#475569" }} />
+              Batch Timing (Clock Time Setter) *
+            </Typography>
+            <Chip
+              label={form.timing || "Set Time"}
+              size="small"
+              sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "11px", height: 22, borderRadius: "6px" }}
             />
-          </div>
-        </div>
+          </Box>
 
-        {/* Multi-Branch Independent Timing & Capacity Section */}
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+            <TextField
+              label="Start Time (Clock)"
+              type="time"
+              required
+              fullWidth
+              size="small"
+              value={startTime}
+              onChange={(e) => updateTimingFromClocks(e.target.value, endTime)}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } } as any}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
+            />
+            <TextField
+              label="End Time (Clock)"
+              type="time"
+              required
+              fullWidth
+              size="small"
+              value={endTime}
+              onChange={(e) => updateTimingFromClocks(startTime, e.target.value)}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } } as any}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
+            />
+          </Box>
+
+          <TextField
+            label="Formatted Schedule Label"
+            required
+            fullWidth
+            size="small"
+            value={form.timing}
+            onChange={(e) => setForm({ ...form, timing: e.target.value })}
+            placeholder="e.g. 08:00 AM - 10:00 AM"
+            slotProps={{ inputLabel: { shrink: true }, formHelperText: { sx: { fontSize: "10px", color: "#94A3B8" } } } as any}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+            helperText="Fine-tune text"
+          />
+        </Paper>
+
         {activeBranchList.length > 1 ? (
-          <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-                  <Building2 size={14} className="text-scholar-600" />
-                  <span>Branch-Specific Timings & Capacities</span>
-                </label>
-                <p className="text-[11px] text-scholar-500 mt-0.5">
+          <Paper
+            variant="outlined"
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Building2 size={14} style={{ color: "#475569" }} />
+                  Branch-Specific Timings & Capacities
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b" }}>
                   Custom schedule & seat capacity for each branch center:
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={applyBaseTimingToAll}
-                  title="Copy base timing to all branches"
-                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-                >
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Button variant="text" size="small" onClick={applyBaseTimingToAll} sx={{ fontSize: "10px", fontWeight: 600, textTransform: "none", p: 0, minWidth: "auto" }}>
                   Sync Timings
-                </button>
-                <span>•</span>
-                <button
-                  type="button"
-                  onClick={applyDefaultCapacityToAll}
-                  title="Copy base capacity to all branches"
-                  className="text-[10px] text-scholar-600 font-semibold hover:underline cursor-pointer"
-                >
+                </Button>
+                <Typography variant="caption" sx={{ color: "#94A3B8" }}>
+                  •
+                </Typography>
+                <Button variant="text" size="small" onClick={applyDefaultCapacityToAll} sx={{ fontSize: "10px", fontWeight: 600, textTransform: "none", p: 0, minWidth: "auto" }}>
                   Sync Capacities
-                </button>
-              </div>
-            </div>
+                </Button>
+              </Box>
+            </Box>
 
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, maxHeight: 224, overflowY: "auto", pr: 0.5 }}>
               {activeBranchList.map((b) => {
                 const branchCap = branchCapacities[b.id] !== undefined ? branchCapacities[b.id] : form.capacity || "40";
                 const branchTime = branchTimings[b.id] !== undefined ? branchTimings[b.id] : form.timing;
-
                 return (
-                  <div
+                  <Paper
                     key={b.id}
-                    className="bg-white p-2.5 rounded-xl border border-scholar-200 shadow-2xs space-y-2"
+                    variant="outlined"
+                    sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.25 }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-ink truncate">
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         📍 {b.name} {b.city ? `(${b.city})` : ""}
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[11px] text-scholar-500 font-medium">Seats:</span>
-                        <input
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>
+                          Seats:
+                        </Typography>
+                        <TextField
                           type="number"
-                          min={1}
-                          className="w-16 rounded-lg border border-scholar-200 bg-scholar-50 px-2 py-0.5 text-center text-xs font-bold text-ink outline-none focus:border-scholar-500"
+                          size="small"
                           value={branchCap}
                           onChange={(e) => handleBranchCapacityChange(b.id, e.target.value)}
+                          slotProps={{ htmlInput: { min: 1 } } as any}
+                          sx={{ width: 72, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F8FAFC", "& input": { textAlign: "center", fontWeight: 700, fontSize: "0.75rem", py: 0.75 } } }}
                         />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <Clock size={12} className="absolute left-2.5 top-2 text-scholar-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border border-scholar-200 bg-scholar-50 pl-7 pr-2 py-1 text-xs font-semibold text-ink outline-none focus:border-scholar-500"
-                          placeholder="e.g. 08:00 AM - 10:00 AM"
-                          value={branchTime}
-                          onChange={(e) => handleBranchTimingChange(b.id, e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                      </Box>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={branchTime}
+                      onChange={(e) => handleBranchTimingChange(b.id, e.target.value)}
+                      placeholder="e.g. 08:00 AM - 10:00 AM"
+                      slotProps={{ input: { startAdornment: <InputAdornment position="start"><Clock size={12} style={{ color: "#94A3B8" }} /></InputAdornment> } } as any}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F8FAFC", fontSize: "0.75rem", fontWeight: 600 } }}
+                    />
+                  </Paper>
                 );
               })}
-            </div>
+            </Box>
 
-            <div className="flex items-center justify-between pt-2 border-t border-scholar-200 text-xs">
-              <span className="font-bold text-scholar-700">Total Combined Batch Capacity:</span>
-              <span className="rounded-lg bg-scholar-600 px-2 py-0.5 text-xs font-black text-white shadow-2xs">
-                {totalCapacity} Seats Across {activeBranchList.length} Branches
-              </span>
-            </div>
-          </div>
+            <Paper
+              variant="outlined"
+              sx={{ p: 1.25, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#334155" }}>
+                Total Combined Batch Capacity:
+              </Typography>
+              <Chip
+                label={`${totalCapacity} Seats Across ${activeBranchList.length} Branches`}
+                size="small"
+                sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 26, borderRadius: "12px" }}
+              />
+            </Paper>
+          </Paper>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Batch Capacity (Seats) *">
-              <div className="relative">
-                <Users size={14} className="absolute left-3 top-2.5 text-scholar-400 pointer-events-none" />
-                <input
-                  type="number"
-                  min={1}
-                  required
-                  className={`${inputClass} pl-9`}
-                  value={form.capacity}
-                  onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                />
-              </div>
-            </Field>
-            <Field label="Batch Status">
-              <select
-                className={inputClass}
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-              >
-                <option value="Active">Active (Ongoing)</option>
-                <option value="Upcoming">Upcoming (Admissions Open)</option>
-                <option value="Closed">Closed</option>
-              </select>
-            </Field>
-          </div>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+            <TextField
+              label="Batch Capacity (Seats) *"
+              type="number"
+              required
+              fullWidth
+              size="small"
+              value={form.capacity}
+              onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 1 } as any, input: { startAdornment: <InputAdornment position="start"><Users size={14} style={{ color: "#94A3B8" }} /></InputAdornment> } as any }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+            />
+            <FormControl fullWidth size="small" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}>
+              <InputLabel id="add-batch-status-label">Batch Status</InputLabel>
+              <Select labelId="add-batch-status-label" label="Batch Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <MenuItem value="Active">Active (Ongoing)</MenuItem>
+                <MenuItem value="Upcoming">Upcoming (Admissions Open)</MenuItem>
+                <MenuItem value="Closed">Closed</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         )}
 
         {activeBranchList.length > 1 && (
-          <Field label="Batch Status">
-            <select
-              className={inputClass}
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              <option value="Active">Active (Admissions Open)</option>
-              <option value="Upcoming">Upcoming (Schedule Announced)</option>
-              <option value="Closed">Closed (Archived)</option>
-            </select>
-          </Field>
+          <FormControl fullWidth size="small" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}>
+            <InputLabel id="add-batch-status-multi-label">Batch Status</InputLabel>
+            <Select labelId="add-batch-status-multi-label" label="Batch Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <MenuItem value="Active">Active (Admissions Open)</MenuItem>
+              <MenuItem value="Upcoming">Upcoming (Schedule Announced)</MenuItem>
+              <MenuItem value="Closed">Closed (Archived)</MenuItem>
+            </Select>
+          </FormControl>
         )}
 
-        <div className="flex gap-2.5 pt-2">
-          <button
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button
             type="button"
+            variant="outlined"
+            fullWidth
             onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-scholar-50 cursor-pointer"
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="contained"
+            fullWidth
             disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 cursor-pointer shadow-2xs"
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
             {loading ? "Adding Batch..." : "Add Batch"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }
-
-
