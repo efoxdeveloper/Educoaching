@@ -103,24 +103,24 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard label="Total Institutes" value={totalInstitutes.toLocaleString("en-IN")} icon={Building2} accent="scholar" />
-        <KpiCard label="Pending Approval" value={pendingCount.toLocaleString("en-IN")} icon={Clock3} accent="marigold" />
-        <KpiCard label="Active Accounts" value={activeCount.toLocaleString("en-IN")} icon={ShieldCheck} accent="scholar" />
-        <KpiCard label="On Trial" value={trialCount.toLocaleString("en-IN")} icon={Clock3} accent="scholar" />
-        <KpiCard label="Suspended" value={suspendedCount.toLocaleString("en-IN")} icon={Ban} accent="scholar" />
+        <KpiCard label="Total Institutes" value={totalInstitutes.toLocaleString("en-IN")} iconName="Building2" accent="scholar" />
+        <KpiCard label="Pending Approval" value={pendingCount.toLocaleString("en-IN")} iconName="Clock3" accent="marigold" />
+        <KpiCard label="Active Accounts" value={activeCount.toLocaleString("en-IN")} iconName="ShieldCheck" accent="scholar" />
+        <KpiCard label="On Trial" value={trialCount.toLocaleString("en-IN")} iconName="Clock3" accent="scholar" />
+        <KpiCard label="Suspended" value={suspendedCount.toLocaleString("en-IN")} iconName="Ban" accent="scholar" />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Est. Monthly Recurring Revenue"
           value={new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(mrr)}
-          icon={Building2}
+          iconName="Building2"
           accent="marigold"
         />
         <KpiCard
           label="Pending Sub-Branch Requests"
           value={pendingBranchCount.toLocaleString("en-IN")}
-          icon={Clock3}
+          iconName="Clock3"
           accent={pendingBranchCount > 0 ? "marigold" : "scholar"}
         />
       </div>

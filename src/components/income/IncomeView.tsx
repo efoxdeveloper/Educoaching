@@ -200,25 +200,25 @@ export function IncomeView() {
               : "Filtered Extra Revenue"
           }
           value={formatCurrency(summary?.filteredTotal || 0)}
-          icon={TrendingUp}
+          iconName="TrendingUp"
           trend={`${incomes.length} transaction entries logged`}
         />
         <KpiCard
           label="All-Time Extra Income"
           value={formatCurrency(summary?.allTimeTotal || 0)}
-          icon={PieChart}
+          iconName="PieChart"
           trend="Cumulative non-fee revenue"
         />
         <KpiCard
           label="Cash Inflow"
           value={formatCurrency(summary?.cashInflow || 0)}
-          icon={Banknote}
+          iconName="Banknote"
           trend="Received via physical cash"
         />
         <KpiCard
           label="Digital / Bank Inflow"
           value={formatCurrency(summary?.digitalInflow || 0)}
-          icon={CreditCard}
+          iconName="CreditCard"
           trend="UPI, Cheque, Bank Transfer"
         />
       </div>

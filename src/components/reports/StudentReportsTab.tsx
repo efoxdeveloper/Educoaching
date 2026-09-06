@@ -101,25 +101,25 @@ export function StudentReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Students"
           value={studentsReport.kpis.total.toLocaleString("en-IN")}
-          icon={Users}
+          iconName="Users"
           accent="scholar"
         />
         <KpiCard
           label="Active Students"
           value={`${studentsReport.kpis.active} (${overview.activeStudentsPct}%)`}
-          icon={CheckCircle2}
+          iconName="CheckCircle2"
           accent="scholar"
         />
         <KpiCard
           label="Total Assessed Fees"
           value={formatCurrency(studentsReport.kpis.totalBilled)}
-          icon={IndianRupee}
+          iconName="IndianRupee"
           accent="marigold"
         />
         <KpiCard
           label="Total Outstanding Dues"
           value={formatCurrency(studentsReport.kpis.totalPending)}
-          icon={AlertCircle}
+          iconName="AlertCircle"
           accent="marigold"
           trend={`${studentsReport.kpis.collectionEfficiency}% collection rate`}
           trendTone="success"

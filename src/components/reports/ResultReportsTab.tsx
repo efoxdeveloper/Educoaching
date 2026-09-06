@@ -146,13 +146,13 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Tests Conducted"
           value={resultReport.kpis.totalTests.toString()}
-          icon={Award}
+          iconName="Award"
           accent="scholar"
         />
         <KpiCard
           label="Overall Pass Rate"
           value={`${resultReport.kpis.overallPassRate}%`}
-          icon={CheckCircle2}
+          iconName="CheckCircle2"
           accent="scholar"
           trend={`${resultReport.kpis.totalEvaluations} evaluated submissions`}
           trendTone="success"
@@ -160,13 +160,13 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Institute Average Score"
           value={`${resultReport.kpis.instituteAverageScore}%`}
-          icon={TrendingUp}
+          iconName="TrendingUp"
           accent="marigold"
         />
         <KpiCard
           label="Highest Score Overall"
           value={`${resultReport.kpis.highestMarkOverall} pts`}
-          icon={GraduationCap}
+          iconName="GraduationCap"
           accent="marigold"
           trend={`${resultReport.kpis.totalAbsent} absent across tests`}
           trendTone="neutral"

@@ -425,26 +425,26 @@ export function BulkCommunicationView() {
         <KpiCard
           label="Active Audience Available"
           value={recipients.length.toString()}
-          icon={Users}
+          iconName="Users"
           accent="marigold"
           trend={`${targetAudience.replace(/_/g, " ").toLowerCase()}`}
         />
         <KpiCard
           label="Preferred Broadcast Channel"
           value={channel}
-          icon={channel === "WHATSAPP" ? MessageSquare : channel === "EMAIL" ? Mail : Smartphone}
+          iconName={channel === "WHATSAPP" ? "MessageSquare" : channel === "EMAIL" ? "Mail" : "Smartphone"}
           accent="scholar"
         />
         <KpiCard
           label="Available Courses"
           value={courses.length.toString()}
-          icon={Megaphone}
+          iconName="Megaphone"
           accent="scholar"
         />
         <KpiCard
           label="Active Batches"
           value={batches.length.toString()}
-          icon={Users}
+          iconName="Users"
           accent="marigold"
         />
       </div>

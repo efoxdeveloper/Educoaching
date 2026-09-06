@@ -113,7 +113,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Overall Attendance"
           value={`${attendanceReport.kpis.overallAttendanceRate}%`}
-          icon={CalendarCheck}
+          iconName="CalendarCheck"
           accent="scholar"
           trend={`${attendanceReport.kpis.totalRecords} attendance marks`}
           trendTone="neutral"
@@ -121,7 +121,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Present Rate"
           value={`${presentRate}%`}
-          icon={CheckCircle2}
+          iconName="CheckCircle2"
           accent="scholar"
           trend={`${attendanceReport.kpis.presentCount} present`}
           trendTone="success"
@@ -129,7 +129,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Absent Rate"
           value={`${absentRate}%`}
-          icon={XCircle}
+          iconName="XCircle"
           accent="marigold"
           trend={`${attendanceReport.kpis.absentCount} absent marks`}
           trendTone={absentRate > 20 ? "danger" : "neutral"}
@@ -137,7 +137,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Students at Risk (<75%)"
           value={attendanceReport.kpis.lowAttendanceCount.toString()}
-          icon={AlertTriangle}
+          iconName="AlertTriangle"
           accent="marigold"
           trend={
             attendanceReport.kpis.lowAttendanceCount > 0

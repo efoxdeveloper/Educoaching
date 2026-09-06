@@ -5,7 +5,73 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import {
+  Users,
+  Wallet,
+  IndianRupee,
+  TrendingUp,
+  TrendingDown,
+  Building2,
+  Clock3,
+  ShieldCheck,
+  Ban,
+  Receipt,
+  UserCheck,
+  CreditCard,
+  Banknote,
+  Layers,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  MessageSquare,
+  Mail,
+  Smartphone,
+  Megaphone,
+  PieChart,
+  ClipboardList,
+  CalendarCheck,
+  XCircle,
+  Award,
+  GraduationCap,
+  AlertCircle,
+  Percent,
+} from "lucide-react";
+
+const ICON_MAP = {
+  Users,
+  Wallet,
+  IndianRupee,
+  TrendingUp,
+  TrendingDown,
+  Building2,
+  Clock3,
+  ShieldCheck,
+  Ban,
+  Receipt,
+  UserCheck,
+  CreditCard,
+  Banknote,
+  Layers,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  MessageSquare,
+  Mail,
+  Smartphone,
+  Megaphone,
+  PieChart,
+  ClipboardList,
+  CalendarCheck,
+  XCircle,
+  Award,
+  GraduationCap,
+  AlertCircle,
+  Percent,
+} as const;
+
+export type IconName = keyof typeof ICON_MAP;
 
 export function Card({ children, className, sx }: { children: React.ReactNode; className?: string; sx?: any }) {
   return (
@@ -34,18 +100,19 @@ export function Card({ children, className, sx }: { children: React.ReactNode; c
 export function KpiCard({
   label,
   value,
-  icon: Icon,
+  iconName,
   trend,
   trendTone = "success",
   accent = "scholar",
 }: {
   label: string;
   value: string;
-  icon: LucideIcon;
+  iconName: IconName;
   trend?: string;
   trendTone?: "success" | "danger" | "neutral";
   accent?: "scholar" | "marigold";
 }) {
+  const Icon = ICON_MAP[iconName] ?? Users;
   const trendColor =
     trendTone === "success" ? "success.main" : trendTone === "danger" ? "error.main" : "text.secondary";
   const avatarBg = accent === "scholar" ? "#EEF2F7" : "#FDF4E6";

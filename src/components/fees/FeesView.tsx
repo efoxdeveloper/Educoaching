@@ -93,10 +93,10 @@ export function FeesView({ students }: { students: Student[] }) {
   return (
     <>
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Collected" value={formatCurrency(totalCollected)} icon={IndianRupee} accent="marigold" />
-        <KpiCard label="Total Pending" value={formatCurrency(totalPending)} icon={Wallet} accent="scholar" />
-        <KpiCard label="Overdue Students" value={overdueCount.toString()} icon={AlertTriangle} accent="scholar" trendTone="danger" trend={overdueCount > 0 ? "Needs follow-up" : undefined} />
-        <KpiCard label="Renewals Due" value={renewalsDue.toString()} icon={RefreshCw} accent="marigold" trendTone={renewalsDue > 0 ? "danger" : "success"} trend={renewalsDue > 0 ? "Demo ended or subscription lapsed" : "All caught up"} />
+        <KpiCard label="Total Collected" value={formatCurrency(totalCollected)} iconName="IndianRupee" accent="marigold" />
+        <KpiCard label="Total Pending" value={formatCurrency(totalPending)} iconName="Wallet" accent="scholar" />
+        <KpiCard label="Overdue Students" value={overdueCount.toString()} iconName="AlertTriangle" accent="scholar" trendTone="danger" trend={overdueCount > 0 ? "Needs follow-up" : undefined} />
+        <KpiCard label="Renewals Due" value={renewalsDue.toString()} iconName="RefreshCw" accent="marigold" trendTone={renewalsDue > 0 ? "danger" : "success"} trend={renewalsDue > 0 ? "Demo ended or subscription lapsed" : "All caught up"} />
       </div>
 
       <Card className="p-5">

@@ -92,13 +92,13 @@ export function BatchReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Batches"
           value={batchReport.kpis.totalBatches.toString()}
-          icon={Layers}
+          iconName="Layers"
           accent="scholar"
         />
         <KpiCard
           label="Overall Occupancy"
           value={`${batchReport.kpis.overallOccupancy}%`}
-          icon={Users}
+          iconName="Users"
           accent="marigold"
           trend={`${batchReport.kpis.totalEnrolled} enrolled of ${batchReport.kpis.totalCapacity} capacity`}
           trendTone="neutral"
@@ -106,13 +106,13 @@ export function BatchReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Active Batches"
           value={batchReport.kpis.activeBatches.toString()}
-          icon={CheckCircle2}
+          iconName="CheckCircle2"
           accent="scholar"
         />
         <KpiCard
           label="High Capacity (≥90%)"
           value={batchReport.kpis.highOccupancyBatches.toString()}
-          icon={AlertTriangle}
+          iconName="AlertTriangle"
           accent="marigold"
           trend={
             batchReport.kpis.highOccupancyBatches > 0

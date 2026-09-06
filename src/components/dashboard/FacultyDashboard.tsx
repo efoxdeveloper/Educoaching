@@ -128,25 +128,25 @@ export function FacultyDashboard({
         <KpiCard
           label="My Assigned Batches"
           value={batches.length.toString()}
-          icon={Layers}
+          iconName="Layers"
           accent="scholar"
         />
         <KpiCard
           label="Enrolled Students"
           value={totalStudents.toLocaleString("en-IN")}
-          icon={Users}
+          iconName="Users"
           accent="scholar"
         />
         <KpiCard
           label="Today's Classes"
           value={todayClasses.length.toString()}
-          icon={Clock}
+          iconName="Clock"
           accent="marigold"
         />
         <KpiCard
           label="Today's Attendance Rate"
           value={todayAttendancePercent !== null ? `${todayAttendancePercent}%` : "Pending"}
-          icon={CheckCircle2}
+          iconName="CheckCircle2"
           accent={todayAttendancePercent !== null && todayAttendancePercent >= 80 ? "scholar" : "marigold"}
         />
       </div>

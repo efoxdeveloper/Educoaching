@@ -81,13 +81,13 @@ export function AdmissionReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Applications"
           value={admissionReport.kpis.totalApplications.toString()}
-          icon={ClipboardList}
+          iconName="ClipboardList"
           accent="scholar"
         />
         <KpiCard
           label="Conversion Rate"
           value={`${admissionReport.kpis.conversionRate}%`}
-          icon={TrendingUp}
+          iconName="TrendingUp"
           accent="marigold"
           trend={`${admissionReport.kpis.enrolledCount} enrolled students`}
           trendTone="success"
@@ -95,13 +95,13 @@ export function AdmissionReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Pending Review"
           value={admissionReport.kpis.pendingCount.toString()}
-          icon={Clock}
+          iconName="Clock"
           accent="scholar"
         />
         <KpiCard
           label="Total Pipeline Value"
           value={formatCurrency(admissionReport.kpis.pipelineValue)}
-          icon={IndianRupee}
+          iconName="IndianRupee"
           accent="marigold"
           trend={`${formatCurrency(admissionReport.kpis.enrolledValue)} realized`}
           trendTone="success"

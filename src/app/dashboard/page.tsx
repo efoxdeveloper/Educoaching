@@ -330,14 +330,14 @@ export default async function DashboardPage() {
         <KpiCard
           label="Active Students"
           value={data.totalStudents.toLocaleString("en-IN")}
-          icon={Users}
+          iconName="Users"
           accent="scholar"
         />
 
         <KpiCard
           label="This Month Collection"
           value={formatCurrency(data.thisMonthCollection)}
-          icon={IndianRupee}
+          iconName="IndianRupee"
           accent="scholar"
           trend={
             momGrowth !== null
@@ -350,7 +350,7 @@ export default async function DashboardPage() {
         <KpiCard
           label="Month Expenses"
           value={formatCurrency(data.thisMonthExpenses)}
-          icon={Receipt}
+          iconName="Receipt"
           accent="marigold"
           trend="Operational outflow"
           trendTone="neutral"
@@ -361,7 +361,7 @@ export default async function DashboardPage() {
           value={`${data.netOperatingCashFlow >= 0 ? "+" : ""}${formatCurrency(
             data.netOperatingCashFlow
           )}`}
-          icon={data.netOperatingCashFlow >= 0 ? TrendingUp : TrendingDown}
+          iconName={data.netOperatingCashFlow >= 0 ? "TrendingUp" : "TrendingDown"}
           accent={data.netOperatingCashFlow >= 0 ? "scholar" : "marigold"}
           trend="Collections − Expenses"
           trendTone={data.netOperatingCashFlow >= 0 ? "success" : "danger"}
@@ -370,7 +370,7 @@ export default async function DashboardPage() {
         <KpiCard
           label="Fee Recovery Rate"
           value={`${data.feeRecoveryRate}%`}
-          icon={Wallet}
+          iconName="Wallet"
           accent="scholar"
           trend={`ARPU: ${formatCurrency(data.arpu)}`}
           trendTone="neutral"
@@ -379,7 +379,7 @@ export default async function DashboardPage() {
         <KpiCard
           label="Lead Conversion"
           value={`${data.conversionRate}%`}
-          icon={UserCheck}
+          iconName="UserCheck"
           accent="marigold"
           trend={`${data.enrolledCount} of ${data.totalLeads} leads`}
           trendTone="success"

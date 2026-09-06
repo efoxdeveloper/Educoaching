@@ -201,7 +201,7 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Gross Revenue"
           value={formatCurrency(kpis.totalRevenue)}
-          icon={IndianRupee}
+          iconName="IndianRupee"
           trend={`Fees (${formatCurrency(kpis.feeRevenue)}) + Extra (${formatCurrency(
             kpis.extraIncome
           )})`}
@@ -209,13 +209,13 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Operating Expenses"
           value={formatCurrency(kpis.totalExpenses)}
-          icon={TrendingDown}
+          iconName="TrendingDown"
           trend={`${kpis.expenseTransactionsCount} total expense transactions`}
         />
         <KpiCard
           label="Net Profit / (Loss)"
           value={formatCurrency(kpis.netProfit)}
-          icon={isNetProfitPositive ? TrendingUp : TrendingDown}
+          iconName={isNetProfitPositive ? "TrendingUp" : "TrendingDown"}
           trend={
             isNetProfitPositive
               ? "Profitable operations (Revenue > Expenses)"
@@ -225,7 +225,7 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Operating Profit Margin"
           value={`${kpis.profitMargin}%`}
-          icon={Percent}
+          iconName="Percent"
           trend="Net margin on total gross revenue"
         />
       </div>

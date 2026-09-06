@@ -137,13 +137,13 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Total Assessed Fees"
           value={formatCurrency(feeReport.kpis.totalBilled)}
-          icon={IndianRupee}
+          iconName="IndianRupee"
           accent="scholar"
         />
         <KpiCard
           label="Total Collected"
           value={formatCurrency(feeReport.kpis.totalCollected)}
-          icon={Wallet}
+          iconName="Wallet"
           accent="scholar"
           trend={`${feeReport.kpis.collectionEfficiency}% collection rate`}
           trendTone="success"
@@ -151,7 +151,7 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Pending Dues"
           value={formatCurrency(feeReport.kpis.totalPending)}
-          icon={AlertTriangle}
+          iconName="AlertTriangle"
           accent="marigold"
           trend={`${feeReport.duesAging.length} students with dues`}
           trendTone="neutral"
@@ -159,7 +159,7 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
         <KpiCard
           label="Overdue Amount"
           value={formatCurrency(feeReport.kpis.overdueAmount)}
-          icon={AlertTriangle}
+          iconName="AlertTriangle"
           accent="marigold"
           trend={`${feeReport.kpis.overdueCount} students past deadline`}
           trendTone={feeReport.kpis.overdueCount > 0 ? "danger" : "success"}

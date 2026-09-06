@@ -134,7 +134,7 @@ export function ExpensesView() {
         <KpiCard
           label="This Month Expenses"
           value={formatCurrency(summary?.thisMonthTotal || 0)}
-          icon={TrendingDown}
+          iconName="TrendingDown"
           accent="marigold"
           trendTone="danger"
           trend="Operational outflow"
@@ -142,20 +142,20 @@ export function ExpensesView() {
         <KpiCard
           label="Filtered Outflow"
           value={formatCurrency(summary?.filteredTotal || 0)}
-          icon={Receipt}
+          iconName="Receipt"
           accent="scholar"
           trend={`${expenses.length} recorded items`}
         />
         <KpiCard
           label="Digital Outflow (UPI/Bank)"
           value={formatCurrency(summary?.digitalOutflow || 0)}
-          icon={CreditCard}
+          iconName="CreditCard"
           accent="scholar"
         />
         <KpiCard
           label="Cash Outflow"
           value={formatCurrency(summary?.cashOutflow || 0)}
-          icon={Banknote}
+          iconName="Banknote"
           accent="marigold"
         />
       </div>
