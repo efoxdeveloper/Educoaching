@@ -8,6 +8,12 @@ import {
   calculateCourseEndDate,
 } from "@/lib/course-duration";
 import { formatDate } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
 
 export function DurationPicker({
   value,
@@ -48,79 +54,116 @@ export function DurationPicker({
   const sampleEndDate = calculateCourseEndDate(new Date(), value || "1 Year");
 
   return (
-    <div className="space-y-2.5 rounded-xl border border-scholar-200 bg-scholar-50/40 p-3.5">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-          <Clock size={14} className="text-scholar-600" />
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        borderRadius: "12px",
+        borderColor: "#D6E0EB",
+        bgcolor: "rgba(247,245,240,0.4)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            color: "#1E293b",
+            fontSize: "0.75rem",
+            display: "flex",
+            alignItems: "center",
+            gap: 0.75,
+          }}
+        >
+          <Clock size={14} style={{ color: "#475569" }} />
           {label}
-        </label>
-        <span className="text-[11px] text-scholar-500 font-medium">Custom (Years / Months / Days)</span>
-      </div>
+        </Typography>
+        <Chip
+          label="Custom (Years / Months / Days)"
+          size="small"
+          variant="outlined"
+          sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC", borderColor: "#D6E0EB", height: 20, bgcolor: "white" }}
+        />
+      </Box>
 
-      <div className="space-y-2.5">
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">
-              Years
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={10}
-              value={years}
-              onChange={(e) => handleCustomChange(parseInt(e.target.value) || 0, months, days)}
-              className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
-              placeholder="0"
-            />
-          </div>
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5 }}>
+        <TextField
+          label="Years"
+          type="number"
+          fullWidth
+          size="small"
+          value={years}
+          onChange={(e) => handleCustomChange(parseInt(e.target.value) || 0, months, days)}
+          slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0, max: 10 } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", "& input": { textAlign: "center", fontWeight: 600, fontSize: "0.875rem" } } }}
+        />
+        <TextField
+          label="Months"
+          type="number"
+          fullWidth
+          size="small"
+          value={months}
+          onChange={(e) => handleCustomChange(years, parseInt(e.target.value) || 0, days)}
+          slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0, max: 24 } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", "& input": { textAlign: "center", fontWeight: 600, fontSize: "0.875rem" } } }}
+        />
+        <TextField
+          label="Days"
+          type="number"
+          fullWidth
+          size="small"
+          value={days}
+          onChange={(e) => handleCustomChange(years, months, parseInt(e.target.value) || 0)}
+          slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0, max: 365 } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", "& input": { textAlign: "center", fontWeight: 600, fontSize: "0.875rem" } } }}
+        />
+      </Box>
 
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">
-              Months
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={24}
-              value={months}
-              onChange={(e) => handleCustomChange(years, parseInt(e.target.value) || 0, days)}
-              className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
-              placeholder="0"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-scholar-600 block mb-1">
-              Days
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={365}
-              value={days}
-              onChange={(e) => handleCustomChange(years, months, parseInt(e.target.value) || 0)}
-              className="w-full rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink outline-none focus:border-scholar-500 text-center"
-              placeholder="0"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Selected duration preview */}
-      <div className="flex items-center justify-between rounded-lg bg-white p-2 border border-scholar-200 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-scholar-100 text-scholar-700 text-[10px] font-bold">
+      <Paper
+        variant="outlined"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 1.25,
+          borderRadius: "12px",
+          borderColor: "#D6E0EB",
+          bgcolor: "white",
+        }}
+      >
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Box
+            sx={{
+              width: 20,
+              height: 20,
+              borderRadius: "9999px",
+              bgcolor: "#EEF2F7",
+              color: "#1E3A5F",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "10px",
+              fontWeight: 700,
+            }}
+          >
             ✓
-          </span>
-          <span className="font-bold text-scholar-900">
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 700, color: "#1E3A5F", fontSize: "0.875rem" }}>
             {value || "1 Year"}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 text-[11px] text-scholar-500">
-          <Calendar size={11} className="text-scholar-400" />
-          <span>Finishes: ~{formatDate(sampleEndDate)}</span>
-        </div>
-      </div>
-    </div>
+          </Typography>
+        </Stack>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+          <Calendar size={11} style={{ color: "#94A3B8" }} />
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b" }}>
+            Finishes: ~{formatDate(sampleEndDate)}
+          </Typography>
+        </Stack>
+      </Paper>
+    </Paper>
   );
 }

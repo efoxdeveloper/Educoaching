@@ -3,12 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
-import { Building2, Check, Calendar } from "lucide-react";
 import { DurationPicker } from "./DurationPicker";
 import { calculateCourseEndDate } from "@/lib/course-duration";
 import { formatDate } from "@/lib/utils";
 import type { CourseItem } from "./CoursesTable";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import FormGroup from "@mui/material/FormGroup";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import { Building2, Calendar } from "lucide-react";
 
 type BranchOption = {
   id: string;
@@ -137,276 +154,304 @@ export function EditCourseDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title={course ? `Edit: ${course.name}` : "Edit Course"}>
-      <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
         {error && (
-          <p className="rounded-xl bg-danger-50 px-3 py-2.5 text-xs text-danger-600 font-medium">
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem" }}>
             {error}
-          </p>
+          </Alert>
         )}
 
-        {/* Course Basic Information */}
-        <Field label="Course / Program Name">
-          <input
-            required
-            className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. JEE Main + Advanced 2-Year Pinnacle"
-          />
-        </Field>
+        <TextField
+          label="Course / Program Name"
+          required
+          fullWidth
+          size="small"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="e.g. JEE Main + Advanced 2-Year Pinnacle"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        {/* Target Exam */}
-        <Field label="Target Exam / Stream">
-          <input
-            className={inputClass}
-            value={form.targetExam}
-            onChange={(e) => setForm({ ...form, targetExam: e.target.value })}
-            placeholder="e.g. NEET-UG or CBSE 10"
-            list="edit-exam-suggestions"
-          />
-          <datalist id="edit-exam-suggestions">
-            {COMMON_EXAMS.map((ex) => (
-              <option key={ex} value={ex} />
-            ))}
-          </datalist>
-        </Field>
+        <TextField
+          label="Target Exam / Stream"
+          fullWidth
+          size="small"
+          value={form.targetExam}
+          onChange={(e) => setForm({ ...form, targetExam: e.target.value })}
+          placeholder="e.g. NEET-UG or CBSE 10"
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          helperText={COMMON_EXAMS.slice(0, 4).join(" • ")}
+          slotProps={{ inputLabel: { shrink: true }, formHelperText: { sx: { fontSize: "10px", color: "#7E9BBC" } } }}
+        />
 
-        {/* Academic Session / Year */}
-        <Field label="Academic Session / Year (Optional)">
-          <input
-            className={inputClass}
-            value={form.academicYear}
-            onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
-            placeholder="e.g. 2026-2027 or Session 2026-27"
-          />
-        </Field>
+        <TextField
+          label="Academic Session / Year (Optional)"
+          fullWidth
+          size="small"
+          value={form.academicYear}
+          onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
+          placeholder="e.g. 2026-2027 or Session 2026-27"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        {/* Course Duration with Days, Months, Years */}
         <DurationPicker
           value={form.duration}
           onChange={(val) => setForm({ ...form, duration: val })}
           label="Course Duration (Days / Months / Years)"
         />
 
-        {/* Course Starting Date */}
-        <Field label="Course Starting Date (Commencement Date)">
-          <input
+        <Box>
+          <TextField
+            label="Course Starting Date (Commencement Date)"
             type="date"
-            className={inputClass}
+            fullWidth
+            size="small"
             value={form.startDate}
             onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
           {form.startDate && (
-            <p className="mt-1 text-[11px] text-scholar-600 flex items-center gap-1.5 bg-scholar-50 p-2 rounded-lg border border-scholar-200">
-              <Calendar size={13} className="text-scholar-500 shrink-0" />
-              <span>
+            <Paper
+              variant="outlined"
+              sx={{
+                mt: 1,
+                p: 1.25,
+                borderRadius: "12px",
+                bgcolor: "#EEF2F7",
+                borderColor: "#D6E0EB",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                fontSize: "11px",
+                color: "#4E6E93",
+              }}
+            >
+              <Calendar size={13} style={{ color: "#7E9BBC", flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#4E6E93" }}>
                 Commences on <strong>{formatDate(form.startDate)}</strong> — Expected completion:{" "}
                 <strong>{formatDate(calculateCourseEndDate(new Date(form.startDate), form.duration || "1 Year"))}</strong>
-              </span>
-            </p>
+              </Typography>
+            </Paper>
           )}
-        </Field>
+        </Box>
 
-        {/* Eligibility */}
-        <Field label="Target Standard / Eligibility (Optional)">
-          <input
-            className={inputClass}
-            value={form.eligibility}
-            onChange={(e) => setForm({ ...form, eligibility: e.target.value })}
-            placeholder="e.g. Class 10 Passed / Moving to Class 11"
-          />
-        </Field>
+        <TextField
+          label="Target Standard / Eligibility (Optional)"
+          fullWidth
+          size="small"
+          value={form.eligibility}
+          onChange={(e) => setForm({ ...form, eligibility: e.target.value })}
+          placeholder="e.g. Class 10 Passed / Moving to Class 11"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        {/* Detailed Fee Structure & Billing Model */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5 space-y-3">
-          <label className="block text-xs font-bold uppercase tracking-wider text-scholar-800">
+        <Paper
+          variant="outlined"
+          sx={{
+            borderRadius: "12px",
+            borderColor: "#D6E0EB",
+            bgcolor: "rgba(247,245,240,0.5)",
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", fontSize: "0.75rem" }}>
             Fee & Billing Structure
-          </label>
+          </Typography>
 
-          {/* Billing Frequency Selector: ONE_TIME, MONTHLY, QUARTERLY, ANNUAL */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, feeType: "ONE_TIME" })}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                form.feeType === "ONE_TIME"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
+          <FormControl fullWidth size="small" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}>
+            <InputLabel id="edit-fee-type-label">Billing Frequency</InputLabel>
+            <Select
+              labelId="edit-fee-type-label"
+              label="Billing Frequency"
+              value={form.feeType}
+              onChange={(e) => setForm({ ...form, feeType: e.target.value as typeof form.feeType })}
             >
-              Full Course Fee
-              <span className="block text-[10px] opacity-80">(One-time / Total)</span>
-            </button>
+              <MenuItem value="ONE_TIME">Full Course Fee (One-time / Total)</MenuItem>
+              <MenuItem value="MONTHLY">Monthly Fee (Recurring / mo)</MenuItem>
+              <MenuItem value="QUARTERLY">Quarterly Fee (Every 3 Months)</MenuItem>
+              <MenuItem value="ANNUAL">Per Year Fee (Annual basis)</MenuItem>
+            </Select>
+          </FormControl>
 
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, feeType: "MONTHLY" })}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                form.feeType === "MONTHLY"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Monthly Fee
-              <span className="block text-[10px] opacity-80">(Recurring / mo)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, feeType: "QUARTERLY" })}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                form.feeType === "QUARTERLY"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Quarterly Fee
-              <span className="block text-[10px] opacity-80">(Every 3 Months)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, feeType: "ANNUAL" })}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                form.feeType === "ANNUAL"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Per Year Fee
-              <span className="block text-[10px] opacity-80">(Annual basis)</span>
-            </button>
-          </div>
-
-          <Field
-            label={`Fee Amount (₹) ${
+          <TextField
+            label={
               form.feeType === "ONE_TIME"
-                ? "— Full Program Total (Can be split into Installments for parents)"
+                ? "Fee Amount (₹) — Full Program Total"
                 : form.feeType === "MONTHLY"
-                ? "— Per Month"
-                : form.feeType === "QUARTERLY"
-                ? "— Per Quarter (Every 3 Months)"
-                : "— Per Year"
-            }`}
-          >
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-scholar-400 font-bold text-sm">₹</span>
-              <input
-                required
-                type="number"
-                min="0"
-                step="1"
-                className={`${inputClass} pl-7 font-semibold text-ink`}
-                value={form.fee}
-                onChange={(e) => setForm({ ...form, fee: e.target.value })}
-                placeholder={form.feeType === "ONE_TIME" ? "85000" : form.feeType === "MONTHLY" ? "4500" : form.feeType === "QUARTERLY" ? "12000" : "50000"}
-              />
-            </div>
-          </Field>
-        </div>
+                  ? "Fee Amount (₹) — Per Month"
+                  : form.feeType === "QUARTERLY"
+                    ? "Fee Amount (₹) — Per Quarter"
+                    : "Fee Amount (₹) — Per Year"
+            }
+            required
+            fullWidth
+            size="small"
+            type="number"
+            value={form.fee}
+            onChange={(e) => setForm({ ...form, fee: e.target.value })}
+            placeholder={form.feeType === "ONE_TIME" ? "85000" : form.feeType === "MONTHLY" ? "4500" : form.feeType === "QUARTERLY" ? "12000" : "50000"}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { min: 0, step: 1 },
+              input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> },
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
+          />
+        </Paper>
 
-        {/* Branch Allocation */}
-        <div className="rounded-xl border border-scholar-200 bg-white p-3.5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-                <Building2 size={15} className="text-scholar-600" /> Branch Allocation
-              </label>
-              <p className="text-[11px] text-scholar-500">
-                Choose which campus branches offer this program
-              </p>
-            </div>
-          </div>
+        <Paper
+          variant="outlined"
+          sx={{
+            borderRadius: "12px",
+            borderColor: "#D6E0EB",
+            bgcolor: "white",
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Building2 size={15} style={{ color: "#475569" }} /> Branch Allocation
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
+              Choose which campus branches offer this program
+            </Typography>
+          </Box>
 
           {availableBranches.length === 0 ? (
-            <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+            <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "#EEF2F7", borderColor: "#D6E0EB" }}>
               This institute has only one branch (Main Branch) — no branch selection needed.
-            </p>
+            </Alert>
           ) : (
-            <div className="space-y-2.5">
-              <div className="flex gap-4 text-xs font-medium">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="editBranchOption"
-                    checked={form.isAllBranches}
-                    onChange={() => setForm({ ...form, isAllBranches: true, branchIds: [] })}
-                    className="accent-scholar-600"
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <FormControl component="fieldset">
+                <RadioGroup
+                  value={form.isAllBranches ? "all" : "specific"}
+                  onChange={(e) => {
+                    const isAll = e.target.value === "all";
+                    setForm({ ...form, isAllBranches: isAll, branchIds: isAll ? [] : form.branchIds });
+                  }}
+                  row
+                  sx={{ gap: 2 }}
+                >
+                  <FormControlLabel
+                    value="all"
+                    control={<Radio size="small" sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }} />}
+                    label={<Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600 }}>Available Across All Branches ({availableBranches.length})</Typography>}
                   />
-                  <span>Available Across All Branches ({availableBranches.length})</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="editBranchOption"
-                    checked={!form.isAllBranches}
-                    onChange={() => setForm({ ...form, isAllBranches: false })}
-                    className="accent-scholar-600"
+                  <FormControlLabel
+                    value="specific"
+                    control={<Radio size="small" sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }} />}
+                    label={<Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600 }}>Select Specific Branches</Typography>}
                   />
-                  <span>Select Specific Branches</span>
-                </label>
-              </div>
+                </RadioGroup>
+              </FormControl>
 
               {!form.isAllBranches && (
-                <div className="rounded-lg border border-scholar-200 bg-scholar-50/70 p-3 space-y-2 max-h-36 overflow-y-auto">
-                  <p className="text-[11px] font-semibold text-scholar-600">
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    borderRadius: "12px",
+                    borderColor: "#D6E0EB",
+                    bgcolor: "#F8FAFC",
+                    p: 1.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    maxHeight: 144,
+                    overflowY: "auto",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 600, color: "#4E6E93" }}>
                     Select branches where this course is taught:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  </Typography>
+                  <FormGroup sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1 }}>
                     {availableBranches.map((branch) => {
                       const isSelected = form.branchIds.includes(branch.id);
                       return (
-                        <button
-                          type="button"
+                        <Paper
                           key={branch.id}
+                          variant="outlined"
                           onClick={() => handleBranchToggle(branch.id)}
-                          className={`flex items-center justify-between p-2 rounded-lg border text-left text-xs transition-all ${
-                            isSelected
-                              ? "border-scholar-600 bg-scholar-100 text-scholar-900 font-bold"
-                              : "border-scholar-200 bg-white text-scholar-700 hover:bg-scholar-50"
-                          }`}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            p: 1,
+                            borderRadius: "12px",
+                            cursor: "pointer",
+                            borderColor: isSelected ? "#1E3A5F" : "#D6E0EB",
+                            bgcolor: isSelected ? "#EEF2F7" : "white",
+                            transition: "all 0.15s",
+                            "&:hover": { bgcolor: isSelected ? "#E2E8F0" : "#F8FAFC" },
+                          }}
                         >
-                          <span className="truncate">{branch.name} {branch.city ? `(${branch.city})` : ""}</span>
-                          {isSelected && <Check size={14} className="text-scholar-700 shrink-0" />}
-                        </button>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                            <Checkbox
+                              checked={isSelected}
+                              size="small"
+                              sx={{ p: 0.25, color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }}
+                              onChange={() => handleBranchToggle(branch.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 700 : 500, color: isSelected ? "#1E3A5F" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {branch.name} {branch.city ? `(${branch.city})` : ""}
+                            </Typography>
+                          </Box>
+                          {isSelected && <Chip label="✓" size="small" sx={{ height: 18, minWidth: 18, fontSize: "10px", bgcolor: "#1E3A5F", color: "white", "& .MuiChip-label": { px: 0.5 } }} />}
+                        </Paper>
                       );
                     })}
-                  </div>
-                </div>
+                  </FormGroup>
+                </Paper>
               )}
-            </div>
+            </Box>
           )}
-        </div>
+        </Paper>
 
-        {/* Detailed Course Syllabus & Inclusions */}
-        <Field label="Course Details, Syllabus & Inclusions (Optional)">
-          <textarea
-            rows={3}
-            className={`${inputClass} resize-none`}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Course syllabus description..."
-          />
-        </Field>
+        <TextField
+          label="Course Details, Syllabus & Inclusions (Optional)"
+          fullWidth
+          size="small"
+          multiline
+          rows={3}
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          placeholder="Course syllabus description..."
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        <div className="flex gap-3 pt-2">
-          <button
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button
             type="button"
+            variant="outlined"
+            fullWidth
             onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="contained"
+            fullWidth
             disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 shadow-xs"
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
             {loading ? "Saving Changes..." : "Update Course"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }
