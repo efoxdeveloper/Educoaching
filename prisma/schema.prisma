@@ -90,8 +90,13 @@ model MobileOtp {
   attempts    Int       @default(0)
   createdAt   DateTime  @default(now())
   institute   Institute @relation(fields: [instituteId], references: [id])
+  mobile      String?
+  purpose     String?
+  testId      String?
 
   @@index([instituteId])
+  @@index([mobile])
+  @@index([testId])
 }
 
 model PlatformNotification {

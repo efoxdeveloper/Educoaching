@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendInstituteSms } from "@/lib/sms";
+import { auth } from "@/lib/auth";
 
 export async function POST(
   req: Request,
@@ -7,7 +9,7 @@ export async function POST(
 ) {
   try {
     const body = await req.json();
-    const { name, mobile, email, parentMobile } = body;
+    const { name, mobile, email, parentMobile, otp } = body;
 
     if (!name || !String(name).trim()) {
       return NextResponse.json({ error: "Student name is required" }, { status: 400 });
@@ -40,6 +42,112 @@ export async function POST(
         mobile: cleanMobile,
       },
     });
+
+    // SECURITY: If student already exists, require OTP verification to prevent impersonation
+    // Anyone who knows a student's mobile could otherwise register as that student
+    // New mobile numbers (no existing student) are allowed without OTP as they create a fresh record
+    // This path is intentionally OTP-free only because it creates a brand-new student record — see comment below
+    if (student) {
+      // Check if request is from an already authenticated portal session that owns this mobile
+      // If session user is the same student/parent, skip OTP (session already verified)
+      let isSessionVerified = false;
+      try {
+        const session = await auth();
+        const sessionUser = session?.user as { email?: string; mobile?: string; role?: string } | undefined;
+        const sessionMobile = (sessionUser as any)?.mobile ? String((sessionUser as any).mobile).replace(/\D/g, "") : null;
+        const sessionEmail = sessionUser?.email ? String(sessionUser.email).toLowerCase() : null;
+        if (sessionMobile && sessionMobile === cleanMobile) {
+          isSessionVerified = true;
+        } else if (sessionEmail && student.email && sessionEmail === String(student.email).toLowerCase()) {
+          isSessionVerified = true;
+        }
+      } catch {
+        // ignore session check errors
+      }
+
+      if (!isSessionVerified) {
+        const providedOtp = otp ? String(otp).trim() : "";
+
+        if (!providedOtp) {
+          // Generate and send OTP
+          const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+          await prisma.mobileOtp.create({
+            data: {
+              instituteId: test.instituteId,
+              code: otpCode,
+              mobile: cleanMobile,
+              purpose: "EXAM_REGISTER",
+              testId: test.id,
+              expiresAt,
+            },
+          });
+
+          // Attempt to send OTP via institute's BYOK gateway (SMS/WhatsApp)
+          let smsSent = false;
+          let smsReason: string | undefined;
+          try {
+            const smsResult = await sendInstituteSms(test.instituteId, {
+              to: cleanMobile,
+              templateName: "OTP",
+              variables: { otp: otpCode, OTP: otpCode, code: otpCode },
+              message: `Your OTP for exam registration (${test.title}) is ${otpCode}. Valid for 5 minutes. Do not share.`,
+            });
+            smsSent = smsResult.sent;
+            smsReason = smsResult.reason;
+          } catch (e) {
+            smsReason = e instanceof Error ? e.message : "sms_send_failed";
+          }
+
+          const isTestEnv = process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
+          return NextResponse.json(
+            {
+              error: "OTP verification required for existing student mobile number",
+              requiresOtp: true,
+              smsSent,
+              smsReason: !smsSent ? smsReason : undefined,
+              ...(isTestEnv && !smsSent ? { debugOtp: otpCode } : {}),
+            },
+            { status: 403 }
+          );
+        }
+
+        // Verify provided OTP
+        const now = new Date();
+        const validOtp = await prisma.mobileOtp.findFirst({
+          where: {
+            instituteId: test.instituteId,
+            mobile: cleanMobile,
+            code: providedOtp,
+            purpose: "EXAM_REGISTER",
+            testId: test.id,
+            expiresAt: { gt: now },
+            verifiedAt: null,
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        if (!validOtp) {
+          return NextResponse.json(
+            { error: "Invalid or expired OTP. Please request a new OTP.", requiresOtp: true },
+            { status: 403 }
+          );
+        }
+
+        if (validOtp.attempts >= 3) {
+          return NextResponse.json(
+            { error: "Too many OTP attempts. Please request a new OTP.", requiresOtp: true },
+            { status: 403 }
+          );
+        }
+
+        await prisma.mobileOtp.update({
+          where: { id: validOtp.id },
+          data: { verifiedAt: new Date(), attempts: { increment: 1 } },
+        });
+      }
+    }
 
     if (!student) {
       // Create new student record — use batch's branch as branch context (required after backfill)

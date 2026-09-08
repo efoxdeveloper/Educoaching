@@ -30,6 +30,7 @@ import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
 import Slider from "@mui/material/Slider";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type Course = {
   id: string;
@@ -76,7 +77,7 @@ export function AddStudentDrawer({
     email: "",
     parentMobile: "",
     parentEmail: "",
-    courseId: courses[0]?.id || "",
+    courseId: "",
     branchId: "",
     batchId: "",
   });
@@ -352,7 +353,7 @@ export function AddStudentDrawer({
         email: "",
         parentMobile: "",
         parentEmail: "",
-        courseId: courses[0]?.id || "",
+        courseId: "",
         branchId: "",
         batchId: "",
       });
@@ -517,7 +518,10 @@ export function AddStudentDrawer({
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <FormControl fullWidth size="small" required>
                 <InputLabel id="add-student-course-label-single">Course Program *</InputLabel>
-                <Select labelId="add-student-course-label-single" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                <Select displayEmpty labelId="add-student-course-label-single" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                  <MenuItem value="" disabled>
+                    <em>Select course</em>
+                  </MenuItem>
                   {courses.map((c) => (
                     <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
                       {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
@@ -533,7 +537,10 @@ export function AddStudentDrawer({
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
               <FormControl fullWidth size="small" required>
                 <InputLabel id="add-student-course-label">Course Program *</InputLabel>
-                <Select labelId="add-student-course-label" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                <Select displayEmpty labelId="add-student-course-label" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                  <MenuItem value="" disabled>
+                    <em>Select course</em>
+                  </MenuItem>
                   {courses.map((c) => (
                     <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
                       {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
@@ -556,9 +563,9 @@ export function AddStudentDrawer({
             </Box>
           )}
 
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" disabled={!form.courseId}>
             <InputLabel id="add-student-batch-label">Assigned Batch & Timing</InputLabel>
-            <Select labelId="add-student-batch-label" label="Assigned Batch & Timing" value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+            <Select labelId="add-student-batch-label" label="Assigned Batch & Timing" value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })} sx={{ borderRadius: "12px", bgcolor: "white" }} disabled={!form.courseId}>
               <MenuItem value="">Unassigned Batch</MenuItem>
               {filteredBatches.map((b) => {
                 const branchLabel = b.isAllBranches
@@ -967,7 +974,7 @@ export function AddStudentDrawer({
           <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
+          <Button type="submit" variant="contained" fullWidth disabled={loading} startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
             {loading ? "Enrolling Student..." : requiresOwnerApproval ? "Enroll & Request Owner Approval" : "Confirm Enrollment"}
           </Button>
         </Stack>

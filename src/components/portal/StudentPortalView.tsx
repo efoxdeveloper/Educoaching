@@ -1721,23 +1721,17 @@ export function StudentPortalView({
                 </Typography>
               </Box>
 
-              {viewerRole !== "PARENT" ? (
-                <Button
-                  variant="contained"
-                  startIcon={<CreditCard size={15} />}
-                  onClick={() => {
-                    setPayAmount(String(student.pendingFee));
-                    setPayModalOpen(true);
-                  }}
-                  sx={{ bgcolor: "#059669", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.5, py: 1.2, flexShrink: 0, "&:hover": { bgcolor: "#047857" } }}
-                >
-                  Pay Fee Online Now
-                </Button>
-              ) : (
-                <Paper elevation={0} sx={{ py: 1, px: 1.8, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #D6E0EB", textAlign: "center", color: "#475569", fontSize: "0.75rem", fontWeight: 500 }}>
-                  Fee payments available only via student login
-                </Paper>
-              )}
+              <Button
+                variant="contained"
+                startIcon={<CreditCard size={15} />}
+                onClick={() => {
+                  setPayAmount(String(student.pendingFee));
+                  setPayModalOpen(true);
+                }}
+                sx={{ bgcolor: "#059669", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.5, py: 1.2, flexShrink: 0, "&:hover": { bgcolor: "#047857" } }}
+              >
+                Pay Fee Online Now
+              </Button>
             </Paper>
           ) : (
             <Paper elevation={0} sx={{ p: 2, borderRadius: "16px", border: "1px solid #A7E0C2", bgcolor: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", gap: 1.2, color: "#065F46", fontSize: "0.75rem", fontWeight: 600 }}>

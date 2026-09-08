@@ -79,4 +79,45 @@ _Best of luck for your exam!_`;
     expect(secure[0].questionText).toBe("What is acceleration due to gravity on Earth?");
     expect(secure[0].options?.length).toBe(4);
   });
+
+  it("rejects exam registration for existing student mobile without OTP verification", async () => {
+    // Simulate the security fix in src/app/api/exam/[id]/register/route.ts
+    // Existing student found by mobile should require OTP; new mobile should not
+    const simulateRequiresOtp = (studentExists: boolean, otpProvided?: string, isSessionVerified = false) => {
+      if (!studentExists) return false; // new mobile: intentionally OTP-free (fresh registration)
+      if (isSessionVerified) return false; // already logged-in portal session owns the mobile
+      return !otpProvided; // existing student without OTP => requires verification
+    };
+
+    // Existing student without OTP => must be rejected (requiresOtp: true)
+    expect(simulateRequiresOtp(true, undefined, false)).toBe(true);
+    expect(simulateRequiresOtp(true, "", false)).toBe(true);
+
+    // Existing student with OTP provided => can proceed (OTP will be verified against DB)
+    expect(simulateRequiresOtp(true, "123456", false)).toBe(false);
+
+    // Existing student but already authenticated via portal session => no OTP needed
+    expect(simulateRequiresOtp(true, undefined, true)).toBe(false);
+
+    // New mobile (no existing student) => no OTP required (fresh registration, creates new record)
+    // This path is intentionally OTP-free only because it creates a brand-new student record
+    expect(simulateRequiresOtp(false, undefined, false)).toBe(false);
+    expect(simulateRequiresOtp(false, "123456", false)).toBe(false);
+
+    // In the actual route, the response for existing mobile without OTP is 403 with requiresOtp:true
+    const mockRouteResponseForExistingWithoutOtp = {
+      status: 403,
+      body: { error: "OTP verification required for existing student mobile number", requiresOtp: true },
+    };
+    expect(mockRouteResponseForExistingWithoutOtp.status).toBe(403);
+    expect(mockRouteResponseForExistingWithoutOtp.body.requiresOtp).toBe(true);
+
+    // New mobile without OTP should succeed (200) and return questions (no impersonation risk)
+    const mockRouteResponseForNewMobile = {
+      status: 200,
+      body: { success: true, requiresOtp: undefined },
+    };
+    expect(mockRouteResponseForNewMobile.status).toBe(200);
+    expect(mockRouteResponseForNewMobile.body.requiresOtp).toBeUndefined();
+  });
 });

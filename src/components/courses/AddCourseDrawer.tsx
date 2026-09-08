@@ -24,6 +24,7 @@ import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import { Building2, Calendar } from "lucide-react";
 
 type BranchOption = {
@@ -284,7 +285,7 @@ export function AddCourseDrawer({
             type="number"
             value={form.fee}
             onChange={(e) => setForm({ ...form, fee: e.target.value })}
-            placeholder={form.feeType === "ONE_TIME" ? "85000" : form.feeType === "MONTHLY" ? "4500" : form.feeType === "QUARTERLY" ? "12000" : "50000"}
+            placeholder="Enter amount"
             slotProps={{
               inputLabel: { shrink: true },
               htmlInput: { min: 0, step: 1 },
@@ -434,6 +435,7 @@ export function AddCourseDrawer({
             variant="contained"
             fullWidth
             disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
             sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
             {loading ? "Creating..." : "Save Course"}

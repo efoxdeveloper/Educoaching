@@ -18,6 +18,7 @@ import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import { Building2, Clock, Users } from "lucide-react";
 
@@ -50,19 +51,17 @@ export function AddBatchDrawer({
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
-    courseId: courses[0]?.id || "",
-    timing: "08:00 AM - 10:00 AM",
-    capacity: "40",
+    courseId: "",
+    timing: "",
+    capacity: "",
     status: "Active",
   });
 
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("10:00");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const [isAllBranches, setIsAllBranches] = useState(false);
-  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>(
-    branches[0]?.id ? [branches[0].id] : []
-  );
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
 
   const [branchCapacities, setBranchCapacities] = useState<Record<string, string>>({});
   const [branchTimings, setBranchTimings] = useState<Record<string, string>>({});
@@ -86,10 +85,10 @@ export function AddBatchDrawer({
 
   const totalCapacity = useMemo(() => {
     if (activeBranchList.length <= 1) {
-      return Number(form.capacity) || 40;
+      return Number(form.capacity) || 0;
     }
     return activeBranchList.reduce((sum, b) => {
-      const cap = Number(branchCapacities[b.id]) || Number(form.capacity) || 40;
+      const cap = Number(branchCapacities[b.id]) || Number(form.capacity) || 0;
       return sum + cap;
     }, 0);
   }, [activeBranchList, branchCapacities, form.capacity]);
@@ -117,7 +116,7 @@ export function AddBatchDrawer({
   };
 
   const applyDefaultCapacityToAll = () => {
-    const base = form.capacity || "40";
+    const base = form.capacity || "";
     const newMap: Record<string, string> = {};
     activeBranchList.forEach((b) => {
       newMap[b.id] = base;
@@ -126,7 +125,7 @@ export function AddBatchDrawer({
   };
 
   const applyBaseTimingToAll = () => {
-    const baseTiming = form.timing || "08:00 AM - 10:00 AM";
+    const baseTiming = form.timing || "";
     const newMap: Record<string, string> = {};
     activeBranchList.forEach((b) => {
       newMap[b.id] = baseTiming;
@@ -138,6 +137,22 @@ export function AddBatchDrawer({
     e.preventDefault();
     setError("");
 
+    if (!form.courseId) {
+      setError("Please select a course for this batch.");
+      return;
+    }
+    if (!form.name.trim()) {
+      setError("Batch name is required.");
+      return;
+    }
+    if (!startTime || !endTime) {
+      setError("Please select both start and end time for the batch.");
+      return;
+    }
+    if (!form.capacity || Number(form.capacity) <= 0) {
+      setError("Please enter a valid batch capacity (number of seats).");
+      return;
+    }
     if (!isAllBranches && selectedBranchIds.length === 0 && branches.length > 0) {
       setError("Please select at least one campus branch or check 'All Branches'.");
       return;
@@ -150,7 +165,7 @@ export function AddBatchDrawer({
 
       if (activeBranchList.length > 1) {
         activeBranchList.forEach((b) => {
-          finalBranchCapacities[b.id] = Number(branchCapacities[b.id]) || Number(form.capacity) || 40;
+          finalBranchCapacities[b.id] = Number(branchCapacities[b.id]) || Number(form.capacity) || 0;
           finalBranchTimings[b.id] = branchTimings[b.id] || form.timing;
         });
       }
@@ -174,13 +189,15 @@ export function AddBatchDrawer({
 
       setForm({
         name: "",
-        courseId: courses[0]?.id || "",
-        timing: "08:00 AM - 10:00 AM",
-        capacity: "40",
+        courseId: "",
+        timing: "",
+        capacity: "",
         status: "Active",
       });
       setIsAllBranches(false);
-      setSelectedBranchIds(branches[0]?.id ? [branches[0].id] : []);
+      setSelectedBranchIds([]);
+      setStartTime("");
+      setEndTime("");
       setBranchCapacities({});
       setBranchTimings({});
       onClose();
@@ -216,11 +233,15 @@ export function AddBatchDrawer({
         <FormControl fullWidth size="small" required sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}>
           <InputLabel id="add-batch-course-label">Course Program *</InputLabel>
           <Select
+            displayEmpty
             labelId="add-batch-course-label"
             label="Course Program *"
             value={form.courseId}
             onChange={(e) => setForm({ ...form, courseId: e.target.value })}
           >
+            <MenuItem value="" disabled>
+              <em>Select course</em>
+            </MenuItem>
             {courses.map((c) => (
               <MenuItem key={c.id} value={c.id}>
                 {c.name}
@@ -231,7 +252,7 @@ export function AddBatchDrawer({
 
         <Paper
           variant="outlined"
-          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5, opacity: !form.courseId ? 0.6 : 1, pointerEvents: !form.courseId ? "none" : "auto" }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -252,6 +273,11 @@ export function AddBatchDrawer({
               </Box>
             )}
           </Box>
+          {!form.courseId && (
+            <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "white", borderColor: "#D6E0EB" }}>
+              Please select a course first to configure branches.
+            </Alert>
+          )}
 
           {branches.filter((b) => !b.isMainBranch).length === 0 ? (
             <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "white", borderColor: "#D6E0EB" }}>
@@ -339,7 +365,7 @@ export function AddBatchDrawer({
 
         <Paper
           variant="outlined"
-          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+          sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", p: 2, display: "flex", flexDirection: "column", gap: 1.5, opacity: !form.courseId ? 0.6 : 1, pointerEvents: !form.courseId ? "none" : "auto" }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -362,6 +388,7 @@ export function AddBatchDrawer({
               size="small"
               value={startTime}
               onChange={(e) => updateTimingFromClocks(e.target.value, endTime)}
+              disabled={!form.courseId}
               slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } } as any}
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
             />
@@ -373,6 +400,7 @@ export function AddBatchDrawer({
               size="small"
               value={endTime}
               onChange={(e) => updateTimingFromClocks(startTime, e.target.value)}
+              disabled={!form.courseId}
               slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } } as any}
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
             />
@@ -486,6 +514,8 @@ export function AddBatchDrawer({
               size="small"
               value={form.capacity}
               onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+              placeholder="Enter number of seats"
+              disabled={!form.courseId}
               slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 1 } as any, input: { startAdornment: <InputAdornment position="start"><Users size={14} style={{ color: "#94A3B8" }} /></InputAdornment> } as any }}
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
             />
@@ -526,6 +556,7 @@ export function AddBatchDrawer({
             variant="contained"
             fullWidth
             disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
             sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
             {loading ? "Adding Batch..." : "Add Batch"}
