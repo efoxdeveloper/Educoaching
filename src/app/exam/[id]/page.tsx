@@ -21,6 +21,17 @@ import {
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
+// MUI — timer visuals only (Card/Button/LinearProgress per Part 2 rules; timer logic untouched)
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import MuiButton from "@mui/material/Button";
+import MuiCard from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import LinearProgress from "@mui/material/LinearProgress";
+import Chip from "@mui/material/Chip";
+
 type ExamDetails = {
   id: string;
   title: string;
@@ -303,18 +314,58 @@ export default function PublicExamPage() {
             </div>
           </div>
 
-          {examStarted && !completedResult && (
-            <div
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-mono text-sm font-bold ${
-                secondsRemaining < 300
-                  ? "bg-rose-50 text-rose-700 animate-pulse border border-rose-200"
-                  : "bg-scholar-100 text-scholar-800"
-              }`}
-            >
-              <Clock size={16} />
-              <span>{formatTimer(secondsRemaining)}</span>
-            </div>
-          )}
+          {examStarted && !completedResult && (() => {
+            const total = (exam.durationMinutes || 60) * 60;
+            const elapsedPct = total > 0 ? ((total - secondsRemaining) / total) * 100 : 0;
+            const isLow = secondsRemaining < 300;
+            return (
+              <MuiCard
+                elevation={0}
+                sx={{
+                  minWidth: 168,
+                  borderRadius: "14px",
+                  border: isLow ? "1px solid #FECACA" : "1px solid #E2E8F0",
+                  bgcolor: isLow ? "#FFF1F2" : "#F8FAFC",
+                  boxShadow: isLow ? "0 0 0 2px rgba(244,63,94,0.12)" : "none",
+                  overflow: "hidden",
+                }}
+              >
+                <CardContent sx={{ p: 1.2, "&:last-child": { pb: 1.2 } }}>
+                  <Stack spacing={0.8}>
+                    <Stack direction="row" sx={{ alignItems: "center", gap: 1.2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", color: isLow ? "#E11D48" : "#334155" }}>
+                        <Clock size={16} />
+                      </Box>
+                      <Typography variant="body2" sx={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.875rem", color: isLow ? "#BE123C" : "#1E293B" }}>
+                        {formatTimer(secondsRemaining)}
+                      </Typography>
+                      {isLow && (
+                        <Chip
+                          label="Low time"
+                          size="small"
+                          sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#F43F5E", color: "white", "& .MuiChip-label": { px: 0.8 } }}
+                        />
+                      )}
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={elapsedPct}
+                      color={isLow ? "error" : "primary"}
+                      sx={{
+                        height: 6,
+                        borderRadius: 3,
+                        bgcolor: isLow ? "#FFE4E6" : "#E2E8F0",
+                        "& .MuiLinearProgress-bar": { borderRadius: 3 },
+                      }}
+                    />
+                    <Typography variant="caption" sx={{ fontSize: "10px", color: "text.secondary", textAlign: "right", lineHeight: 1 }}>
+                      {Math.floor(elapsedPct)}% elapsed • {exam.durationMinutes} min total
+                    </Typography>
+                  </Stack>
+                </CardContent>
+              </MuiCard>
+            );
+          })()}
         </div>
       </header>
 
@@ -802,21 +853,29 @@ export default function PublicExamPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-scholar-200 mt-4">
-                <button
-                  type="button"
+              <Box sx={{ pt: 2, borderTop: "1px solid #E2E8F0", mt: 2 }}>
+                <MuiButton
+                  variant="contained"
+                  fullWidth
                   onClick={() => setConfirmSubmitOpen(true)}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-scholar-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-scholar-700 disabled:opacity-50"
+                  startIcon={isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                  sx={{
+                    bgcolor: "#1E3A5F",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    textTransform: "none",
+                    borderRadius: "12px",
+                    py: 1.2,
+                    boxShadow: "none",
+                    "&:hover": { bgcolor: "#13243B" },
+                    "&.Mui-disabled": { bgcolor: "#94A3B8", color: "white" },
+                  }}
                 >
-                  {isSubmitting ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <CheckCircle2 size={14} />
-                  )}
                   Submit Exam Paper
-                </button>
-              </div>
+                </MuiButton>
+              </Box>
             </div>
           </div>
         )}

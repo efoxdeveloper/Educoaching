@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 
 type Course = { id: string; name: string; fee: string };
 type Batch = { id: string; name: string; courseId: string };
-type Branch = { id: string; name: string };
+type Branch = { id: string; name: string; isMainBranch?: boolean };
 type FacultyStaff = { id: string; name: string; roleType: string };
 
 const LEAD_SOURCES = [
@@ -171,7 +171,7 @@ export function AddAdmissionDrawer({
           </Field>
         </div>
 
-        {branches.length > 0 ? (
+        {branches.filter((b) => !b.isMainBranch).length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             <Field label="Course / Offering *">
               <select
@@ -198,6 +198,7 @@ export function AddAdmissionDrawer({
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
+                    {b.isMainBranch ? " (Main Branch)" : ""}
                   </option>
                 ))}
               </select>

@@ -39,6 +39,26 @@ import { formatDate, formatCurrency, initials } from "@/lib/utils";
 import { useRazorpayCheckout } from "@/lib/useRazorpayCheckout";
 import { SupportChat } from "@/components/support/SupportChat";
 
+// MUI — Part 1-2 restyle (all tabs + header + navigation + timer visuals)
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import MuiCard from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
+import LinearProgress from "@mui/material/LinearProgress";
+import InputLabel from "@mui/material/InputLabel";
+
 export type StudentData = {
   id: string;
   name: string;
@@ -135,6 +155,9 @@ type StudyMaterial = {
   fileUrl: string;
   description: string | null;
   createdAt: string;
+  batchId?: string | null;
+  courseId?: string | null;
+  branchId?: string | null;
 };
 
 type Assignment = {
@@ -145,6 +168,9 @@ type Assignment = {
   dueDate: string;
   totalMarks: number;
   attachmentUrl: string | null;
+  batchId?: string | null;
+  courseId?: string | null;
+  branchId?: string | null;
   submission?: {
     status: string;
     marksObtained: number | null;
@@ -373,6 +399,14 @@ export function StudentPortalView({
 
   const student = students.find((s) => s.id === selectedStudentId) || students[0];
 
+  // Per-child scoping for materials/assignments — same pattern as filteredLiveClasses (:1130) and studentExams.filter (:1305)
+  // Preserves branch-wide behavior: batchId=null => show to all children
+  const filteredMaterials = useMemo(() => materials.filter((m) => !m.batchId || m.batchId === student?.batchId), [materials, student?.batchId]);
+  const filteredAssignments = useMemo(
+    () => assignments.filter((a) => !a.batchId || a.batchId === student?.batchId),
+    [assignments, student?.batchId],
+  );
+
   const handleStudentSubmitWork = async (assignmentId: string) => {
     if (!submissionUrl.trim()) return;
     setIsSubmittingWork(true);
@@ -464,1064 +498,1449 @@ export function StudentPortalView({
 
   if (!student) {
     return (
-      <div className="py-12 text-center text-sm text-scholar-500">
+      <Box sx={{ py: 6, textAlign: "center", color: "text.secondary", fontSize: "0.875rem" }}>
         No enrolled student found for your credentials.
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Student / Parent Profile Switcher (Branch credentials locked to student's enrolled campus) */}
-      <div className="flex flex-col gap-3 rounded-2xl bg-scholar-800 p-6 text-white sm:flex-row sm:items-center sm:justify-between shadow-lg">
-        <div className="flex items-center gap-4">
-          {/* Student Passport Photo / Avatar */}
+    <Stack spacing={3}>
+      {/* ── Student / Parent Profile Switcher — MUI (branch credentials locked) ── */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: "16px",
+          backgroundColor: "#13243B",
+          color: "white",
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 4px 20px rgba(13,26,42,0.25)",
+        }}
+      >
+        <Stack direction="row" spacing={2} sx={{ minWidth: 0, alignItems: "center" }}>
+          {/* Avatar / Photo */}
           {student.photoUrl ? (
-            <div className="relative group shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <Box sx={{ position: "relative", flexShrink: 0 }}>
+              <Avatar
                 src={student.photoUrl}
                 alt={student.name}
-                className="h-16 w-16 rounded-2xl object-cover border-2 border-white/40 shadow-md"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setNewPhotoUrl(student.photoUrl || null);
-                  setPhotoModalOpen(true);
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "16px",
+                  border: "2px solid rgba(255,255,255,0.4)",
+                  boxShadow: 2,
                 }}
-                className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity text-white text-[9px] font-bold cursor-pointer"
-              >
-                Change
-              </button>
-            </div>
+                variant="rounded"
+              />
+              {viewerRole !== "PARENT" && (
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => {
+                    setNewPhotoUrl(student.photoUrl || null);
+                    setPhotoModalOpen(true);
+                  }}
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "16px",
+                    border: "none",
+                    bgcolor: "rgba(0,0,0,0.0)",
+                    color: "white",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: 0,
+                    transition: "opacity 0.2s, background 0.2s",
+                    "&:hover": { opacity: 1, bgcolor: "rgba(0,0,0,0.6)" },
+                  }}
+                >
+                  Change
+                </Box>
+              )}
+            </Box>
           ) : (
-            <div
+            <Box
+              onClick={() => {
+                if (viewerRole === "PARENT") return;
+                setNewPhotoUrl(null);
+                setPhotoModalOpen(true);
+              }}
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "16px",
+                border: "2px dashed #EFB65B",
+                bgcolor: "rgba(255,255,255,0.08)",
+                color: "#EFB65B",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: viewerRole === "PARENT" ? "default" : "pointer",
+                flexShrink: 0,
+                position: "relative",
+                transition: "background 0.2s",
+                "&:hover": { bgcolor: viewerRole === "PARENT" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.15)" },
+              }}
+              title={viewerRole === "PARENT" ? "Photo can only be updated via student login" : "Click to upload your passport photograph"}
+            >
+              <Camera size={26} />
+              <Chip
+                label={viewerRole === "PARENT" ? "View only" : "Upload"}
+                size="small"
+                sx={{
+                  position: "absolute",
+                  bottom: -6,
+                  height: 16,
+                  fontSize: "8px",
+                  fontWeight: 800,
+                  bgcolor: "#E8A33D",
+                  color: "#13243B",
+                  "& .MuiChip-label": { px: 0.7 },
+                }}
+              />
+            </Box>
+          )}
+
+          <Box sx={{ minWidth: 0 }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center" }}>
+              <Chip
+                label="Student & Parent Portal"
+                size="small"
+                sx={{
+                  bgcolor: "#E8A33D",
+                  color: "#13243B",
+                  fontWeight: 800,
+                  fontSize: "10px",
+                  height: 20,
+                  borderRadius: "6px",
+                  "& .MuiChip-label": { px: 1 },
+                }}
+              />
+              <Chip
+                icon={<Building2 size={11} style={{ color: "white" }} />}
+                label={student.branchName || "Main Branch"}
+                size="small"
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.15)",
+                  color: "rgba(255,255,255,0.9)",
+                  fontWeight: 600,
+                  fontSize: "10px",
+                  height: 20,
+                  borderRadius: "6px",
+                  "& .MuiChip-icon": { ml: 0.7, mr: -0.5 },
+                }}
+              />
+              {student.photoUrl ? (
+                <Chip
+                  icon={<CheckCircle2 size={10} style={{ color: "#6EE7B7" }} />}
+                  label="Photo on File"
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(16,185,129,0.2)",
+                    color: "#A7F3D0",
+                    border: "1px solid rgba(52,211,153,0.35)",
+                    fontWeight: 600,
+                    fontSize: "10px",
+                    height: 20,
+                    "& .MuiChip-icon": { ml: 0.7 },
+                  }}
+                />
+              ) : (
+                <Chip
+                  icon={<Camera size={10} style={{ color: "#FCD34D" }} />}
+                  label="Photo Pending"
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(245,158,11,0.22)",
+                    color: "#FDE68A",
+                    border: "1px solid rgba(251,191,36,0.35)",
+                    fontWeight: 600,
+                    fontSize: "10px",
+                    height: 20,
+                    "& .MuiChip-icon": { ml: 0.7 },
+                  }}
+                />
+              )}
+            </Stack>
+            <Typography variant="h6" sx={{ mt: 0.7, fontFamily: "var(--font-sora)", fontWeight: 800, fontSize: "1.25rem", lineHeight: 1.2, color: "white" }}>
+              {student.name}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.75rem", mt: 0.3 }}>
+              {student.courseName} • {student.batchName} • Mobile: {student.mobile}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Action Buttons & Switcher */}
+        <Stack direction="row" sx={{ alignSelf: { xs: "stretch", sm: "center" }, flexWrap: "wrap", gap: 1.2, alignItems: "center" }}>
+          {viewerRole !== "PARENT" && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Camera size={13} style={{ color: "#EFB65B" }} />}
+              onClick={() => {
+                setNewPhotoUrl(student.photoUrl || null);
+                setPhotoModalOpen(true);
+              }}
+              sx={{
+                borderColor: "rgba(255,255,255,0.2)",
+                bgcolor: "rgba(255,255,255,0.08)",
+                color: "white",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                textTransform: "none",
+                borderRadius: "12px",
+                px: 1.8,
+                py: 0.7,
+                "&:hover": { bgcolor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.3)" },
+              }}
+            >
+              {student.photoUrl ? "Update Photo" : "Upload Photo"}
+            </Button>
+          )}
+
+          {viewerRole !== "PARENT" && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<KeyRound size={13} />}
+              onClick={() => {
+                setPasswordErrorMsg("");
+                setPasswordSuccessMsg("");
+                setPasswordModalOpen(true);
+              }}
+              sx={{
+                borderColor: "rgba(255,255,255,0.2)",
+                bgcolor: "rgba(255,255,255,0.08)",
+                color: "white",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                textTransform: "none",
+                borderRadius: "12px",
+                px: 1.8,
+                py: 0.7,
+                "&:hover": { bgcolor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.3)" },
+              }}
+            >
+              Change Password
+            </Button>
+          )}
+          {viewerRole === "PARENT" && (
+            <Chip
+              label="Manage photo & password via student login"
+              size="small"
+              sx={{ bgcolor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: "10px", height: 24, borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)" }}
+            />
+          )}
+
+          {students.length > 1 && (
+            <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <Select
+                  value={switcherCourse}
+                  onChange={(e) => {
+                    setSwitcherCourse(e.target.value);
+                    setSwitcherBatch("ALL");
+                  }}
+                  displayEmpty
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderRadius: "12px",
+                    height: 32,
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.2)" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.35)" },
+                    "& .MuiSvgIcon-root": { color: "rgba(255,255,255,0.85)" },
+                  }}
+                >
+                  <MenuItem value="ALL">All Courses ({students.length})</MenuItem>
+                  {availableCourses.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name} ({c.count})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: 130 }}>
+                <Select
+                  value={switcherBatch}
+                  onChange={(e) => setSwitcherBatch(e.target.value)}
+                  displayEmpty
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderRadius: "12px",
+                    height: 32,
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.2)" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.35)" },
+                    "& .MuiSvgIcon-root": { color: "rgba(255,255,255,0.85)" },
+                  }}
+                >
+                  <MenuItem value="ALL">All Batches</MenuItem>
+                  {availableBatches.map((b) => (
+                    <MenuItem key={b.id} value={b.id}>
+                      {b.name} ({b.count})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: 180, maxWidth: { xs: 200, sm: 240 } }}>
+                <Select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  displayEmpty
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.12)",
+                    color: "white",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    borderRadius: "12px",
+                    height: 32,
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(232,163,61,0.45)" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(232,163,61,0.7)" },
+                    "& .MuiSvgIcon-root": { color: "rgba(255,255,255,0.85)" },
+                  }}
+                >
+                  {filteredStudentsForSwitching.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      No matching students
+                    </MenuItem>
+                  ) : (
+                    filteredStudentsForSwitching.map((s) => (
+                      <MenuItem key={s.id} value={s.id}>
+                        {s.name} • {s.batchName} ({s.courseName})
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Search size={13} />}
+                onClick={() => setSwitcherModalOpen(true)}
+                sx={{
+                  borderColor: "rgba(232,163,61,0.55)",
+                  bgcolor: "rgba(232,163,61,0.15)",
+                  color: "#FDE68A",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  textTransform: "none",
+                  borderRadius: "12px",
+                  height: 32,
+                  px: 1.8,
+                  "&:hover": { bgcolor: "rgba(232,163,61,0.25)", borderColor: "rgba(232,163,61,0.75)" },
+                }}
+              >
+                Search & Switch
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+      </Paper>
+
+      {/* Photo Upload Prompt Banner if photo is missing — MUI */}
+      {!student.photoUrl && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: "16px",
+            border: "1px solid #FCD34D",
+            bgcolor: "#FFFBEB",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <Avatar variant="rounded" sx={{ width: 40, height: 40, bgcolor: "#FDE68A", color: "#92400E", borderRadius: "12px" }}>
+              <Camera size={20} />
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#78350F", fontSize: "0.75rem" }}>
+                Passport Photograph Pending
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#92400E", fontSize: "11px", lineHeight: 1.4, mt: 0.3 }}>
+                Your photograph was not provided during admission. Please upload your passport-size photo for your official{" "}
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  Student Identity Card
+                </Box>{" "}
+                and attendance verification.
+              </Typography>
+            </Box>
+          </Stack>
+          {viewerRole !== "PARENT" ? (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Upload size={13} />}
               onClick={() => {
                 setNewPhotoUrl(null);
                 setPhotoModalOpen(true);
               }}
-              className="relative flex h-16 w-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-marigold-300 bg-white/10 text-marigold-400 hover:bg-white/20 transition-all shadow-md shrink-0 group"
-              title="Click to upload your passport photograph"
+              sx={{
+                bgcolor: "#D97706",
+                color: "white",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                textTransform: "none",
+                borderRadius: "12px",
+                px: 2.2,
+                alignSelf: { xs: "flex-start", sm: "center" },
+                "&:hover": { bgcolor: "#B45309" },
+              }}
             >
-              <Camera size={26} className="group-hover:scale-110 transition-transform" />
-              <span className="absolute -bottom-1 rounded-full bg-marigold-400 px-1.5 py-0.2 text-[8px] font-extrabold uppercase text-scholar-950 shadow-xs">
-                Upload
-              </span>
-            </div>
-          )}
-
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="rounded bg-marigold-400 px-2 py-0.5 text-[10px] font-bold text-scholar-950 uppercase">
-                Student & Parent Portal
-              </span>
-              <span className="inline-flex items-center gap-1 rounded bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-scholar-100">
-                <Building2 size={11} /> {student.branchName || "Main Branch"}
-              </span>
-              {student.photoUrl ? (
-                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/30 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
-                  <CheckCircle2 size={10} /> Photo on File
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded bg-amber-500/30 border border-amber-400/40 px-2 py-0.5 text-[10px] font-semibold text-amber-200 animate-pulse">
-                  <Camera size={10} /> Photo Pending
-                </span>
-              )}
-            </div>
-            <h2 className="mt-1 font-display text-xl font-bold">{student.name}</h2>
-            <p className="text-xs text-scholar-200">
-              {student.courseName} • {student.batchName} • Mobile: {student.mobile}
-            </p>
-          </div>
-        </div>
-
-        {/* Action Buttons & Switch Student Dropdown for Parent with multiple wards */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              setNewPhotoUrl(student.photoUrl || null);
-              setPhotoModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-colors shadow-2xs cursor-pointer"
-          >
-            <Camera size={13} className="text-marigold-400" />
-            <span>{student.photoUrl ? "Update Photo" : "Upload Photo"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setPasswordErrorMsg("");
-              setPasswordSuccessMsg("");
-              setPasswordModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-colors shadow-2xs cursor-pointer"
-          >
-            <KeyRound size={13} className="text-scholar-200" />
-            <span>Change Password</span>
-          </button>
-
-          {students.length > 1 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Course Dropdown */}
-              <select
-                value={switcherCourse}
-                onChange={(e) => {
-                  setSwitcherCourse(e.target.value);
-                  setSwitcherBatch("ALL");
-                }}
-                className="rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white outline-none cursor-pointer"
-                title="Filter by Course"
-              >
-                <option value="ALL" className="text-ink font-medium">
-                  All Courses ({students.length})
-                </option>
-                {availableCourses.map((c) => (
-                  <option key={c.id} value={c.id} className="text-ink font-medium">
-                    {c.name} ({c.count})
-                  </option>
-                ))}
-              </select>
-
-              {/* Batch Dropdown */}
-              <select
-                value={switcherBatch}
-                onChange={(e) => setSwitcherBatch(e.target.value)}
-                className="rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white outline-none cursor-pointer"
-                title="Filter by Batch"
-              >
-                <option value="ALL" className="text-ink font-medium">
-                  All Batches
-                </option>
-                {availableBatches.map((b) => (
-                  <option key={b.id} value={b.id} className="text-ink font-medium">
-                    {b.name} ({b.count})
-                  </option>
-                ))}
-              </select>
-
-              {/* Student Dropdown */}
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="max-w-[200px] sm:max-w-[240px] truncate rounded-xl border border-marigold-400/50 bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white outline-none cursor-pointer shadow-2xs"
-                title="Select Student"
-              >
-                {filteredStudentsForSwitching.length === 0 ? (
-                  <option value="" disabled className="text-ink">
-                    No matching students
-                  </option>
-                ) : (
-                  filteredStudentsForSwitching.map((s) => (
-                    <option key={s.id} value={s.id} className="text-ink font-medium">
-                      {s.name} • {s.batchName} ({s.courseName})
-                    </option>
-                  ))
-                )}
-              </select>
-
-              {/* Search & Switch Modal Button */}
-              <button
-                type="button"
-                onClick={() => setSwitcherModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-marigold-400/60 bg-marigold-500/20 px-3 py-1.5 text-xs font-bold text-marigold-300 hover:bg-marigold-500/30 transition-colors shadow-2xs cursor-pointer"
-                title="Open Advanced Student Search & Switcher"
-              >
-                <Search size={13} />
-                <span>Search & Switch</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Photo Upload Prompt Banner if photo is missing */}
-      {!student.photoUrl && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-amber-900 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-800">
-              <Camera size={20} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-amber-950">
-                Passport Photograph Pending
-              </h4>
-              <p className="text-[11px] text-amber-800 leading-snug">
-                Your photograph was not provided during admission. Please upload your passport-size photo for your official <strong>Student Identity Card</strong> and attendance verification.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setNewPhotoUrl(null);
-              setPhotoModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow hover:bg-amber-700 transition-colors cursor-pointer shrink-0"
-          >
-            <Upload size={13} />
-            <span>Upload Passport Photo</span>
-          </button>
-        </div>
-      )}
-
-      {/* Portal Navigation Tabs */}
-      <div className="flex border-b border-scholar-200 pb-2 overflow-x-auto">
-        {[
-          { id: "batch", label: "My Allocated Batch", icon: Layers },
-          { id: "live-classes", label: "Live Lectures", icon: Video, count: liveClasses.length },
-          { id: "certificates", label: "My Certificates", icon: Award, count: student.certificates?.length || 0 },
-          { id: "exams", label: "Online CBT Exams", icon: Award, count: exams.length },
-          { id: "materials", label: "Study Material & LMS", icon: BookOpen, count: materials.length },
-          { id: "assignments", label: "Homework & DPP", icon: CheckSquare, count: assignments.length },
-          { id: "fees", label: "Fee Ledger & Pay Online", icon: Wallet },
-          { id: "doubts", label: "✨ AI Doubt Assistant", icon: Sparkles },
-          { id: "help", label: "Help & Support", icon: HelpCircle },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setActiveTab(t.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl mr-2 transition-all shrink-0 ${
-              activeTab === t.id
-                ? "bg-scholar-600 text-white shadow-xs"
-                : "text-scholar-600 hover:bg-scholar-100"
-            }`}
-          >
-            <t.icon size={15} />
-            <span>{t.label}</span>
-            {t.count !== undefined && (
-              <span
-                className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                  activeTab === t.id ? "bg-white/20 text-white" : "bg-scholar-200 text-scholar-800"
-                }`}
-              >
-                {t.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab 1: My Allocated Batch (Read-Only) */}
-      {activeTab === "batch" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <Layers size={18} className="text-scholar-600" />
-              My Allocated Batch & Class Schedule
-            </h3>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-scholar-700 bg-scholar-100 border border-scholar-200 px-2 py-0.5 rounded-md">
-              <Lock size={11} /> Read-Only View
-            </span>
-          </div>
-
-          <Card className="p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-scholar-100 pb-4">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-scholar-500">
-                  Enrolled Program & Course
-                </span>
-                <p className="font-display text-lg font-bold text-ink mt-0.5">
-                  {student.courseName}
-                </p>
-                {student.courseDuration && (
-                  <p className="text-xs text-scholar-500 flex items-center gap-1 mt-0.5">
-                    <Clock size={12} className="text-scholar-400" /> Duration: {student.courseDuration}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl bg-scholar-50 p-3 border border-scholar-200 text-left sm:text-right">
-                <span className="text-[11px] text-scholar-500 font-medium">Branch</span>
-                <p className="font-bold text-ink text-sm flex items-center gap-1 sm:justify-end">
-                  <Building2 size={13} className="text-scholar-500" />
-                  {student.batch?.branchName || student.branchName || "Main Branch"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="rounded-xl bg-scholar-50/70 p-4 border border-scholar-200/80">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-scholar-500">
-                  Batch Name
-                </span>
-                <p className="font-display text-base font-bold text-ink mt-1">
-                  {student.batch?.name || student.batchName}
-                </p>
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 mt-2">
-                  Status: {student.batch?.status || "Active (Ongoing)"}
-                </span>
-              </div>
-
-              <div className="rounded-xl bg-scholar-50/70 p-4 border border-scholar-200/80">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-scholar-500">
-                  Class Timing (Winter / Standard)
-                </span>
-                <p className="font-display text-base font-bold text-ink mt-1 flex items-center gap-1.5">
-                  <Clock size={16} className="text-scholar-600" />
-                  {student.batch?.timing || "7:00 AM - 9:00 AM"}
-                </p>
-                <p className="text-[11px] text-scholar-500 mt-2">
-                  Please report to campus 10 minutes prior to lecture start.
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-scholar-50/70 p-4 border border-scholar-200/80">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-scholar-500">
-                  Assigned Faculty
-                </span>
-                <div className="mt-1 space-y-1">
-                  {student.batch?.facultyMembers && student.batch.facultyMembers.length > 0 ? (
-                    student.batch.facultyMembers.map((fac, idx) => (
-                      <p key={idx} className="text-xs font-semibold text-scholar-800">
-                        • {fac}
-                      </p>
-                    ))
-                  ) : (
-                    <p className="text-xs font-medium text-scholar-600">
-                      Academic Faculty assigned by Branch Administration
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Read-Only Notice */}
-            <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 text-xs text-scholar-600 flex items-start gap-2">
-              <Lock size={15} className="text-scholar-500 shrink-0 mt-0.5" />
-              <span>
-                <strong>Notice</strong>: Students can only view their allocated batch and schedule.
-                Batch timing adjustments, subject additions, or campus transfers must be requested through your campus administration.
-              </span>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab: Live Classes & Online Lectures */}
-      {activeTab === "live-classes" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <Video size={18} className="text-rose-600" />
-              Live Online Lectures & Interactive Classes
-            </h3>
-            <span className="text-xs text-scholar-500">
-              Direct access to Zoom / Google Meet / MS Teams interactive classrooms
-            </span>
-          </div>
-
-          {liveClasses.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
-              No live classes scheduled for your enrolled program at this moment.
-            </div>
+              Upload Passport Photo
+            </Button>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {liveClasses.map((lc) => {
+            <Chip
+              label="Photo update via student login"
+              size="small"
+              sx={{ bgcolor: "#FDE68A", color: "#92400E", fontSize: "11px", height: 24, border: "1px solid #FCD34D", alignSelf: { xs: "flex-start", sm: "center" } }}
+            />
+          )}
+        </Paper>
+      )}
+
+      {/* Portal Navigation Tabs — MUI Tabs/Tab */}
+      <Paper elevation={0} sx={{ borderRadius: "14px", border: "1px solid #E2E8F0", overflow: "hidden" }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, v) => setActiveTab(v as typeof activeTab)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: 1,
+            minHeight: 48,
+            bgcolor: "white",
+            "& .MuiTabs-indicator": { height: 3, borderRadius: "3px 3px 0 0", bgcolor: "#1E3A5F" },
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              minHeight: 44,
+              py: 1,
+              px: 1.8,
+              borderRadius: "10px",
+              my: 0.5,
+              mr: 0.7,
+              color: "#4E6E93",
+              "&.Mui-selected": { bgcolor: "#1E3A5F", color: "white" },
+            },
+          }}
+        >
+          <Tab
+            value="batch"
+            icon={<Layers size={15} />}
+            iconPosition="start"
+            label="My Allocated Batch"
+          />
+          <Tab
+            value="live-classes"
+            icon={<Video size={15} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+                <span>Live Lectures</span>
+                <Chip label={liveClasses.length} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: activeTab === "live-classes" ? "rgba(255,255,255,0.2)" : "#EEF2F7", color: activeTab === "live-classes" ? "white" : "#4E6E93", "& .MuiChip-label": { px: 0.8 } }} />
+              </Stack>
+            }
+          />
+          <Tab
+            value="certificates"
+            icon={<Award size={15} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+                <span>My Certificates</span>
+                <Chip label={student.certificates?.length || 0} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: activeTab === "certificates" ? "rgba(255,255,255,0.2)" : "#EEF2F7", color: activeTab === "certificates" ? "white" : "#4E6E93", "& .MuiChip-label": { px: 0.8 } }} />
+              </Stack>
+            }
+          />
+          <Tab
+            value="exams"
+            icon={<Award size={15} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+                <span>Online CBT Exams</span>
+                <Chip label={exams.length} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: activeTab === "exams" ? "rgba(255,255,255,0.2)" : "#EEF2F7", color: activeTab === "exams" ? "white" : "#4E6E93", "& .MuiChip-label": { px: 0.8 } }} />
+              </Stack>
+            }
+          />
+          <Tab
+            value="materials"
+            icon={<BookOpen size={15} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+                <span>Study Material & LMS</span>
+                <Chip label={materials.length} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: activeTab === "materials" ? "rgba(255,255,255,0.2)" : "#EEF2F7", color: activeTab === "materials" ? "white" : "#4E6E93", "& .MuiChip-label": { px: 0.8 } }} />
+              </Stack>
+            }
+          />
+          <Tab
+            value="assignments"
+            icon={<CheckSquare size={15} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+                <span>Homework & DPP</span>
+                <Chip label={assignments.length} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: activeTab === "assignments" ? "rgba(255,255,255,0.2)" : "#EEF2F7", color: activeTab === "assignments" ? "white" : "#4E6E93", "& .MuiChip-label": { px: 0.8 } }} />
+              </Stack>
+            }
+          />
+          <Tab value="fees" icon={<Wallet size={15} />} iconPosition="start" label="Fee Ledger & Pay Online" />
+          <Tab value="doubts" icon={<Sparkles size={15} />} iconPosition="start" label="✨ AI Doubt Assistant" />
+          <Tab value="help" icon={<HelpCircle size={15} />} iconPosition="start" label="Help & Support" />
+        </Tabs>
+      </Paper>
+
+      {/* Tab 1: My Allocated Batch (Read-Only) — MUI */}
+      {activeTab === "batch" && (
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+              <Layers size={18} color="#1E3A5F" />
+              My Allocated Batch & Class Schedule
+            </Typography>
+            <Chip icon={<Lock size={11} />} label="Read-Only View" size="small" sx={{ bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", color: "#4E6E93", fontWeight: 600, fontSize: "11px", "& .MuiChip-icon": { ml: 0.7 } }} />
+          </Stack>
+
+          <MuiCard elevation={0} sx={{ borderRadius: "16px", border: "1px solid #D6E0EB" }}>
+            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+              <Stack spacing={2.5}>
+                <Stack direction={{ xs: "column", sm: "row" }} sx={{ borderBottom: "1px solid #EEF2F7", pb: 2, justifyContent: "space-between", gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontSize: "11px" }}>
+                      Enrolled Program & Course
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1.125rem", color: "text.primary", mt: 0.5 }}>
+                      {student.courseName}
+                    </Typography>
+                    {student.courseDuration && (
+                      <Stack direction="row" spacing={0.7} sx={{ mt: 0.5, color: "text.secondary", fontSize: "0.75rem", alignItems: "center" }}>
+                        <Clock size={12} color="#7E9BBC" />
+                        <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "text.secondary" }}>Duration: {student.courseDuration}</Typography>
+                      </Stack>
+                    )}
+                  </Box>
+                  <Paper elevation={0} sx={{ p: 1.7, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #D6E0EB", textAlign: { xs: "left", sm: "right" }, minWidth: 150 }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "11px" }}>Branch</Typography>
+                    <Stack direction="row" spacing={0.7} sx={{ mt: 0.2, alignItems: "center", justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+                      <Building2 size={13} color="#4E6E93" />
+                      <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.875rem", color: "text.primary" }}>
+                        {student.batch?.branchName || student.branchName || "Main Branch"}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                </Stack>
+
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr" }, gap: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.6)", border: "1px solid rgba(214,224,235,0.85)" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontSize: "11px" }}>
+                      Batch Name
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary", mt: 0.7 }}>
+                      {student.batch?.name || student.batchName}
+                    </Typography>
+                    <Chip label={`Status: ${student.batch?.status || "Active (Ongoing)"}`} size="small" sx={{ mt: 1, bgcolor: "#E9F7EF", color: "#1F9D66", border: "1px solid #A7E0C2", fontWeight: 700, fontSize: "10px", height: 22 }} />
+                  </Paper>
+
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.6)", border: "1px solid rgba(214,224,235,0.85)" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontSize: "11px" }}>
+                      Class Timing (Winter / Standard)
+                    </Typography>
+                    <Stack direction="row" spacing={0.9} sx={{ mt: 0.7, alignItems: "center" }}>
+                      <Clock size={16} color="#1E3A5F" />
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+                        {student.batch?.timing || "7:00 AM - 9:00 AM"}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "11px", mt: 1, display: "block" }}>
+                      Please report to campus 10 minutes prior to lecture start.
+                    </Typography>
+                  </Paper>
+
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.6)", border: "1px solid rgba(214,224,235,0.85)" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontSize: "11px" }}>
+                      Assigned Faculty
+                    </Typography>
+                    <Box sx={{ mt: 0.7 }}>
+                      {student.batch?.facultyMembers && student.batch.facultyMembers.length > 0 ? (
+                        <Stack spacing={0.5}>
+                          {student.batch.facultyMembers.map((fac, idx) => (
+                            <Typography key={idx} variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#1E3A5F" }}>
+                              • {fac}
+                            </Typography>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "text.secondary" }}>
+                          Academic Faculty assigned by Branch Administration
+                        </Typography>
+                      )}
+                    </Box>
+                  </Paper>
+                </Box>
+
+                <Paper elevation={0} sx={{ p: 1.5, borderRadius: "12px", border: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.55)", display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                  <Lock size={15} color="#4E6E93" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#4E6E93", lineHeight: 1.5 }}>
+                    <Box component="span" sx={{ fontWeight: 700 }}>Notice</Box>: Students can only view their allocated batch and schedule. Batch timing adjustments, subject additions, or campus transfers must be requested through your campus administration.
+                  </Typography>
+                </Paper>
+              </Stack>
+            </CardContent>
+          </MuiCard>
+        </Stack>
+      )}
+
+      {/* Tab: Live Classes & Online Lectures — MUI */}
+      {activeTab === "live-classes" && (
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+              <Video size={18} color="#E11D48" />
+              Live Online Lectures & Interactive Classes
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+              Direct access to Zoom / Google Meet / MS Teams interactive classrooms
+            </Typography>
+          </Stack>
+
+          {(() => {
+            const filteredLiveClasses = liveClasses.filter((lc) => !student?.batchId || !lc.batchId || lc.batchId === student.batchId);
+            if (filteredLiveClasses.length === 0)
+              return (
+                <Paper elevation={0} sx={{ p: 4, borderRadius: "16px", border: "1px dashed #D6E0EB", textAlign: "center", color: "text.secondary", fontSize: "0.75rem" }}>
+                  No live classes scheduled for your enrolled program at this moment.
+                </Paper>
+              );
+            return (
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
+                {filteredLiveClasses.map((lc) => {
                 const classDate = new Date(lc.scheduledAt);
                 const isLive = lc.status === "LIVE";
                 const isJoinable = isLive || Date.now() >= classDate.getTime() - 10 * 60 * 1000;
 
                 return (
-                  <Card
+                  <MuiCard
                     key={lc.id}
-                    className={`p-5 flex flex-col justify-between transition-all ${
-                      isLive ? "border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/10" : ""
-                    }`}
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: "16px",
+                      border: isLive ? "1px solid #FB7185" : "1px solid #D6E0EB",
+                      boxShadow: isLive ? "0 0 0 2px rgba(244,63,94,0.12)" : undefined,
+                      bgcolor: isLive ? "rgba(255,241,242,0.35)" : "white",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
-                            isLive
-                              ? "bg-rose-500 text-white animate-pulse"
-                              : "bg-sky-50 text-sky-700 border border-sky-200"
-                          }`}
-                        >
-                          {isLive && <Radio size={12} />}
-                          {isLive ? "LIVE NOW" : "SCHEDULED"}
-                        </span>
-                        <span className="text-[11px] text-scholar-400 font-medium">
+                    <Stack spacing={1.8}>
+                      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                        <Chip
+                          icon={isLive ? <Radio size={12} style={{ color: "white" }} /> : undefined}
+                          label={isLive ? "LIVE NOW" : "SCHEDULED"}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "11px",
+                            height: 22,
+                            bgcolor: isLive ? "#F43F5E" : "#F0F9FF",
+                            color: isLive ? "white" : "#0369A1",
+                            border: isLive ? "none" : "1px solid #BAE6FD",
+                            "& .MuiChip-icon": { ml: 0.7 },
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "11px" }}>
                           {lc.durationMinutes} Minutes
-                        </span>
-                      </div>
+                        </Typography>
+                      </Stack>
 
-                      <div>
+                      <Box>
                         {lc.subject && (
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-scholar-500">
+                          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontSize: "11px" }}>
                             {lc.subject}
-                          </span>
+                          </Typography>
                         )}
-                        <h4 className="font-display font-bold text-sm text-ink mt-0.5">
+                        <Typography variant="subtitle1" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "0.875rem", color: "text.primary", mt: 0.3 }}>
                           {lc.title}
-                        </h4>
+                        </Typography>
                         {lc.description && (
-                          <p className="text-xs text-scholar-500 mt-1">{lc.description}</p>
+                          <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem", mt: 0.5 }}>
+                            {lc.description}
+                          </Typography>
                         )}
-                      </div>
+                      </Box>
 
-                      <div className="rounded-xl bg-scholar-50/70 p-3 text-xs space-y-1 border border-scholar-100">
-                        <div className="flex items-center gap-1.5 text-scholar-700 font-medium">
-                          <Calendar size={13} className="text-scholar-400" />
-                          <span>{formatDate(classDate)}</span>
-                          <span className="text-scholar-400">&bull;</span>
-                          <Clock size={13} className="text-scholar-400" />
-                          <span>
-                            {classDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        {lc.facultyName && (
-                          <p className="text-[11px] text-scholar-600">
-                            Faculty: <strong>{lc.facultyName}</strong>
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                      <Paper elevation={0} sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.55)", border: "1px solid #EEF2F7" }}>
+                        <Stack spacing={0.5}>
+                          <Stack direction="row" spacing={0.8} sx={{ color: "#334155", fontSize: "0.75rem", fontWeight: 500, alignItems: "center", flexWrap: "wrap" }}>
+                            <Calendar size={13} color="#7E9BBC" />
+                            <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 500 }}>{formatDate(classDate)}</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>•</Typography>
+                            <Clock size={13} color="#7E9BBC" />
+                            <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 500 }}>
+                              {classDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </Typography>
+                          </Stack>
+                          {lc.facultyName && (
+                            <Typography variant="caption" sx={{ color: "#475569", fontSize: "11px" }}>
+                              Faculty: <Box component="span" sx={{ fontWeight: 700 }}>{lc.facultyName}</Box>
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Paper>
+                    </Stack>
 
-                    <div className="mt-4 pt-3 border-t border-scholar-100">
+                    <Box sx={{ mt: 2, pt: 1.7, borderTop: "1px solid #EEF2F7" }}>
                       {viewerRole === "PARENT" ? (
-                        <div className="text-center py-2 px-3 rounded-xl bg-scholar-50 border border-scholar-200 text-scholar-600 text-xs font-medium">
+                        <Paper elevation={0} sx={{ py: 1.2, px: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #D6E0EB", textAlign: "center", color: "#475569", fontSize: "0.75rem", fontWeight: 500 }}>
                           Live class scheduled for your child&apos;s batch — join is available only via student login
-                        </div>
+                        </Paper>
                       ) : isJoinable ? (
-                        <a
+                        <Button
+                          component="a"
                           href={lc.meetingLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-rose-700 transition-colors"
+                          variant="contained"
+                          fullWidth
+                          startIcon={<ExternalLink size={13} />}
+                          sx={{ bgcolor: "#E11D48", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", py: 1.2, "&:hover": { bgcolor: "#BE123C" } }}
                         >
-                          <ExternalLink size={13} />
-                          <span>Join Live Class</span>
-                        </a>
+                          Join Live Class
+                        </Button>
                       ) : (
-                        <div className="text-center py-2 px-3 rounded-xl bg-scholar-100 text-scholar-500 text-xs font-medium">
+                        <Paper elevation={0} sx={{ py: 1.2, px: 1.5, borderRadius: "12px", bgcolor: "#F1F5F9", textAlign: "center", color: "#64748B", fontSize: "0.75rem", fontWeight: 500 }}>
                           🔒 Join link unlocks 10 mins before class start (
                           {new Date(classDate.getTime() - 10 * 60 * 1000).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                           )
-                        </div>
+                        </Paper>
                       )}
-                    </div>
-                  </Card>
+                    </Box>
+                  </MuiCard>
                 );
               })}
-            </div>
-          )}
-        </div>
+              </Box>
+            );
+          })()}
+        </Stack>
       )}
 
-      {/* Tab: My Course Certificates */}
+      {/* Tab: My Course Certificates — MUI */}
       {activeTab === "certificates" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <Award size={18} className="text-amber-500" />
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+              <Award size={18} color="#D97706" />
               Official Course Completion & Merit Certificates
-            </h3>
-            <span className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Verified system-issued certificates of achievement
-            </span>
-          </div>
+            </Typography>
+          </Stack>
 
           {(!student.certificates || student.certificates.length === 0) ? (
-            <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400 space-y-1">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-scholar-50 text-scholar-400 mb-2">
+            <Paper elevation={0} sx={{ p: 4, borderRadius: "16px", border: "1px dashed #D6E0EB", textAlign: "center" }}>
+              <Avatar sx={{ width: 40, height: 40, bgcolor: "#F8FAFC", color: "#94A3B8", mx: "auto", mb: 1.2, borderRadius: "12px" }} variant="rounded">
                 <Award size={20} />
-              </div>
-              <p className="font-semibold text-scholar-600 text-sm">No certificates issued yet</p>
-              <p>
+              </Avatar>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#334155", fontSize: "0.875rem" }}>No certificates issued yet</Typography>
+              <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.75rem", mt: 0.5 }}>
                 Certificates are issued by the academic administration upon course completion.
-              </p>
-            </div>
+              </Typography>
+            </Paper>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
               {student.certificates.map((cert) => (
-                <Card key={cert.id} className="p-5 flex flex-col justify-between space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
-                        <Award size={11} /> {cert.title}
-                      </span>
-                      <span className="text-[11px] text-scholar-400 font-medium">
+                <MuiCard key={cert.id} elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <Stack spacing={1.2}>
+                    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                      <Chip icon={<Award size={11} />} label={cert.title} size="small" sx={{ bgcolor: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", fontWeight: 700, fontSize: "10px", height: 22, "& .MuiChip-icon": { ml: 0.7 } }} />
+                      <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 500, fontSize: "11px" }}>
                         Issued on {formatDate(new Date(cert.issuedAt))}
-                      </span>
-                    </div>
-
-                    <h4 className="font-display font-bold text-sm text-ink">{cert.templateName}</h4>
-
-                    <p className="text-xs text-scholar-600">
-                      Program: <strong>{student.courseName}</strong>
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-scholar-100 flex items-center justify-between">
-                    <span className="text-[11px] text-scholar-400 font-mono">
+                      </Typography>
+                    </Stack>
+                    <Typography variant="subtitle1" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "0.875rem", color: "text.primary" }}>{cert.templateName}</Typography>
+                    <Typography variant="body2" sx={{ color: "#475569", fontSize: "0.75rem" }}>
+                      Program: <Box component="span" sx={{ fontWeight: 700 }}>{student.courseName}</Box>
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" sx={{ pt: 1.7, mt: 1.5, borderTop: "1px solid #EEF2F7", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontFamily: "monospace", fontSize: "11px" }}>
                       Certificate #{cert.id.slice(-8).toUpperCase()}
-                    </span>
-
-                    <a
+                    </Typography>
+                    <Button
+                      component="a"
                       href={`/api/files/${cert.pdfFileAssetId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-scholar-700 transition-colors"
+                      variant="contained"
+                      size="small"
+                      startIcon={<Download size={13} />}
+                      sx={{ bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2, "&:hover": { bgcolor: "#13243B" } }}
                     >
-                      <Download size={13} />
-                      <span>Download PDF Certificate</span>
-                    </a>
-                  </div>
-                </Card>
+                      Download PDF Certificate
+                    </Button>
+                  </Stack>
+                </MuiCard>
               ))}
-            </div>
+            </Box>
           )}
-        </div>
+        </Stack>
       )}
 
-      {/* Tab 2: Online CBT Exams */}
+      {/* Tab 2: Online CBT Exams — MUI */}
       {activeTab === "exams" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink">
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
               Computer Based Tests (CBT) & Assessments
-            </h3>
-            <span className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Live timed exams with negative marking & instant scorecards
-            </span>
-          </div>
+            </Typography>
+          </Stack>
 
           {(() => {
             const studentExams = exams.filter((ex) => !student?.batchId || ex.batchId === student.batchId);
             if (studentExams.length === 0) {
               return (
-                <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
+                <Paper elevation={0} sx={{ p: 4, borderRadius: "16px", border: "1px dashed #D6E0EB", textAlign: "center", color: "#94A3B8", fontSize: "0.75rem" }}>
                   No online examinations scheduled for your batch right now.
-                </div>
+                </Paper>
               );
             }
 
             return (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr" }, gap: 2 }}>
                 {studentExams.map((ex) => {
                   const hasAttempted = Boolean(ex.attempt);
                   return (
-                    <Card key={ex.id} className="flex flex-col justify-between p-5">
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <Badge tone={hasAttempted ? "success" : "scholar"}>
-                            {hasAttempted ? "Attempted" : "Live / Scheduled"}
-                          </Badge>
-                          <span className="text-[11px] text-scholar-400">
+                    <MuiCard key={ex.id} elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                      <Box>
+                        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                          <Chip
+                            label={hasAttempted ? "Attempted" : "Live / Scheduled"}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "11px",
+                              height: 22,
+                              bgcolor: hasAttempted ? "#E9F7EF" : "#EEF2F7",
+                              color: hasAttempted ? "#1F9D66" : "#4E6E93",
+                              border: hasAttempted ? "1px solid #A7E0C2" : "1px solid #D6E0EB",
+                            }}
+                          />
+                          <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px" }}>
                             {formatDate(ex.testDate)}
-                          </span>
-                        </div>
+                          </Typography>
+                        </Stack>
 
-                        <h4 className="mt-2 font-display text-base font-bold text-ink">
+                        <Typography variant="subtitle1" sx={{ mt: 1.2, fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
                           {ex.title}
-                        </h4>
-                        <p className="text-xs text-scholar-500">
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
                           {ex.subject || "All Subjects"} • {ex.seriesName || "General Exam"}
-                        </p>
+                        </Typography>
 
                         {ex.startTime && (
-                          <div className="mt-2 inline-flex items-center gap-1 rounded bg-scholar-100/70 px-2 py-0.5 text-[11px] font-semibold text-scholar-700">
-                            <Clock size={11} className="text-scholar-500" />
-                            <span>
-                              {(() => {
-                                const s = new Date(ex.startTime);
-                                if (isNaN(s.getTime())) return null;
-                                const sStr = s.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-                                if (!ex.endTime) return `${sStr} onwards`;
-                                const e = new Date(ex.endTime);
-                                const eStr = !isNaN(e.getTime()) ? e.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
-                                return eStr ? `${sStr} - ${eStr}` : sStr;
-                              })()}
-                            </span>
-                          </div>
+                          <Chip
+                            icon={<Clock size={11} color="#4E6E93" />}
+                            label={(() => {
+                              const s = new Date(ex.startTime);
+                              if (isNaN(s.getTime())) return "";
+                              const sStr = s.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+                              if (!ex.endTime) return `${sStr} onwards`;
+                              const e = new Date(ex.endTime);
+                              const eStr = !isNaN(e.getTime()) ? e.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
+                              return eStr ? `${sStr} - ${eStr}` : sStr;
+                            })()}
+                            size="small"
+                            sx={{ mt: 1.2, bgcolor: "rgba(238,242,247,0.7)", color: "#334155", fontWeight: 600, fontSize: "11px", height: 22, "& .MuiChip-icon": { ml: 0.7 } }}
+                          />
                         )}
 
-                        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-scholar-50 p-2.5 text-center text-xs text-scholar-700">
-                          <div>
-                            <span className="block text-[10px] text-scholar-400">Duration</span>
-                            <strong>{ex.durationMinutes || 60} mins</strong>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] text-scholar-400">Max Marks</span>
-                            <strong>{ex.totalMarks} pts</strong>
-                          </div>
-                        </div>
+                        <Paper elevation={0} sx={{ mt: 2, p: 1.2, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #EEF2F7", display: "grid", gridTemplateColumns: "1fr 1fr", textAlign: "center" }}>
+                          <Box>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "10px", display: "block" }}>Duration</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "text.primary" }}>{ex.durationMinutes || 60} mins</Typography>
+                          </Box>
+                          <Box>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "10px", display: "block" }}>Max Marks</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "text.primary" }}>{ex.totalMarks} pts</Typography>
+                          </Box>
+                        </Paper>
 
                         {hasAttempted && ex.attempt && (
-                          <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 space-y-1">
-                            <p className="font-bold text-sm">
+                          <Paper elevation={0} sx={{ mt: 1.5, p: 1.5, borderRadius: "12px", bgcolor: "#E9F7EF", border: "1px solid #A7E0C2" }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#065F46" }}>
                               {viewerRole === "PARENT" ? "Child's Score" : "Your Score"}: {ex.attempt.score} / {ex.totalMarks}
-                            </p>
+                            </Typography>
                             {ex.attempt.rank && (
-                              <p className="text-[11px]">Rank: #{ex.attempt.rank}</p>
+                              <Typography variant="caption" sx={{ color: "#047857", fontSize: "11px", display: "block" }}>Rank: #{ex.attempt.rank}</Typography>
                             )}
                             {ex.attempt.percentile && (
-                              <p className="text-[11px]">Percentile: {ex.attempt.percentile}%</p>
+                              <Typography variant="caption" sx={{ color: "#047857", fontSize: "11px", display: "block" }}>Percentile: {ex.attempt.percentile}%</Typography>
                             )}
-                          </div>
+                          </Paper>
                         )}
-                      </div>
+                      </Box>
 
-                      <div className="mt-5 border-t border-scholar-100 pt-3">
+                      <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid #EEF2F7" }}>
                         {viewerRole === "PARENT" ? (
-                          <div className="text-center py-2 px-3 rounded-xl bg-scholar-50 text-scholar-600 text-xs font-medium border border-scholar-100">
+                          <Paper elevation={0} sx={{ py: 1.2, px: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #EEF2F7", textAlign: "center", color: "#475569", fontSize: "0.75rem", fontWeight: 500 }}>
                             {hasAttempted ? (
-                              <span className="font-semibold text-emerald-700">Attempted — Score: {ex.attempt?.score} / {ex.totalMarks}</span>
+                              <Box component="span" sx={{ fontWeight: 700, color: "#047857" }}>Attempted — Score: {ex.attempt?.score} / {ex.totalMarks}</Box>
                             ) : (
                               <span>Not yet attempted</span>
                             )}
-                          </div>
+                          </Paper>
                         ) : (
-                          <button
-                            type="button"
+                          <Button
+                            variant="contained"
+                            fullWidth
+                            startIcon={<Play size={13} fill="currentColor" />}
                             onClick={() => setActiveExamModal(ex)}
-                            className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-colors ${
-                              hasAttempted
-                                ? "bg-scholar-700 hover:bg-scholar-800"
-                                : "bg-emerald-600 hover:bg-emerald-700"
-                            }`}
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "0.75rem",
+                              textTransform: "none",
+                              borderRadius: "12px",
+                              py: 1.1,
+                              bgcolor: hasAttempted ? "#1E3A5F" : "#1F9D66",
+                              "&:hover": { bgcolor: hasAttempted ? "#13243B" : "#188050" },
+                            }}
                           >
-                            <Play size={13} fill="currentColor" />
                             {hasAttempted ? "Review Answers & Analysis" : "Start Online Exam"}
-                          </button>
+                          </Button>
                         )}
-                      </div>
-                    </Card>
+                      </Box>
+                    </MuiCard>
                   );
                 })}
-              </div>
+              </Box>
             );
           })()}
-        </div>
+        </Stack>
       )}
 
-      {/* Tab 3: Study Material & LMS */}
+      {/* Tab 3: Study Material & LMS — MUI */}
       {activeTab === "materials" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink">
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
               Class Notes, Question Banks & LMS Downloads
-            </h3>
-            <span className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Verified learning materials uploaded by your faculty
-            </span>
-          </div>
+            </Typography>
+          </Stack>
 
-          {materials.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
+          {filteredMaterials.length === 0 ? (
+            <Paper elevation={0} sx={{ p: 4, borderRadius: "16px", border: "1px dashed #D6E0EB", textAlign: "center", color: "#94A3B8", fontSize: "0.75rem" }}>
               No study materials shared for this subject yet.
-            </div>
+            </Paper>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {materials.map((m) => (
-                <Card key={m.id} className="p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <Badge tone="scholar">{m.subject}</Badge>
-                      <span className="text-[10px] text-scholar-400 uppercase font-bold">
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr" }, gap: 1.7 }}>
+              {filteredMaterials.map((m) => (
+                <MuiCard key={m.id} elevation={0} sx={{ p: 2, borderRadius: "16px", border: "1px solid #D6E0EB", display: "flex", flexDirection: "column", justifyContent: "space-between", transition: "box-shadow 0.2s", "&:hover": { boxShadow: "0 4px 16px rgba(13,26,42,0.08)" } }}>
+                  <Box>
+                    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                      <Chip label={m.subject} size="small" sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", border: "1px solid #D6E0EB", fontWeight: 600, fontSize: "11px", height: 22 }} />
+                      <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "10px", textTransform: "uppercase" }}>
                         {m.fileType || "PDF"}
-                      </span>
-                    </div>
+                      </Typography>
+                    </Stack>
 
-                    <h4 className="mt-2 font-semibold text-ink text-sm line-clamp-1">{m.title}</h4>
-                    {m.topic && <p className="text-xs text-scholar-500">Topic: {m.topic}</p>}
+                    <Typography variant="subtitle2" sx={{ mt: 1.2, fontWeight: 600, color: "text.primary", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</Typography>
+                    {m.topic && <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Topic: {m.topic}</Typography>}
                     {m.description && (
-                      <p className="mt-1 text-xs text-scholar-400 line-clamp-2">{m.description}</p>
+                      <Typography variant="body2" sx={{ mt: 0.5, color: "#94A3B8", fontSize: "0.75rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.description}</Typography>
                     )}
-                  </div>
+                  </Box>
 
-                  <div className="mt-4 pt-3 border-t border-scholar-100 flex items-center justify-between">
-                    <span className="text-[11px] text-scholar-400">{formatDate(m.createdAt)}</span>
-                    <a
+                  <Stack direction="row" sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #EEF2F7", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px" }}>{formatDate(m.createdAt)}</Typography>
+                    <Button
+                      component="a"
                       href={m.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg bg-scholar-50 px-2.5 py-1 text-xs font-semibold text-scholar-700 hover:bg-scholar-100"
+                      size="small"
+                      startIcon={<ExternalLink size={12} />}
+                      sx={{ bgcolor: "#F8FAFC", color: "#334155", border: "1px solid #E2E8F0", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", borderRadius: "10px", px: 1.5, py: 0.5, "&:hover": { bgcolor: "#EEF2F7" } }}
                     >
-                      <ExternalLink size={12} /> Open Document
-                    </a>
-                  </div>
-                </Card>
+                      Open Document
+                    </Button>
+                  </Stack>
+                </MuiCard>
               ))}
-            </div>
+            </Box>
           )}
-        </div>
+        </Stack>
       )}
 
-      {/* Tab 4: Homework & DPP */}
+      {/* Tab 4: Homework & DPP — MUI */}
       {activeTab === "assignments" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-base font-bold text-ink">
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
               Daily Practice Problems (DPP) & Homework
-            </h3>
-            <span className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Submit your work digitally and review teacher corrections
-            </span>
-          </div>
+            </Typography>
+          </Stack>
 
-          {assignments.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-scholar-200 p-8 text-center text-xs text-scholar-400">
+          {filteredAssignments.length === 0 ? (
+            <Paper elevation={0} sx={{ p: 4, borderRadius: "16px", border: "1px dashed #D6E0EB", textAlign: "center", color: "#94A3B8", fontSize: "0.75rem" }}>
               No active assignments due for your batch.
-            </div>
+            </Paper>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {assignments.map((asg) => {
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr" }, gap: 2 }}>
+              {filteredAssignments.map((asg) => {
                 const isSubmitted = Boolean(asg.submission);
                 return (
-                  <Card key={asg.id} className="p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Badge tone={isSubmitted ? "success" : "warn"}>
-                          {isSubmitted ? "Submitted" : "Pending Submission"}
-                        </Badge>
-                        <span className="text-[11px] text-scholar-500">Due: {formatDate(asg.dueDate)}</span>
-                      </div>
+                  <MuiCard key={asg.id} elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                    <Box>
+                      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                        <Chip
+                          label={isSubmitted ? "Submitted" : "Pending Submission"}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "11px",
+                            height: 22,
+                            bgcolor: isSubmitted ? "#E9F7EF" : "#FFFBEB",
+                            color: isSubmitted ? "#1F9D66" : "#B45309",
+                            border: isSubmitted ? "1px solid #A7E0C2" : "1px solid #FDE68A",
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px" }}>Due: {formatDate(asg.dueDate)}</Typography>
+                      </Stack>
 
-                      <h4 className="mt-2 font-display text-sm font-bold text-ink">{asg.title}</h4>
-                      <p className="text-xs text-scholar-500">
+                      <Typography variant="subtitle1" sx={{ mt: 1.5, fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "0.875rem", color: "text.primary" }}>{asg.title}</Typography>
+                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
                         {asg.subject} • Max Marks: {asg.totalMarks}
-                      </p>
+                      </Typography>
 
                       {asg.attachmentUrl && (
-                        <a
+                        <Button
+                          component="a"
                           href={asg.attachmentUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-scholar-600 hover:underline"
+                          size="small"
+                          startIcon={<ExternalLink size={12} />}
+                          sx={{ mt: 1.2, color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", p: 0, "&:hover": { bgcolor: "transparent", textDecoration: "underline" } }}
                         >
-                          <ExternalLink size={12} /> Download Question Sheet
-                        </a>
+                          Download Question Sheet
+                        </Button>
                       )}
 
                       {isSubmitted && asg.submission && (
-                        <div className="mt-3 rounded-xl bg-emerald-50 p-2.5 text-xs text-emerald-900 space-y-1">
-                          <p className="font-bold">
+                        <Paper elevation={0} sx={{ mt: 1.5, p: 1.5, borderRadius: "12px", bgcolor: "#E9F7EF", border: "1px solid #A7E0C2" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#065F46" }}>
                             Score: {asg.submission.marksObtained != null ? asg.submission.marksObtained : "Pending Review"} / {asg.totalMarks} pts
-                          </p>
+                          </Typography>
                           {asg.submission.feedback && (
-                            <p className="text-[11px] italic text-emerald-800">
+                            <Typography variant="caption" sx={{ color: "#047857", fontSize: "11px", fontStyle: "italic", display: "block", mt: 0.5 }}>
                               Feedback: {asg.submission.feedback}
-                            </p>
+                            </Typography>
                           )}
-                        </div>
+                        </Paper>
                       )}
 
-                      {/* Student submit form modal */}
-                      {submittingAssignmentId === asg.id && (
-                        <div className="mt-3 border-t border-scholar-100 pt-3 space-y-2">
-                          <input
+                      {submittingAssignmentId === asg.id && viewerRole !== "PARENT" && (
+                        <Stack spacing={1.5} sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid #EEF2F7" }}>
+                          <TextField
                             type="url"
                             placeholder="Paste Google Drive / Dropbox link..."
                             value={submissionUrl}
                             onChange={(e) => setSubmissionUrl(e.target.value)}
-                            className="w-full rounded-xl border border-scholar-200 p-2 text-xs outline-none"
+                            size="small"
+                            fullWidth
+                            sx={{ "& .MuiOutlinedInput-input": { fontSize: "0.75rem" } }}
                           />
-                          <input
+                          <TextField
                             type="text"
                             placeholder="Optional notes for teacher..."
                             value={submissionNotes}
                             onChange={(e) => setSubmissionNotes(e.target.value)}
-                            className="w-full rounded-xl border border-scholar-200 p-2 text-xs outline-none"
+                            size="small"
+                            fullWidth
+                            sx={{ "& .MuiOutlinedInput-input": { fontSize: "0.75rem" } }}
                           />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
+                          <Stack direction="row" spacing={1}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              fullWidth
                               onClick={() => setSubmittingAssignmentId(null)}
-                              className="flex-1 rounded-lg border border-scholar-200 py-1.5 text-xs font-semibold text-scholar-600"
+                              sx={{ borderColor: "#D6E0EB", color: "#475569", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", borderRadius: "10px" }}
                             >
                               Cancel
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              fullWidth
                               onClick={() => handleStudentSubmitWork(asg.id)}
                               disabled={isSubmittingWork}
-                              className="flex-1 rounded-lg bg-scholar-600 py-1.5 text-xs font-semibold text-white"
+                              sx={{ bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "#13243B" } }}
                             >
                               Submit
-                            </button>
-                          </div>
-                        </div>
+                            </Button>
+                          </Stack>
+                        </Stack>
                       )}
-                    </div>
+                    </Box>
 
                     {!submittingAssignmentId && (
-                      <div className="mt-4 border-t border-scholar-100 pt-3">
-                        <button
-                          type="button"
-                          onClick={() => setSubmittingAssignmentId(asg.id)}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-scholar-50 py-2 text-xs font-semibold text-scholar-700 hover:bg-scholar-100"
-                        >
-                          <CheckSquare size={13} />
-                          {isSubmitted ? "Re-submit Homework" : "Submit Homework Solution"}
-                        </button>
-                      </div>
+                      <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #EEF2F7" }}>
+                        {viewerRole === "PARENT" ? (
+                          <Paper elevation={0} sx={{ py: 1.2, px: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #D6E0EB", textAlign: "center", color: "#475569", fontSize: "0.75rem", fontWeight: 500 }}>
+                            Homework submissions available only via student login
+                          </Paper>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            fullWidth
+                            size="small"
+                            startIcon={<CheckSquare size={13} />}
+                            onClick={() => setSubmittingAssignmentId(asg.id)}
+                            sx={{ bgcolor: "#F8FAFC", color: "#334155", border: "1px solid #E2E8F0", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "#EEF2F7" } }}
+                          >
+                            {isSubmitted ? "Re-submit Homework" : "Submit Homework Solution"}
+                          </Button>
+                        )}
+                      </Box>
                     )}
-                  </Card>
+                  </MuiCard>
                 );
               })}
-            </div>
+            </Box>
           )}
-        </div>
+        </Stack>
       )}
 
-      {/* Tab 5: Fee Ledger & Online Payment */}
+      {/* Tab 5: Fee Ledger & Online Payment — MUI */}
       {activeTab === "fees" && (
-        <div className="space-y-4">
+        <Stack spacing={2}>
           {/* Fee Structure Summary Cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Card className="p-4 text-center">
-              <span className="text-xs font-semibold text-scholar-500">Total Course Fee</span>
-              <p className="font-display text-2xl font-bold text-ink mt-1">
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+            <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB", textAlign: "center" }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.secondary", fontSize: "11px" }}>Total Course Fee</Typography>
+              <Typography variant="h5" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1.5rem", color: "text.primary", mt: 0.7 }}>
                 {formatCurrency(student.totalFee)}
-              </p>
-              <span className="block text-[11px] text-scholar-400 mt-0.5">
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px", display: "block", mt: 0.5 }}>
                 Plan: {student.plan === "INSTALLMENTS" ? "Installments" : student.plan === "QUARTERLY" ? "Quarterly" : "Full Course"}
-              </span>
-            </Card>
+              </Typography>
+            </MuiCard>
 
-            <Card className="p-4 text-center">
-              <span className="text-xs font-semibold text-emerald-700">Total Paid Amount</span>
-              <p className="font-display text-2xl font-bold text-emerald-600 mt-1">
+            <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #A7E0C2", bgcolor: "#F0FDF4", textAlign: "center" }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#047857", fontSize: "11px" }}>Total Paid Amount</Typography>
+              <Typography variant="h5" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1.5rem", color: "#059669", mt: 0.7 }}>
                 {formatCurrency(student.paidFee)}
-              </p>
-              <span className="block text-[11px] text-emerald-600 mt-0.5 font-medium">
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#059669", fontSize: "11px", fontWeight: 600, display: "block", mt: 0.5 }}>
                 {student.pendingFee === 0 ? "100% Fully Settled" : `${Math.round((student.paidFee / student.totalFee) * 100)}% Cleared`}
-              </span>
-            </Card>
+              </Typography>
+            </MuiCard>
 
-            <Card className="p-4 text-center">
-              <span className="text-xs font-semibold text-rose-700">Outstanding Balance Due</span>
-              <p className="font-display text-2xl font-bold text-rose-600 mt-1">
+            <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #FECACA", bgcolor: "#FEF2F2", textAlign: "center" }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#B91C1C", fontSize: "11px" }}>Outstanding Balance Due</Typography>
+              <Typography variant="h5" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1.5rem", color: "#DC2626", mt: 0.7 }}>
                 {formatCurrency(student.pendingFee)}
-              </p>
+              </Typography>
               {student.dueDate && (
-                <span className="block text-[11px] text-rose-600 mt-0.5 font-medium">
+                <Typography variant="caption" sx={{ color: "#DC2626", fontSize: "11px", fontWeight: 600, display: "block", mt: 0.5 }}>
                   Due by: {formatDate(student.dueDate)}
-                </span>
+                </Typography>
               )}
-            </Card>
-          </div>
+            </MuiCard>
+          </Box>
 
           {/* Online Payment Callout */}
           {student.pendingFee > 0 ? (
-            <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-white p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-              <div className="space-y-1">
-                <h4 className="font-display text-base font-bold text-emerald-950 flex items-center gap-2">
-                  <CreditCard size={18} className="text-emerald-600" />
-                  Pay Your Course Fees Online
-                </h4>
-                <p className="text-xs text-emerald-800">
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: "16px",
+                border: "1px solid #6EE7B7",
+                background: "linear-gradient(90deg, #ECFDF5 0%, #F0FDFA 50%, #FFFFFF 100%)",
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                justifyContent: "space-between",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <CreditCard size={18} color="#059669" />
+                  <Typography variant="subtitle1" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "#022C22" }}>
+                    Pay Your Course Fees Online
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" sx={{ color: "#065F46", fontSize: "0.75rem", mt: 0.5 }}>
                   Pay outstanding balance or your next scheduled installment via UPI, Net Banking, or Card with instant verification.
-                </p>
-              </div>
+                </Typography>
+              </Box>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setPayAmount(String(student.pendingFee));
-                  setPayModalOpen(true);
-                }}
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-sm shrink-0"
-              >
-                <CreditCard size={15} />
-                Pay Fee Online Now
-              </button>
-            </div>
+              {viewerRole !== "PARENT" ? (
+                <Button
+                  variant="contained"
+                  startIcon={<CreditCard size={15} />}
+                  onClick={() => {
+                    setPayAmount(String(student.pendingFee));
+                    setPayModalOpen(true);
+                  }}
+                  sx={{ bgcolor: "#059669", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.5, py: 1.2, flexShrink: 0, "&:hover": { bgcolor: "#047857" } }}
+                >
+                  Pay Fee Online Now
+                </Button>
+              ) : (
+                <Paper elevation={0} sx={{ py: 1, px: 1.8, borderRadius: "12px", bgcolor: "#F8FAFC", border: "1px solid #D6E0EB", textAlign: "center", color: "#475569", fontSize: "0.75rem", fontWeight: 500 }}>
+                  Fee payments available only via student login
+                </Paper>
+              )}
+            </Paper>
           ) : (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center text-xs text-emerald-800 font-semibold flex items-center justify-center gap-2">
-              <CheckCircle2 size={16} className="text-emerald-600" />
+            <Paper elevation={0} sx={{ p: 2, borderRadius: "16px", border: "1px solid #A7E0C2", bgcolor: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", gap: 1.2, color: "#065F46", fontSize: "0.75rem", fontWeight: 600 }}>
+              <CheckCircle2 size={16} color="#059669" />
               All course fees are fully settled! No pending installments due.
-            </div>
+            </Paper>
           )}
 
           {/* Payment Transactions & Receipts */}
-          <Card className="p-5">
-            <h4 className="font-display text-sm font-bold text-ink mb-3">
+          <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB" }}>
+            <Typography variant="subtitle1" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "0.875rem", color: "text.primary", mb: 2 }}>
               Payment Transactions & Official Receipts
-            </h4>
+            </Typography>
 
             {student.payments.length === 0 ? (
-              <p className="text-xs text-scholar-400 py-4 text-center">
+              <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.75rem", textAlign: "center", py: 2 }}>
                 No payment transactions recorded yet.
-              </p>
+              </Typography>
             ) : (
-              <div className="space-y-2">
+              <Stack spacing={1.2}>
                 {student.payments.map((p) => {
                   const isRefund = p.amount < 0 || p.isRefund;
                   return (
-                    <div
+                    <Paper
                       key={p.id}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border p-3 text-xs transition-colors ${
-                        isRefund
-                          ? "border-danger-200 bg-danger-50/40"
-                          : "border-scholar-100 bg-scholar-50/40 hover:bg-scholar-50"
-                      }`}
+                      elevation={0}
+                      sx={{
+                        p: 1.7,
+                        borderRadius: "12px",
+                        border: isRefund ? "1px solid #FECACA" : "1px solid #EEF2F7",
+                        bgcolor: isRefund ? "rgba(254,242,242,0.5)" : "rgba(248,250,252,0.5)",
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "stretch", sm: "center" },
+                        justifyContent: "space-between",
+                        gap: 1.5,
+                      }}
                     >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-ink">
+                      <Box>
+                        <Stack direction="row" spacing={0.8} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "text.primary" }}>
                             {p.installmentTitle || (isRefund ? "Fee Refund Credit" : "Fee Payment")}
-                          </span>
-                          <span className="rounded-md bg-scholar-100 px-1.5 py-0.5 text-[10px] font-semibold text-scholar-700">
-                            {p.method}
-                          </span>
+                          </Typography>
+                          <Chip label={p.method} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 600, bgcolor: "#EEF2F7", color: "#334155", "& .MuiChip-label": { px: 0.8 } }} />
                           {isRefund && (
-                            <span className="rounded-md bg-danger-100 px-1.5 py-0.5 text-[10px] font-bold text-danger-700">
-                              REFUND
-                            </span>
+                            <Chip label="REFUND" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#FEE2E2", color: "#B91C1C", "& .MuiChip-label": { px: 0.8 } }} />
                           )}
-                        </div>
-                        <p className="text-[11px] text-scholar-400">
+                        </Stack>
+                        <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px", display: "block", mt: 0.5 }}>
                           {formatDate(p.paidAt)}
                           {p.refundReason ? ` • ${p.refundReason}` : ""}
-                        </p>
-                      </div>
+                        </Typography>
+                      </Box>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0 border-t sm:border-0 border-scholar-100">
-                        <div className="text-left sm:text-right">
-                          <span
-                            className={`font-display font-bold text-sm ${
-                              isRefund ? "text-danger-700" : "text-emerald-700"
-                            }`}
-                          >
+                      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", justifyContent: { xs: "space-between", sm: "flex-end" } }}>
+                        <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
+                          <Typography variant="subtitle2" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "0.875rem", color: isRefund ? "#B91C1C" : "#059669" }}>
                             {isRefund ? "-" : "+"}
                             {formatCurrency(Math.abs(p.amount))}
-                          </span>
-                          <span className="block text-[10px] text-scholar-500 font-medium">
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "#64748B", fontSize: "10px", fontWeight: 500, display: "block" }}>
                             {isRefund ? "Refund Recorded" : "Verified ✓"}
-                          </span>
-                        </div>
+                          </Typography>
+                        </Box>
 
-                        <a
+                        <Button
+                          component="a"
                           href={`/api/payments/${p.id}/receipt`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-scholar-700 hover:bg-scholar-50 shadow-2xs transition-colors shrink-0"
-                          title="Download Official Tax Receipt (PDF)"
+                          size="small"
+                          startIcon={<Download size={12} />}
+                          sx={{ bgcolor: "white", color: "#334155", border: "1px solid #E2E8F0", fontWeight: 600, fontSize: "11px", textTransform: "none", borderRadius: "10px", px: 1.5, py: 0.6, flexShrink: 0, "&:hover": { bgcolor: "#F8FAFC" } }}
                         >
-                          <Download size={12} />
-                          <span>PDF Receipt</span>
-                        </a>
-                      </div>
-                    </div>
+                          PDF Receipt
+                        </Button>
+                      </Stack>
+                    </Paper>
                   );
                 })}
-              </div>
+              </Stack>
             )}
-          </Card>
-        </div>
+          </MuiCard>
+        </Stack>
       )}
 
-      {/* Tab: Help & Support — role-aware AI + FAQ */}
+      {/* Tab: Help & Support — MUI role-aware AI + FAQ */}
       {activeTab === "help" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-                <HelpCircle size={16} className="text-scholar-600" /> Help & Support
-              </h3>
-              <p className="text-xs text-scholar-500">
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Box>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <HelpCircle size={16} color="#1E3A5F" />
+                <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>Help & Support</Typography>
+              </Stack>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", display: "block", mt: 0.3 }}>
                 {viewerRole === "PARENT" ? "Help for parents — fees, attendance, live classes, and per-child assignments." : "Help for students — live classes, tests, attendance, and DPP."}
-              </p>
-            </div>
-          </div>
+              </Typography>
+            </Box>
+          </Stack>
           <SupportChat role={viewerRole} />
-          <Card className="p-5">
-            <h4 className="font-bold text-sm text-ink mb-2">Contact Platform Admin</h4>
-            <p className="text-xs text-scholar-600 mb-3">If the AI couldn’t resolve your issue, submit a support ticket — our team will respond in your portal.</p>
-            <a href="/support" className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-700 px-4 py-2 text-xs font-bold text-white hover:bg-scholar-800">Open Support Tickets →</a>
-          </Card>
-        </div>
+          <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.875rem", color: "text.primary", mb: 0.5 }}>Contact Platform Admin</Typography>
+            <Typography variant="body2" sx={{ color: "#475569", fontSize: "0.75rem", mb: 1.5 }}>If the AI couldn’t resolve your issue, submit a support ticket — our team will respond in your portal.</Typography>
+            <Button
+              component="a"
+              href="/support"
+              variant="contained"
+              size="small"
+              sx={{ bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.2, "&:hover": { bgcolor: "#13243B" } }}
+            >
+              Open Support Tickets →
+            </Button>
+          </MuiCard>
+        </Stack>
       )}
 
-      {/* Tab 6: AI Doubt Solver */}
+      {/* Tab 6: AI Doubt Solver — MUI */}
       {activeTab === "doubts" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-500" /> AI Academic Doubt Assistant
-              </h3>
-              <p className="text-xs text-scholar-500">
+        <Stack spacing={2}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Box>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <Sparkles size={16} color="#D97706" />
+                <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>AI Academic Doubt Assistant</Typography>
+              </Stack>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", display: "block", mt: 0.3 }}>
                 Get instant step-by-step conceptual breakdowns, formulas, and hints for any homework or exam question.
-              </p>
-            </div>
-          </div>
+              </Typography>
+            </Box>
+          </Stack>
 
-          <Card className="p-5">
-            <form onSubmit={handleSolveDoubt} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <label className="text-xs font-semibold text-scholar-700">Subject:</label>
-                <select
-                  value={doubtSubject}
-                  onChange={(e) => setDoubtSubject(e.target.value)}
-                  className="rounded-xl border border-scholar-200 bg-white px-3 py-1 text-xs font-medium text-ink outline-none"
-                >
-                  <option value="Physics">Physics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Biology">Biology</option>
-                  <option value="General">Other / General</option>
-                </select>
-              </div>
+          <MuiCard elevation={0} sx={{ p: 2.5, borderRadius: "16px", border: "1px solid #D6E0EB" }}>
+            <Box component="form" onSubmit={handleSolveDoubt} sx={{ display: "flex", flexDirection: "column", gap: 1.8 }}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#334155" }}>Subject:</Typography>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <Select
+                    value={doubtSubject}
+                    onChange={(e) => setDoubtSubject(e.target.value)}
+                    displayEmpty
+                    sx={{ fontSize: "0.75rem", fontWeight: 600, borderRadius: "10px", height: 34, bgcolor: "white" }}
+                  >
+                    <MenuItem value="Physics">Physics</MenuItem>
+                    <MenuItem value="Chemistry">Chemistry</MenuItem>
+                    <MenuItem value="Mathematics">Mathematics</MenuItem>
+                    <MenuItem value="Biology">Biology</MenuItem>
+                    <MenuItem value="General">Other / General</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
 
-              <textarea
+              <TextField
+                multiline
                 rows={3}
                 placeholder="Type or paste your math/physics/chemistry question here..."
                 value={doubtText}
                 onChange={(e) => setDoubtText(e.target.value)}
-                className="w-full rounded-xl border border-scholar-200 p-3 text-sm outline-none focus:border-scholar-500"
+                fullWidth
+                sx={{ "& .MuiOutlinedInput-input": { fontSize: "0.875rem" } }}
               />
 
-              <button
+              <Button
                 type="submit"
+                variant="contained"
                 disabled={solvingDoubt || !doubtText.trim()}
-                className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-4 py-2 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-50"
+                startIcon={solvingDoubt ? <Loader2 size={13} className="animate-spin" /> : <Lightbulb size={13} />}
+                sx={{ alignSelf: "flex-start", bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.2, py: 1, "&:hover": { bgcolor: "#13243B" } }}
               >
-                {solvingDoubt ? <Loader2 size={13} className="animate-spin" /> : <Lightbulb size={13} />}
                 {solvingDoubt ? "Analyzing Doubt..." : "Get Step-by-Step Hint"}
-              </button>
-            </form>
+              </Button>
+            </Box>
 
             {doubtSolution && (
-              <div className="mt-5 space-y-3 rounded-2xl bg-amber-50/50 p-4 border border-amber-200/80 text-xs">
-                <div>
-                  <span className="font-bold text-amber-900">Core Physics/Math Concept:</span>
-                  <p className="text-scholar-800 mt-0.5">{doubtSolution.coreConcept}</p>
-                </div>
+              <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: "16px", bgcolor: "#FFFBEB", border: "1px solid #FCD34D", display: "flex", flexDirection: "column", gap: 1.7 }}>
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#78350F", fontSize: "11px" }}>Core Physics/Math Concept:</Typography>
+                  <Typography variant="body2" sx={{ color: "#334155", fontSize: "0.75rem", mt: 0.3 }}>{doubtSolution.coreConcept}</Typography>
+                </Box>
 
-                <div>
-                  <span className="font-bold text-amber-900">Standard Formula / Law:</span>
-                  <p className="font-mono bg-white p-2 rounded-lg border border-amber-200 text-scholar-900 mt-0.5">
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#78350F", fontSize: "11px" }}>Standard Formula / Law:</Typography>
+                  <Paper elevation={0} sx={{ mt: 0.5, p: 1.2, borderRadius: "10px", border: "1px solid #FDE68A", bgcolor: "white", fontFamily: "monospace", fontSize: "0.75rem", color: "#1E293B" }}>
                     {doubtSolution.formulaKey}
-                  </p>
-                </div>
+                  </Paper>
+                </Box>
 
-                <div>
-                  <span className="font-bold text-amber-900">Step-by-Step Approach:</span>
-                  <ol className="list-decimal pl-4 mt-1 space-y-1 text-scholar-800">
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#78350F", fontSize: "11px" }}>Step-by-Step Approach:</Typography>
+                  <Box component="ol" sx={{ pl: 2.5, mt: 0.7, display: "flex", flexDirection: "column", gap: 0.5, color: "#334155", fontSize: "0.75rem", listStyle: "decimal" }}>
                     {doubtSolution.stepByStepApproach.map((st, i) => (
-                      <li key={i}>{st}</li>
+                      <Box component="li" key={i}>{st}</Box>
                     ))}
-                  </ol>
-                </div>
+                  </Box>
+                </Box>
 
-                <div className="rounded-lg bg-white/80 p-2.5 border border-amber-200 text-amber-950 font-medium">
+                <Paper elevation={0} sx={{ p: 1.5, borderRadius: "10px", border: "1px solid #FDE68A", bgcolor: "rgba(255,255,255,0.7)", color: "#78350F", fontSize: "0.75rem", fontWeight: 600 }}>
                   💡 Pro-Tip: {doubtSolution.proTip}
-                </div>
-              </div>
+                </Paper>
+              </Paper>
             )}
-          </Card>
-        </div>
+          </MuiCard>
+        </Stack>
       )}
 
       {/* Online Exam Modal */}
@@ -2096,6 +2515,6 @@ export function StudentPortalView({
           </div>
         </div>
       )}
-    </div>
+    </Stack>
   );
 }

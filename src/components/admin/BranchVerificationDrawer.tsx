@@ -27,6 +27,16 @@ import {
   KeyRound,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
 
 export type AdminBranchDetail = {
   id: string;
@@ -212,16 +222,16 @@ Created: ${formatDate(branch.createdAt)}
       title={`Sub-Branch Verification: ${branch.name}`}
       maxWidth="max-w-2xl"
     >
-      <div className="space-y-5 pb-4">
-        {/* Top Header Overview */}
-        <div className="flex items-center justify-between rounded-xl bg-scholar-50 p-3 border border-scholar-200/70">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-scholar-200 text-scholar-800 shadow-2xs">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 2 }}>
+        {/* Top Header Overview — MUI Paper */}
+        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <Avatar variant="rounded" sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "white", color: "#1E3A5F", border: "1px solid #D6E0EB" }}>
               <Building2 size={18} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-ink">{branch.name}</span>
+            </Avatar>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>{branch.name}</Typography>
                 <Badge
                   tone={
                     isPending
@@ -236,440 +246,363 @@ Created: ${formatDate(branch.createdAt)}
                     : branch.status}
                 </Badge>
                 {branch.isMainBranch && (
-                  <span className="rounded bg-scholar-200/70 px-1.5 py-0.5 text-[10px] font-bold text-scholar-800">
-                    Main Branch
-                  </span>
+                  <Chip label="Main Branch" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#E2E8F0", color: "#334155" }} />
                 )}
-              </div>
-              <p className="text-[11px] text-scholar-500 font-normal mt-0.5">
+              </Box>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
                 Authenticity &amp; Physical Infrastructure Check
-              </p>
-            </div>
-          </div>
-        </div>
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-            <AlertTriangle size={15} className="shrink-0 text-rose-500" />
-            <span>{error}</span>
-          </div>
+          <Alert severity="error" icon={<AlertTriangle size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem" }}>
+            {error}
+          </Alert>
         )}
 
-        {/* Verification Status Alert */}
+        {/* Verification Status Alert — MUI Alert */}
         {isPending ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 space-y-2">
-            <div className="flex items-start gap-2.5">
-              <Clock size={18} className="text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs font-bold text-amber-900">
-                  Sub-Branch Access Request Under Verification
-                </h4>
-                <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                  Verify the physical address, branch phone number, and parent institute ownership to ensure this campus is genuine and operational before granting full access.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <a
+          <Alert
+            severity="warning"
+            icon={<Clock size={18} />}
+            sx={{ borderRadius: "12px", bgcolor: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400e", fontSize: "0.75rem" }}
+          >
+            <Typography variant="caption" sx={{ fontWeight: 700, color: "#92400e", fontSize: "0.75rem", display: "block" }}>
+              Sub-Branch Access Request Under Verification
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e", display: "block", mt: 0.5, lineHeight: 1.5 }}>
+              Verify the physical address, branch phone number, and parent institute ownership to ensure this campus is genuine and operational before granting full access.
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: "wrap" }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<MapPin size={12} />}
+                endIcon={<ExternalLink size={11} />}
                 href={googleMapsUrl}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-amber-300 px-2.5 py-1 text-[11px] font-semibold text-amber-900 shadow-xs hover:bg-amber-100/50"
+                component="a"
+                sx={{ borderRadius: "8px", borderColor: "#FDE68A", bgcolor: "white", color: "#92400e", fontWeight: 600, fontSize: "11px", textTransform: "none", py: 0.5, px: 1.5 }}
               >
-                <MapPin size={12} className="text-rose-600" />
                 Check Physical Address on Google Maps
-                <ExternalLink size={11} className="text-amber-600" />
-              </a>
+              </Button>
               {whatsappBranchUrl && (
-                <a
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<MessageSquare size={12} />}
+                  endIcon={<ExternalLink size={11} />}
                   href={whatsappBranchUrl}
                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xs hover:bg-emerald-700"
+                  component="a"
+                  sx={{ borderRadius: "8px", bgcolor: "#059669", fontWeight: 600, fontSize: "11px", textTransform: "none", py: 0.5, px: 1.5, boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}
                 >
-                  <MessageSquare size={12} />
                   WhatsApp Branch Manager
-                  <ExternalLink size={11} />
-                </a>
+                </Button>
               )}
-            </div>
-          </div>
+            </Stack>
+          </Alert>
         ) : (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-medium text-emerald-900">
-              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>
-                Sub-branch access is <strong>Active</strong>. Campus is operating under parent institute.
-              </span>
-            </div>
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 hover:underline shrink-0"
-            >
-              <MapPin size={12} />
-              View on Maps
-              <ExternalLink size={10} />
-            </a>
-          </div>
+          <Alert
+            severity="success"
+            icon={<CheckCircle2 size={16} />}
+            sx={{ borderRadius: "12px", bgcolor: "#ECFDF5", border: "1px solid #A7F3D0", color: "#065f46", fontSize: "0.75rem" }}
+            action={
+              <Button
+                size="small"
+                startIcon={<MapPin size={12} />}
+                endIcon={<ExternalLink size={10} />}
+                href={googleMapsUrl}
+                target="_blank"
+                component="a"
+                sx={{ fontSize: "11px", fontWeight: 600, color: "#065f46", textTransform: "none", p: 0, minWidth: 0 }}
+              >
+                View on Maps
+              </Button>
+            }
+          >
+            Sub-branch access is <Box component="span" sx={{ fontWeight: 700 }}>Active</Box>. Campus is operating under parent institute.
+          </Alert>
         )}
 
         {/* SECTION 1: Sub-Branch Physical Location & Maps */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-              <MapPin size={14} className="text-scholar-600" />
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <MapPin size={14} style={{ color: "#4E6E93" }} />
               1. Physical Campus &amp; Location Check
-            </h3>
-            <span className="text-[10px] text-scholar-400 font-mono">ID: {branch.id}</span>
-          </div>
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", fontFamily: "monospace" }}>ID: {branch.id}</Typography>
+          </Box>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            <div className="md:col-span-2 rounded-xl bg-scholar-50/70 p-3 border border-scholar-200/70">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-scholar-500">
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 1.5 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", gridColumn: "1 / -1" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "block", mb: 0.5 }}>
                 Full Physical Campus Address
-              </p>
-              <p className="text-xs font-bold text-ink mt-0.5 select-all">
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>
                 {fullAddress || "No physical street address specified yet"}
-              </p>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <a
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: "wrap" }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<MapPin size={12} />}
+                  endIcon={<ExternalLink size={11} />}
                   href={googleMapsUrl}
                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg bg-scholar-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-scholar-700 transition"
+                  component="a"
+                  sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontSize: "0.70rem", fontWeight: 600, textTransform: "none", py: 0.5, px: 1.5, boxShadow: "none" }}
                 >
-                  <MapPin size={12} />
                   Open in Google Maps
-                  <ExternalLink size={11} className="ml-0.5" />
-                </a>
+                </Button>
                 {fullAddress && (
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={copiedField === "branch_address" ? <Check size={12} style={{ color: "#059669" }} /> : <Copy size={12} />}
                     onClick={() => copyToClipboard(fullAddress, "branch_address")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-xs font-medium text-scholar-700 hover:bg-scholar-100 cursor-pointer"
+                    sx={{ borderRadius: "8px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontSize: "0.70rem", fontWeight: 500, textTransform: "none", py: 0.5, px: 1.5 }}
                   >
-                    {copiedField === "branch_address" ? (
-                      <>
-                        <Check size={12} className="text-emerald-600" />
-                        <span>Copied Address</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={12} />
-                        <span>Copy Address</span>
-                      </>
-                    )}
-                  </button>
+                    {copiedField === "branch_address" ? "Copied Address" : "Copy Address"}
+                  </Button>
                 )}
-              </div>
-            </div>
+              </Stack>
+            </Paper>
 
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">City / District</p>
-              <p className="text-xs font-bold text-ink mt-0.5">{branch.city || "—"}</p>
-            </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>City / District</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>{branch.city || "—"}</Typography>
+            </Paper>
 
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">State / Region</p>
-              <p className="text-xs font-bold text-ink mt-0.5">{branch.state || "—"}</p>
-            </div>
-          </div>
-        </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>State / Region</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>{branch.state || "—"}</Typography>
+            </Paper>
+          </Box>
+        </Paper>
 
         {/* SECTION 2: Sub-Branch Direct Contact & Verification */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-              <Phone size={14} className="text-scholar-600" />
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Phone size={14} style={{ color: "#4E6E93" }} />
               2. Branch Direct Contact &amp; Helpline
-            </h3>
-            <span className="text-[10px] text-scholar-400">Direct Incharge Line</span>
-          </div>
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Direct Incharge Line</Typography>
+          </Box>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="rounded-xl border border-scholar-100 bg-scholar-50/40 p-3 space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-scholar-500">
-                Branch Phone / Mobile
-              </p>
-              <p className="text-sm font-bold text-ink flex items-center gap-1.5">
-                {branch.contact || "—"}
-              </p>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Branch Phone / Mobile</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", mt: 0.5 }}>{branch.contact || "—"}</Typography>
               {branch.contact && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  <a
-                    href={`tel:${branch.contact}`}
-                    className="inline-flex items-center gap-1 rounded bg-scholar-100 px-2 py-0.5 text-[11px] font-semibold text-scholar-700 hover:bg-scholar-200"
-                  >
-                    <Phone size={10} /> Call Direct
-                  </a>
+                <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: "wrap", alignItems: "center" }}>
+                  <Button size="small" variant="outlined" startIcon={<Phone size={10} />} href={`tel:${branch.contact}`} component="a" sx={{ borderRadius: "8px", fontSize: "11px", fontWeight: 600, textTransform: "none", py: 0.25, px: 1, borderColor: "#D6E0EB", bgcolor: "white", color: "#334155" }}>
+                    Call Direct
+                  </Button>
                   {whatsappBranchUrl && (
-                    <a
-                      href={whatsappBranchUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
-                    >
-                      <MessageSquare size={10} /> WhatsApp
-                    </a>
+                    <Button size="small" variant="outlined" startIcon={<MessageSquare size={10} />} href={whatsappBranchUrl} target="_blank" component="a" sx={{ borderRadius: "8px", fontSize: "11px", fontWeight: 600, textTransform: "none", py: 0.25, px: 1, borderColor: "#A7F3D0", bgcolor: "#ECFDF5", color: "#065f46" }}>
+                      WhatsApp
+                    </Button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(branch.contact!, "branch_phone")}
-                    className="text-scholar-400 hover:text-scholar-700 ml-auto cursor-pointer"
-                  >
-                    {copiedField === "branch_phone" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                  </button>
-                </div>
+                  <IconButton size="small" onClick={() => copyToClipboard(branch.contact!, "branch_phone")} sx={{ ml: "auto", color: "#7E9BBC", width: 24, height: 24 }}>
+                    {copiedField === "branch_phone" ? <Check size={12} style={{ color: "#059669" }} /> : <Copy size={12} />}
+                  </IconButton>
+                </Stack>
               )}
-            </div>
+            </Paper>
 
-            <div className="rounded-xl border border-scholar-100 bg-scholar-50/40 p-3 space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-scholar-500">
-                Branch Student Helpline
-              </p>
-              <p className="text-sm font-bold text-ink">
-                {branch.guidePhone || "—"}
-              </p>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Branch Student Helpline</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", mt: 0.5 }}>{branch.guidePhone || "—"}</Typography>
               {branch.guidePhone && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  <a
-                    href={`tel:${branch.guidePhone}`}
-                    className="inline-flex items-center gap-1 rounded bg-scholar-100 px-2 py-0.5 text-[11px] font-semibold text-scholar-700 hover:bg-scholar-200"
-                  >
-                    <Phone size={10} /> Call Helpline
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(branch.guidePhone!, "guide_phone")}
-                    className="text-scholar-400 hover:text-scholar-700 ml-auto cursor-pointer"
-                  >
-                    {copiedField === "guide_phone" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                  </button>
-                </div>
+                <Stack direction="row" spacing={0.75} sx={{ mt: 1 }}>
+                  <Button size="small" variant="outlined" startIcon={<Phone size={10} />} href={`tel:${branch.guidePhone}`} component="a" sx={{ borderRadius: "8px", fontSize: "11px", fontWeight: 600, textTransform: "none", py: 0.25, px: 1, borderColor: "#D6E0EB", bgcolor: "white", color: "#334155" }}>
+                    Call Helpline
+                  </Button>
+                  <IconButton size="small" onClick={() => copyToClipboard(branch.guidePhone!, "guide_phone")} sx={{ ml: "auto", color: "#7E9BBC", width: 24, height: 24 }}>
+                    {copiedField === "guide_phone" ? <Check size={12} style={{ color: "#059669" }} /> : <Copy size={12} />}
+                  </IconButton>
+                </Stack>
               )}
-            </div>
-          </div>
-        </div>
+            </Paper>
+          </Box>
+        </Paper>
 
         {/* SECTION 3: Parent Institute Ownership & Authority */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-scholar-600" />
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <ShieldCheck size={14} style={{ color: "#4E6E93" }} />
               3. Parent Institute Authority Check
-            </h3>
-            <span className="text-[10px] rounded bg-purple-100 px-1.5 py-0.5 font-bold text-purple-800">
-              {branch.institute.platformSubscriptionStatus || "ACTIVE"}
-            </span>
-          </div>
+            </Typography>
+            <Chip label={branch.institute.platformSubscriptionStatus || "ACTIVE"} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#6D28D9", border: "1px solid #DDD6FE" }} />
+          </Box>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">Parent Institute Legal Name</p>
-              <p className="text-xs font-bold text-ink mt-0.5">{branch.institute.name}</p>
-            </div>
-
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">Institute Owner / Managing Trustee</p>
-              <p className="text-xs font-bold text-ink mt-0.5 flex items-center gap-1">
-                <User size={12} className="text-scholar-500" />
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Parent Institute Legal Name</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>{branch.institute.name}</Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Institute Owner / Managing Trustee</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}>
+                <User size={12} style={{ color: "#4E6E93" }} />
                 {branch.institute.ownerName}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">Owner Verified Email</p>
-              <div className="flex items-center justify-between mt-0.5">
-                <a
-                  href={`mailto:${branch.institute.email}`}
-                  className="text-xs font-semibold text-scholar-700 hover:underline truncate"
-                >
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Owner Verified Email</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5 }}>
+                <Typography component="a" href={`mailto:${branch.institute.email}`} variant="caption" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.75rem", textDecoration: "none", "&:hover": { textDecoration: "underline" }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {branch.institute.email}
-                </a>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(branch.institute.email, "owner_email")}
-                  className="text-scholar-400 hover:text-scholar-700 ml-1 cursor-pointer"
-                >
-                  {copiedField === "owner_email" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-scholar-100 p-2.5">
-              <p className="text-[10px] font-semibold text-scholar-500">Owner Verified Mobile</p>
-              <div className="flex items-center justify-between mt-0.5">
-                <span className="text-xs font-bold text-ink">{branch.institute.mobile}</span>
-                <div className="flex items-center gap-1">
+                </Typography>
+                <IconButton size="small" onClick={() => copyToClipboard(branch.institute.email, "owner_email")} sx={{ color: "#7E9BBC", width: 24, height: 24, ml: 1 }}>
+                  {copiedField === "owner_email" ? <Check size={12} style={{ color: "#059669" }} /> : <Copy size={12} />}
+                </IconButton>
+              </Box>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Owner Verified Mobile</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>{branch.institute.mobile}</Typography>
+                <Stack direction="row" spacing={0.5}>
                   {whatsappOwnerUrl && (
-                    <a
-                      href={whatsappOwnerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded bg-emerald-50 p-1 text-emerald-700 hover:bg-emerald-100"
-                      title="WhatsApp Institute Owner"
-                    >
+                    <IconButton size="small" href={whatsappOwnerUrl} target="_blank" component="a" sx={{ bgcolor: "#ECFDF5", color: "#059669", width: 24, height: 24, "&:hover": { bgcolor: "#D1FAE5" } }} title="WhatsApp Institute Owner">
                       <MessageSquare size={12} />
-                    </a>
+                    </IconButton>
                   )}
-                  <a
-                    href={`tel:${branch.institute.mobile}`}
-                    className="rounded bg-scholar-50 p-1 text-scholar-700 hover:bg-scholar-100"
-                    title="Call Institute Owner"
-                  >
+                  <IconButton size="small" href={`tel:${branch.institute.mobile}`} component="a" sx={{ bgcolor: "#EEF2F7", color: "#334155", width: 24, height: 24, "&:hover": { bgcolor: "#D6E0EB" } }} title="Call Institute Owner">
                     <Phone size={12} />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                  </IconButton>
+                </Stack>
+              </Box>
+            </Paper>
+          </Box>
+        </Paper>
 
         {/* SECTION 4: Sub-Branch Credentials & Access Accounts */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-              <KeyRound size={14} className="text-scholar-600" />
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <KeyRound size={14} style={{ color: "#4E6E93" }} />
               4. Branch Staff &amp; Dedicated Credentials
-            </h3>
-            <span className="text-[10px] text-scholar-400">
-              {branch.users?.length || 0} user{branch.users?.length !== 1 ? "s" : ""} registered
-            </span>
-          </div>
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>{branch.users?.length || 0} user{(branch.users?.length || 0) !== 1 ? "s" : ""} registered</Typography>
+          </Box>
 
           {branch.users && branch.users.length > 0 ? (
-            <div className="divide-y divide-scholar-100 rounded-xl border border-scholar-100 overflow-hidden text-xs">
+            <Stack spacing={1}>
               {branch.users.map((u) => (
-                <div key={u.id} className="p-2.5 bg-scholar-50/40 flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-ink">{u.name || "Branch Incharge"}</p>
-                    <p className="text-[11px] text-scholar-500 font-mono">{u.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="rounded bg-scholar-200/80 px-1.5 py-0.5 text-[10px] font-bold text-scholar-800">
-                      {u.role}
-                    </span>
-                    <p className="text-[10px] text-scholar-400 mt-0.5">
-                      Added {formatDate(u.createdAt)}
-                    </p>
-                  </div>
-                </div>
+                <Paper key={u.id} variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>{u.name || "Branch Incharge"}</Typography>
+                    <Typography variant="caption" sx={{ fontFamily: "monospace", fontSize: "11px", color: "#475569" }}>{u.email}</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Chip label={u.role} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#E2E8F0", color: "#334155" }} />
+                    <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", display: "block", mt: 0.5 }}>Added {formatDate(u.createdAt)}</Typography>
+                  </Box>
+                </Paper>
               ))}
-            </div>
+            </Stack>
           ) : (
-            <p className="text-xs text-scholar-500 italic bg-scholar-50/50 p-3 rounded-xl border border-dashed border-scholar-200">
+            <Alert severity="info" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "rgba(238,242,247,0.5)", border: "1px dashed #D6E0EB" }}>
               No dedicated sub-branch login created yet. Main branch administrators will manage this branch via branch impersonation.
-            </p>
+            </Alert>
           )}
-        </div>
+        </Paper>
 
         {/* SECTION 5: Operational Scope & Activity */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-              <Layers size={14} className="text-scholar-600" />
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Layers size={14} style={{ color: "#4E6E93" }} />
               5. Operations &amp; Resource Scope
-            </h3>
-            <span className="text-[10px] text-scholar-400">
-              Created {formatDate(branch.createdAt)}
-            </span>
-          </div>
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Created {formatDate(branch.createdAt)}</Typography>
+          </Box>
 
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-xl border border-scholar-100 bg-scholar-50/50 p-3">
-              <Users size={16} className="mx-auto text-scholar-600 mb-1" />
-              <p className="text-lg font-black text-ink">{branch._count.students}</p>
-              <p className="text-[10px] font-semibold text-scholar-500">Students Enrolled</p>
-            </div>
-            <div className="rounded-xl border border-scholar-100 bg-scholar-50/50 p-3">
-              <Layers size={16} className="mx-auto text-scholar-600 mb-1" />
-              <p className="text-lg font-black text-ink">{branch._count.batches}</p>
-              <p className="text-[10px] font-semibold text-scholar-500">Assigned Batches</p>
-            </div>
-            <div className="rounded-xl border border-scholar-100 bg-scholar-50/50 p-3">
-              <GraduationCap size={16} className="mx-auto text-scholar-600 mb-1" />
-              <p className="text-lg font-black text-ink">{branch._count.faculty}</p>
-              <p className="text-[10px] font-semibold text-scholar-500">Faculty Allocated</p>
-            </div>
-          </div>
-        </div>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, textAlign: "center" }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+              <Users size={16} style={{ color: "#4E6E93", margin: "0 auto" }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: "#171A21", fontSize: "1.125rem", mt: 0.5 }}>{branch._count.students}</Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Students Enrolled</Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+              <Layers size={16} style={{ color: "#4E6E93", margin: "0 auto" }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: "#171A21", fontSize: "1.125rem", mt: 0.5 }}>{branch._count.batches}</Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Assigned Batches</Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+              <GraduationCap size={16} style={{ color: "#4E6E93", margin: "0 auto" }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: "#171A21", fontSize: "1.125rem", mt: 0.5 }}>{branch._count.faculty}</Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC" }}>Faculty Allocated</Typography>
+            </Paper>
+          </Box>
+        </Paper>
 
-        {/* Action Controls */}
-        <div className="rounded-2xl border-2 border-scholar-200 bg-scholar-50/60 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-scholar-800">
+        {/* Action Controls — restyle-only */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderWidth: 2, borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b" }}>
               Platform Verification Actions
-            </h4>
-            <button
-              type="button"
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={copiedField === "full_summary" ? <Check size={12} style={{ color: "#059669" }} /> : <Copy size={12} />}
               onClick={handleCopySummary}
-              className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-scholar-700 hover:bg-scholar-100 cursor-pointer shadow-xs"
+              sx={{ borderRadius: "8px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "11px", textTransform: "none", py: 0.5, px: 1.5 }}
             >
-              {copiedField === "full_summary" ? (
-                <>
-                  <Check size={12} className="text-emerald-600" />
-                  <span>Dossier Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={12} />
-                  <span>Copy Verification Dossier</span>
-                </>
-              )}
-            </button>
-          </div>
+              {copiedField === "full_summary" ? "Dossier Copied" : "Copy Verification Dossier"}
+            </Button>
+          </Box>
 
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
             {isPending ? (
-              <button
-                type="button"
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={actionLoading ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" } as any} /> : <CheckCircle2 size={15} />}
                 onClick={handleGrantAccess}
                 disabled={actionLoading}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50 transition cursor-pointer"
+                sx={{ borderRadius: "12px", bgcolor: "#059669", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}
               >
-                {actionLoading ? (
-                  <Loader2 size={15} className="animate-spin" />
-                ) : (
-                  <CheckCircle2 size={15} />
-                )}
                 Verify &amp; Grant Sub-Branch Access
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="outlined"
+                startIcon={actionLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" } as any} /> : branch.status === "ACTIVE" ? <Ban size={14} /> : <CheckCircle2 size={14} />}
                 onClick={handleToggleStatus}
                 disabled={actionLoading}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold shadow disabled:opacity-50 transition cursor-pointer ${
-                  branch.status === "ACTIVE"
-                    ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
-                    : "bg-emerald-600 text-white hover:bg-emerald-700"
-                }`}
+                sx={{
+                  borderRadius: "12px",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  textTransform: "none",
+                  py: 1.25,
+                  px: 2,
+                  bgcolor: branch.status === "ACTIVE" ? "#FEF2F2" : "#059669",
+                  color: branch.status === "ACTIVE" ? "#DC2626" : "white",
+                  borderColor: branch.status === "ACTIVE" ? "#FECACA" : "#059669",
+                  "&:hover": { bgcolor: branch.status === "ACTIVE" ? "#FEE2E2" : "#047857" },
+                }}
               >
-                {actionLoading ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : branch.status === "ACTIVE" ? (
-                  <Ban size={14} />
-                ) : (
-                  <CheckCircle2 size={14} />
-                )}
-                {branch.status === "ACTIVE"
-                  ? "Deactivate Sub-Branch"
-                  : "Reactivate Sub-Branch"}
-              </button>
+                {branch.status === "ACTIVE" ? "Deactivate Sub-Branch" : "Reactivate Sub-Branch"}
+              </Button>
             )}
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-scholar-200 bg-white px-4 py-2.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-100 cursor-pointer"
-            >
+            <Button variant="outlined" onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#475569", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1.25, px: 2, bgcolor: "white" }}>
               Close
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+          </Stack>
+        </Paper>
+      </Box>
     </Drawer>
   );
 }

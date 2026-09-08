@@ -21,6 +21,26 @@ import {
   BranchVerificationDrawer,
   type AdminBranchDetail,
 } from "@/components/admin/BranchVerificationDrawer";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
 
 export function AdminBranchesTable({
   initialBranches,
@@ -90,62 +110,77 @@ export function AdminBranchesTable({
   const pendingCount = branches.filter((b) => b.status === "PENDING_APPROVAL").length;
 
   return (
-    <div className="space-y-4">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {pendingCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 shadow-xs">
-          <div className="flex items-center gap-2">
-            <Clock size={18} className="text-amber-600 shrink-0" />
-            <span>
-              <strong>{pendingCount} sub-branch access request{pendingCount > 1 ? "s" : ""}</strong> awaiting platform admin verification and approval.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("PENDING_APPROVAL")}
-            className="rounded-lg bg-amber-600 px-3 py-1 text-xs font-bold text-white hover:bg-amber-700 transition cursor-pointer shrink-0"
-          >
-            Review Pending Sub-Branches
-          </button>
-        </div>
+        <Alert
+          severity="warning"
+          icon={<Clock size={18} />}
+          action={
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => setStatusFilter("PENDING_APPROVAL")}
+              sx={{ borderRadius: "8px", bgcolor: "#D97706", fontWeight: 700, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, boxShadow: "none", "&:hover": { bgcolor: "#B45309" } }}
+            >
+              Review Pending Sub-Branches
+            </Button>
+          }
+          sx={{ borderRadius: "12px", border: "1px solid #FDE68A", bgcolor: "#FFFBEB", color: "#92400e", fontSize: "0.875rem", alignItems: "center" }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, color: "#92400e", fontSize: "0.875rem" }}>
+            <Box component="span" sx={{ fontWeight: 800 }}>{pendingCount} sub-branch access request{pendingCount > 1 ? "s" : ""}</Box> awaiting platform admin verification and approval.
+          </Typography>
+        </Alert>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-scholar-400" />
-          <input
-            type="text"
-            placeholder="Search branch, institute, city, address..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl border border-scholar-200 bg-white py-2 pl-9 pr-3 text-xs outline-none focus:border-scholar-500 shadow-2xs"
-          />
-        </div>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+        <TextField
+          size="small"
+          placeholder="Search branch, institute, city, address..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={15} style={{ color: "#7E9BBC" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+          sx={{ flex: 1, maxWidth: { sm: 360 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem" } }}
+        />
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-medium text-ink outline-none shadow-2xs cursor-pointer"
-        >
-          <option value="">All Statuses</option>
-          <option value="PENDING_APPROVAL">Pending Review ({pendingCount})</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-        </select>
-      </div>
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel id="admin-branches-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+          <Select
+            labelId="admin-branches-status-label"
+            label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+          >
+            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="PENDING_APPROVAL">Pending Review ({pendingCount})</MenuItem>
+            <MenuItem value="ACTIVE">Active</MenuItem>
+            <MenuItem value="INACTIVE">Inactive</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
-      <div className="overflow-x-auto rounded-2xl border border-scholar-100 bg-white shadow-xs">
-        <table className="w-full min-w-[900px] text-left text-xs">
-          <thead>
-            <tr className="border-b border-scholar-100 bg-scholar-50/60 text-scholar-500 font-semibold uppercase tracking-wider">
-              <th className="py-3 pl-4 pr-3">Sub-Branch</th>
-              <th className="py-3 px-3">Parent Institute</th>
-              <th className="py-3 px-3">Owner / Contact</th>
-              <th className="py-3 px-3">Location &amp; Maps</th>
-              <th className="py-3 px-3">Status</th>
-              <th className="py-3 pl-3 pr-4 text-right">Verification &amp; Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-scholar-100/70">
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+        <Table sx={{ minWidth: 900 }} size="small">
+          <TableHead>
+            <TableRow sx={{ bgcolor: "rgba(238,242,247,0.6)", "& th": { fontSize: "0.70rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+              <TableCell>Sub-Branch</TableCell>
+              <TableCell>Parent Institute</TableCell>
+              <TableCell>Owner / Contact</TableCell>
+              <TableCell>Location &amp; Maps</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Verification &amp; Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {filtered.map((b) => {
               const fullAddr = [b.address, b.city, b.state].filter(Boolean).join(", ");
               const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -153,68 +188,71 @@ export function AdminBranchesTable({
               )}`;
 
               return (
-                <tr key={b.id} className="hover:bg-scholar-50/40 transition-colors">
-                  <td className="py-3 pl-4 pr-3">
-                    <div>
-                      <button
-                        type="button"
+                <TableRow key={b.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                  <TableCell>
+                    <Box>
+                      <Box
+                        component="button"
                         onClick={() => openVerification(b)}
-                        className="font-bold text-ink hover:text-scholar-600 flex items-center gap-1.5 text-left cursor-pointer group"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.75,
+                          bgcolor: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          p: 0,
+                          textAlign: "left",
+                          "&:hover .branch-name": { color: "#4E6E93", textDecoration: "underline" },
+                        }}
                       >
-                        <span className="group-hover:underline">{b.name}</span>
+                        <Typography variant="body2" className="branch-name" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>{b.name}</Typography>
                         {b.isMainBranch && (
-                          <span className="rounded bg-purple-100 px-1.5 py-0.2 text-[9px] font-bold text-purple-900 border border-purple-200">
-                            Main Branch
-                          </span>
+                          <Chip label="Main Branch" size="small" sx={{ height: 16, fontSize: "9px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#6D28D9", border: "1px solid #DDD6FE" }} />
                         )}
-                      </button>
-                      <p className="text-[10px] text-scholar-400 font-mono mt-0.5">
+                      </Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", fontFamily: "monospace", display: "block", mt: 0.25 }}>
                         ID: {b.id.slice(0, 12)}...
-                      </p>
-                    </div>
-                  </td>
+                      </Typography>
+                    </Box>
+                  </TableCell>
 
-                  <td className="py-3 px-3">
-                    <div>
-                      <span className="font-semibold text-ink">{b.institute.name}</span>
-                      <p className="text-[10px] text-scholar-400">
-                        {b.institute._count?.branches ?? 1} total branch
-                        {(b.institute._count?.branches ?? 1) !== 1 ? "es" : ""}
-                      </p>
-                    </div>
-                  </td>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>{b.institute.name}</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>
+                      {b.institute._count?.branches ?? 1} total branch{(b.institute._count?.branches ?? 1) !== 1 ? "es" : ""}
+                    </Typography>
+                  </TableCell>
 
-                  <td className="py-3 px-3">
-                    <div>
-                      <span className="text-scholar-700 font-medium">{b.institute.ownerName}</span>
-                      <p className="text-[11px] text-scholar-400">{b.institute.email}</p>
-                      {b.contact && (
-                        <p className="flex items-center gap-1 text-[10px] text-scholar-500">
-                          <Phone size={10} /> {b.contact}
-                        </p>
-                      )}
-                    </div>
-                  </td>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#334155", fontSize: "0.75rem" }}>{b.institute.ownerName}</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{b.institute.email}</Typography>
+                    {b.contact && (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25, color: "#64748b", fontSize: "10px" }}>
+                        <Phone size={10} style={{ color: "#94A3B8" }} /> {b.contact}
+                      </Box>
+                    )}
+                  </TableCell>
 
-                  <td className="py-3 px-3">
-                    <div>
-                      <p className="text-[11px] font-medium text-scholar-700 flex items-center gap-1 truncate max-w-[180px]">
-                        <MapPin size={11} className="shrink-0 text-scholar-400" />
+                  <TableCell>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, fontWeight: 500, color: "#334155", fontSize: "11px" }}>
+                        <MapPin size={11} style={{ color: "#94A3B8", flexShrink: 0 }} />
                         {[b.city, b.state].filter(Boolean).join(", ") || "—"}
-                      </p>
-                      <a
+                      </Box>
+                      <Box
+                        component="a"
                         href={mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-scholar-600 hover:underline mt-0.5"
+                        sx={{ display: "inline-flex", alignItems: "center", gap: 0.25, fontSize: "10px", fontWeight: 600, color: "#4E6E93", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
                       >
-                        <span>Check Map</span>
-                        <ExternalLink size={9} />
-                      </a>
-                    </div>
-                  </td>
+                        Check Map <ExternalLink size={9} />
+                      </Box>
+                    </Box>
+                  </TableCell>
 
-                  <td className="py-3 px-3">
+                  <TableCell>
                     <Badge
                       tone={
                         b.status === "ACTIVE"
@@ -226,32 +264,38 @@ export function AdminBranchesTable({
                     >
                       {b.status === "PENDING_APPROVAL" ? "Pending Review" : b.status}
                     </Badge>
-                  </td>
+                  </TableCell>
 
-                  <td className="py-3 pl-3 pr-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={0.75} sx={{ justifyContent: "flex-end" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<ShieldCheck size={13} />}
                         onClick={() => openVerification(b)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 hover:border-scholar-300 shadow-xs transition cursor-pointer"
+                        sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.25, borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", "&:hover": { bgcolor: "#F8FAFC" } }}
                         title="Verify Sub-Branch Details"
                       >
-                        <ShieldCheck size={13} className="text-scholar-600" />
-                        <span>Verify</span>
-                      </button>
+                        Verify
+                      </Button>
 
                       {b.status === "PENDING_APPROVAL" ? (
-                        <button
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={<CheckCircle2 size={13} />}
                           onClick={() => setStatusTarget({ branch: b, action: "GRANT" })}
                           disabled={busyId === b.id}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50 cursor-pointer"
+                          sx={{ borderRadius: "8px", fontWeight: 700, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, bgcolor: "#059669", boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}
                           title="Grant Sub-Branch Access"
                         >
-                          <CheckCircle2 size={13} />
                           {busyId === b.id ? "Granting..." : "Grant Access"}
-                        </button>
+                        </Button>
                       ) : (
-                        <button
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={b.status === "ACTIVE" ? <Ban size={12} /> : <CheckCircle2 size={12} />}
                           onClick={() =>
                             setStatusTarget({
                               branch: b,
@@ -259,33 +303,54 @@ export function AdminBranchesTable({
                             })
                           }
                           disabled={busyId === b.id || b.isMainBranch}
-                          className={
-                            b.status === "ACTIVE"
-                              ? "inline-flex items-center gap-1 rounded-lg border border-danger-500/20 bg-danger-50 px-2.5 py-1.5 text-xs font-medium text-danger-600 hover:bg-danger-100 disabled:opacity-50 cursor-pointer"
-                              : "inline-flex items-center gap-1 rounded-lg border border-success-500/20 bg-success-50 px-2.5 py-1.5 text-xs font-medium text-success-600 hover:bg-success-100 disabled:opacity-50 cursor-pointer"
-                          }
+                          sx={{
+                            borderRadius: "8px",
+                            fontWeight: 600,
+                            fontSize: "0.70rem",
+                            textTransform: "none",
+                            py: 0.5,
+                            px: 1.25,
+                            bgcolor: b.status === "ACTIVE" ? "#FEF2F2" : "#ECFDF5",
+                            color: b.status === "ACTIVE" ? "#DC2626" : "#059669",
+                            borderColor: b.status === "ACTIVE" ? "#FECACA" : "#A7F3D0",
+                            "&:hover": { bgcolor: b.status === "ACTIVE" ? "#FEE2E2" : "#D1FAE5" },
+                            "&.Mui-disabled": { opacity: 0.5 },
+                          }}
                         >
-                          {b.status === "ACTIVE" ? <Ban size={12} /> : <CheckCircle2 size={12} />}
                           {busyId === b.id ? "Working..." : b.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                        </button>
+                        </Button>
                       )}
-                    </div>
-                  </td>
-                </tr>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-          <Building2 size={28} className="text-scholar-300" />
-          <p className="text-sm text-scholar-400">No sub-branches found matching criteria.</p>
-        </div>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 6,
+            borderRadius: "16px",
+            borderColor: "#D6E0EB",
+            borderStyle: "dashed",
+            bgcolor: "white",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 1,
+            textAlign: "center",
+          }}
+        >
+          <Building2 size={28} style={{ color: "#94A3B8" }} />
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>No sub-branches found matching criteria.</Typography>
+        </Paper>
       )}
 
-      {/* Verification Drawer */}
+      {/* Verification Drawer — same endpoint PATCH /api/admin/branches/[id] with sendBranchApprovedEmail */}
       <BranchVerificationDrawer
         branch={selectedBranch}
         open={verificationDrawerOpen}
@@ -307,7 +372,7 @@ export function AdminBranchesTable({
         }}
       />
 
-      {/* Status Confirmation Dialog */}
+      {/* Status Confirmation Dialog — Grant/Deactivate with same PATCH endpoint */}
       <ConfirmDialog
         open={!!statusTarget}
         onClose={() => setStatusTarget(null)}
@@ -354,7 +419,6 @@ export function AdminBranchesTable({
         }
         loading={!!busyId}
       />
-    </div>
+    </Box>
   );
 }
-

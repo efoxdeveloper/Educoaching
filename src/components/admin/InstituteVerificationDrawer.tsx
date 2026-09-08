@@ -27,6 +27,16 @@ import {
   Sparkles,
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
 
 export type AdminInstituteDetail = {
   id: string;
@@ -193,39 +203,56 @@ ${
       title="Institute & Owner Verification"
       maxWidth="max-w-2xl"
     >
-      <div className="space-y-4 pb-6 text-xs text-ink">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2, fontSize: "0.75rem", color: "#171A21" }}>
         {error && (
-          <div className="rounded-xl bg-danger-50 p-3 text-xs font-semibold text-danger-700 border border-danger-200">
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.75rem" }}>
             {error}
-          </div>
+          </Alert>
         )}
 
-        {/* Top Status & Verification Badge Banner */}
-        <div
-          className={`rounded-2xl p-4 border transition-all ${
-            institute.status === "PENDING_APPROVAL"
-              ? "bg-amber-50/80 border-amber-200"
-              : institute.status === "ACTIVE"
-              ? "bg-emerald-50/80 border-emerald-200"
-              : "bg-danger-50/80 border-danger-200"
-          }`}
+        {/* Top Status & Verification Badge Banner — MUI Paper */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            borderRadius: "16px",
+            borderColor:
+              institute.status === "PENDING_APPROVAL"
+                ? "#FDE68A"
+                : institute.status === "ACTIVE"
+                ? "#A7F3D0"
+                : "#FECACA",
+            bgcolor:
+              institute.status === "PENDING_APPROVAL"
+                ? "rgba(255,251,235,0.8)"
+                : institute.status === "ACTIVE"
+                ? "rgba(236,253,245,0.8)"
+                : "rgba(254,242,242,0.8)",
+          }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-bold text-white shadow-2xs ${
-                  institute.status === "PENDING_APPROVAL"
-                    ? "bg-amber-600"
-                    : institute.status === "ACTIVE"
-                    ? "bg-emerald-600"
-                    : "bg-danger-600"
-                }`}
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Avatar
+                variant="rounded"
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "12px",
+                  bgcolor:
+                    institute.status === "PENDING_APPROVAL"
+                      ? "#D97706"
+                      : institute.status === "ACTIVE"
+                      ? "#059669"
+                      : "#DC2626",
+                  color: "white",
+                  fontWeight: 700,
+                }}
               >
                 <Building2 size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-ink">{institute.name}</h3>
+              </Avatar>
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>{institute.name}</Typography>
                   <Badge
                     tone={
                       institute.status === "ACTIVE"
@@ -237,366 +264,258 @@ ${
                   >
                     {institute.status === "PENDING_APPROVAL" ? "PENDING REVIEW" : institute.status}
                   </Badge>
-                </div>
-                <p className="text-[11px] text-scholar-500 mt-0.5 flex items-center gap-1.5">
-                  <Clock size={12} className="text-scholar-400" />
-                  <span>Requested on: {formatDate(institute.createdAt)} ({new Date(institute.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})</span>
-                </p>
-              </div>
-            </div>
+                </Box>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b", display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>
+                  <Clock size={12} style={{ color: "#94A3B8" }} />
+                  Requested on: {formatDate(institute.createdAt)} ({new Date(institute.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})
+                </Typography>
+              </Box>
+            </Box>
 
-            <button
-              type="button"
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={copiedField === "fullSummary" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
               onClick={copyFullVerificationSummary}
-              className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl border border-scholar-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 transition-colors shadow-2xs cursor-pointer"
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: copiedField === "fullSummary" ? "#059669" : "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.75, px: 1.5, alignSelf: { xs: "flex-start", sm: "auto" } }}
             >
-              {copiedField === "fullSummary" ? (
-                <>
-                  <Check size={13} className="text-emerald-600" />
-                  <span className="text-emerald-700">Copied Summary!</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={13} className="text-scholar-500" />
-                  <span>Copy Verification Summary</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+              {copiedField === "fullSummary" ? "Copied Summary!" : "Copy Verification Summary"}
+            </Button>
+          </Box>
+        </Paper>
 
         {/* Section 1: Owner Identity & Direct Verification Contacts */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h4 className="font-bold text-xs text-scholar-800 flex items-center gap-1.5">
-              <User size={15} className="text-scholar-600" />
-              <span>Owner & Applicant Identity</span>
-            </h4>
-            <span className="rounded-md bg-scholar-100 px-2 py-0.5 text-[10px] font-bold text-scholar-800">
-              Role: Primary Owner
-            </span>
-          </div>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <User size={15} style={{ color: "#4E6E93" }} />
+              Owner & Applicant Identity
+            </Typography>
+            <Chip label="Role: Primary Owner" size="small" sx={{ height: 20, fontSize: "10px", fontWeight: 700, bgcolor: "#EEF2F7", color: "#1E3A5F", border: "1px solid #D6E0EB" }} />
+          </Box>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Owner Name */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Owner Full Name
-              </span>
-              <p className="font-bold text-ink text-sm flex items-center justify-between">
-                <span>{institute.ownerName}</span>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(institute.ownerName, "ownerName")}
-                  className="text-scholar-400 hover:text-scholar-700 cursor-pointer p-0.5"
-                  title="Copy Name"
-                >
-                  {copiedField === "ownerName" ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                </button>
-              </p>
-            </div>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Owner Full Name</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>{institute.ownerName}</Typography>
+                <IconButton size="small" onClick={() => copyToClipboard(institute.ownerName, "ownerName")} sx={{ color: "#7E9BBC", width: 24, height: 24 }}>
+                  {copiedField === "ownerName" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
+                </IconButton>
+              </Box>
+            </Paper>
 
-            {/* Email Address */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400">
-                  Official Email Address
-                </span>
-                <span
-                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
-                    institute.emailVerified
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {institute.emailVerified ? "Verified" : "Unverified"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between font-semibold text-ink">
-                <a
-                  href={`mailto:${institute.email}`}
-                  className="hover:text-scholar-600 hover:underline truncate text-xs flex items-center gap-1"
-                >
-                  <Mail size={12} className="text-scholar-400 shrink-0" />
-                  <span className="truncate">{institute.email}</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(institute.email, "email")}
-                  className="text-scholar-400 hover:text-scholar-700 cursor-pointer p-0.5 shrink-0 ml-1"
-                  title="Copy Email"
-                >
-                  {copiedField === "email" ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                </button>
-              </div>
-            </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Official Email Address</Typography>
+                <Chip label={institute.emailVerified ? "Verified" : "Unverified"} size="small" sx={{ height: 16, fontSize: "9px", fontWeight: 700, bgcolor: institute.emailVerified ? "#ECFDF5" : "#FFFBEB", color: institute.emailVerified ? "#065f46" : "#92400e", border: institute.emailVerified ? "1px solid #A7F3D0" : "1px solid #FDE68A" }} />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography component="a" href={`mailto:${institute.email}`} variant="caption" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.75rem", textDecoration: "none", "&:hover": { textDecoration: "underline" }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Mail size={12} style={{ color: "#94A3B8" }} />
+                  {institute.email}
+                </Typography>
+                <IconButton size="small" onClick={() => copyToClipboard(institute.email, "email")} sx={{ color: "#7E9BBC", width: 24, height: 24, ml: 1 }}>
+                  {copiedField === "email" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
+                </IconButton>
+              </Box>
+            </Paper>
 
-            {/* Mobile Contact with WhatsApp Verification Link */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100 sm:col-span-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400">
-                  Mobile Contact & Verification Checks
-                </span>
-                <span className="text-[10px] text-scholar-500">10-Digit Mobile</span>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Phone size={14} className="text-scholar-500" />
-                  <a
-                    href={`tel:${institute.mobile}`}
-                    className="font-black text-sm text-ink hover:underline tracking-wide"
-                  >
-                    {institute.mobile}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(institute.mobile, "mobile")}
-                    className="text-scholar-400 hover:text-scholar-700 cursor-pointer p-0.5"
-                    title="Copy Phone"
-                  >
-                    {copiedField === "mobile" ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition-colors"
-                  >
-                    <MessageSquare size={12} />
-                    <span>WhatsApp Owner</span>
-                  </a>
-                  <a
-                    href={`tel:${institute.mobile}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-[11px] font-bold text-scholar-700 shadow-2xs hover:bg-scholar-50 transition-colors"
-                  >
-                    <Phone size={12} />
-                    <span>Call Phone</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", gridColumn: "1 / -1" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Mobile Contact & Verification Checks</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>10-Digit Mobile</Typography>
+              </Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Phone size={14} style={{ color: "#4E6E93" }} />
+                  <Typography component="a" href={`tel:${institute.mobile}`} variant="body2" sx={{ fontWeight: 800, color: "#171A21", fontSize: "0.875rem", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>{institute.mobile}</Typography>
+                  <IconButton size="small" onClick={() => copyToClipboard(institute.mobile, "mobile")} sx={{ color: "#7E9BBC", width: 24, height: 24 }}>
+                    {copiedField === "mobile" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
+                  </IconButton>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="contained" startIcon={<MessageSquare size={12} />} href={whatsappUrl} target="_blank" component="a" sx={{ borderRadius: "8px", bgcolor: "#059669", fontWeight: 700, fontSize: "11px", textTransform: "none", py: 0.5, px: 1.5, boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}>
+                    WhatsApp Owner
+                  </Button>
+                  <Button size="small" variant="outlined" startIcon={<Phone size={12} />} href={`tel:${institute.mobile}`} component="a" sx={{ borderRadius: "8px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 700, fontSize: "11px", textTransform: "none", py: 0.5, px: 1.5 }}>
+                    Call Phone
+                  </Button>
+                </Stack>
+              </Box>
+            </Paper>
+          </Box>
+        </Paper>
 
         {/* Section 2: Physical Campus Location & Entity Legitimacy */}
-        <div className="rounded-2xl border border-scholar-200 bg-white p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between border-b border-scholar-100 pb-2.5">
-            <h4 className="font-bold text-xs text-scholar-800 flex items-center gap-1.5">
-              <Building2 size={15} className="text-scholar-600" />
-              <span>Institute Entity & Physical Location</span>
-            </h4>
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-bold text-scholar-600 hover:underline flex items-center gap-1"
-            >
-              <span>Check on Google Maps</span>
-              <ExternalLink size={11} />
-            </a>
-          </div>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Building2 size={15} style={{ color: "#4E6E93" }} />
+              Institute Entity & Physical Location
+            </Typography>
+            <Button size="small" startIcon={<ExternalLink size={11} />} href={googleMapsUrl} target="_blank" component="a" sx={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "none", p: 0, minWidth: 0 }}>
+              Check on Google Maps
+            </Button>
+          </Box>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Address & City */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100 sm:col-span-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400">
-                  Physical Campus Address & City
-                </span>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", gridColumn: "1 / -1" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Physical Campus Address & City</Typography>
                 {institute.address && (
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(institute.address || "", "address")}
-                    className="text-scholar-400 hover:text-scholar-700 cursor-pointer p-0.5"
-                    title="Copy Address"
-                  >
-                    {copiedField === "address" ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                  </button>
+                  <IconButton size="small" onClick={() => copyToClipboard(institute.address || "", "address")} sx={{ color: "#7E9BBC", width: 20, height: 20 }}>
+                    {copiedField === "address" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
+                  </IconButton>
                 )}
-              </div>
-              <div className="font-semibold text-ink text-xs flex items-start gap-1.5">
-                <MapPin size={14} className="text-scholar-500 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-bold text-ink text-sm">
-                    {institute.address || <span className="text-scholar-400 italic font-normal text-xs">No address specified</span>}
-                  </p>
-                  <p className="text-scholar-600 text-xs">
-                    {[institute.city, institute.state].filter(Boolean).join(", ") || (!institute.address ? "Location not specified" : "")}
-                  </p>
-                </div>
-              </div>
-            </div>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <MapPin size={14} style={{ color: "#4E6E93", marginTop: 2, flexShrink: 0 }} />
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>
+                    {institute.address || <Box component="span" sx={{ color: "#94A3B8", fontStyle: "italic", fontWeight: 400, fontSize: "0.75rem" }}>No address specified</Box>}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#475569", fontSize: "0.75rem" }}>{[institute.city, institute.state].filter(Boolean).join(", ") || (!institute.address ? "Location not specified" : "")}</Typography>
+                </Box>
+              </Box>
+            </Paper>
 
-            {/* GSTIN / Tax ID */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Tax PAN / GSTIN / Registration ID
-              </span>
-              <p className="font-bold text-ink text-xs">
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Tax PAN / GSTIN / Registration ID</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>
                 {taxNumber ? (
-                  <span className="font-mono bg-white px-2 py-0.5 rounded border border-scholar-200">
-                    {taxNumber}
-                  </span>
+                  <Box component="span" sx={{ fontFamily: "monospace", bgcolor: "white", px: 1, py: 0.25, borderRadius: "6px", border: "1px solid #D6E0EB" }}>{taxNumber}</Box>
                 ) : (
-                  <span className="text-scholar-400 italic font-normal">Not provided during signup</span>
+                  <Box component="span" sx={{ color: "#94A3B8", fontStyle: "italic", fontWeight: 400 }}>Not provided during signup</Box>
                 )}
-              </p>
-            </div>
+              </Typography>
+            </Paper>
 
-            {/* Helpline / Guide Phone */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Inquiry / Helpline Phone
-              </span>
-              <p className="font-bold text-ink text-xs">
-                {institute.guidePhone || institute.mobile}
-              </p>
-            </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Inquiry / Helpline Phone</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>{institute.guidePhone || institute.mobile}</Typography>
+            </Paper>
 
-            {/* Academic Session */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Academic Session
-              </span>
-              <p className="font-bold text-ink text-xs">
-                {institute.academicYearLabel || "To be set in Setup Wizard"}
-              </p>
-            </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Academic Session</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", mt: 0.5 }}>{institute.academicYearLabel || "To be set in Setup Wizard"}</Typography>
+            </Paper>
 
-            {/* Subscription Cadence */}
-            <div className="p-2.5 rounded-xl bg-scholar-50/60 border border-scholar-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-scholar-400 block mb-0.5">
-                Selected Plan & Billing
-              </span>
-              <div className="flex items-center gap-1.5">
-                <Badge tone="scholar">
-                  {institute.billingCycle} &middot; {institute.platformSubscriptionStatus}
-                </Badge>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Selected Plan & Billing</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                <Chip label={`${institute.billingCycle} · ${institute.platformSubscriptionStatus}`} size="small" sx={{ height: 20, fontSize: "10px", fontWeight: 700, bgcolor: "#EEF2F7", border: "1px solid #D6E0EB" }} />
                 {institute.currentPeriodAmount && (
-                  <span className="text-xs font-bold text-ink">
-                    {formatCurrency(institute.currentPeriodAmount)}
-                  </span>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>{formatCurrency(institute.currentPeriodAmount)}</Typography>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+              </Box>
+            </Paper>
+          </Box>
+        </Paper>
 
         {/* Section 3: Branch Campuses Submitted on Signup */}
         {institute.branches && institute.branches.length > 0 && (
-          <div className="rounded-2xl border border-scholar-200 bg-white p-4 space-y-2.5 shadow-2xs">
-            <div className="flex items-center justify-between border-b border-scholar-100 pb-2">
-              <h4 className="font-bold text-xs text-scholar-800 flex items-center gap-1.5">
-                <Building2 size={15} className="text-scholar-600" />
-                <span>Configured Campus Branches ({institute.branches.length})</span>
-              </h4>
-            </div>
-
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1, mb: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Building2 size={15} style={{ color: "#4E6E93" }} />
+                Configured Campus Branches ({institute.branches.length})
+              </Typography>
+            </Box>
+            <Stack spacing={1} sx={{ maxHeight: 160, overflowY: "auto", pr: 0.5 }}>
               {institute.branches.map((b) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between bg-scholar-50/60 p-2 rounded-xl border border-scholar-100 text-xs"
-                >
-                  <div className="truncate max-w-[240px]">
-                    <p className="font-bold text-ink truncate">
+                <Paper key={b.id} variant="outlined" sx={{ p: 1.25, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {b.name} {b.city ? `(${b.city})` : ""}
-                    </p>
-                    <p className="text-[10px] text-scholar-500 truncate">
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {b.address || "No street address"} {b.contact ? `• Tel: ${b.contact}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {b.isMainBranch && (
-                      <span className="rounded bg-scholar-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                        Main Branch
-                      </span>
-                    )}
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                        b.status === "ACTIVE"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                  </div>
-                </div>
+                    </Typography>
+                  </Box>
+                  <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, ml: 1 }}>
+                    {b.isMainBranch && <Chip label="Main Branch" size="small" sx={{ height: 18, fontSize: "9px", fontWeight: 700, bgcolor: "#1E3A5F", color: "white" }} />}
+                    <Chip label={b.status} size="small" sx={{ height: 18, fontSize: "9px", fontWeight: 700, bgcolor: b.status === "ACTIVE" ? "#ECFDF5" : "#FFFBEB", color: b.status === "ACTIVE" ? "#065f46" : "#92400e", border: b.status === "ACTIVE" ? "1px solid #A7F3D0" : "1px solid #FDE68A" }} />
+                  </Stack>
+                </Paper>
               ))}
-            </div>
-          </div>
+            </Stack>
+          </Paper>
         )}
 
-        {/* Platform Admin Action Controls */}
-        <div className="rounded-2xl border border-scholar-200 bg-scholar-50/70 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-xs text-scholar-800 flex items-center gap-1">
-              <ShieldCheck size={15} className="text-scholar-600" />
-              <span>Platform Admin Access Controls</span>
-            </span>
-          </div>
+        {/* Platform Admin Action Controls — restyle-only, keep onImpersonate/onOpenFeatures exactly */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.5 }}>
+            <ShieldCheck size={15} style={{ color: "#4E6E93" }} />
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b" }}>Platform Admin Access Controls</Typography>
+          </Box>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
             {institute.status === "PENDING_APPROVAL" ? (
-              <button
-                type="button"
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={actionLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" } as any} /> : <CheckCircle2 size={14} />}
                 onClick={() => setConfirmActionTarget("GRANT")}
                 disabled={actionLoading}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors disabled:opacity-50 cursor-pointer"
+                sx={{ borderRadius: "12px", bgcolor: "#059669", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}
               >
-                {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                <span>Verify & Grant Access (Send Welcome Email)</span>
-              </button>
+                Verify & Grant Access (Send Welcome Email)
+              </Button>
             ) : (
               <>
                 {onImpersonate && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Eye size={13} />}
                     onClick={() => onImpersonate(institute)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-bold text-scholar-700 shadow-2xs hover:bg-scholar-50 transition-colors cursor-pointer"
+                    sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75 }}
                   >
-                    <Eye size={13} />
-                    <span>Impersonate Dashboard</span>
-                  </button>
+                    Impersonate Dashboard
+                  </Button>
                 )}
 
                 {onOpenFeatures && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<SlidersHorizontal size={13} />}
                     onClick={() => onOpenFeatures(institute)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-bold text-scholar-700 shadow-2xs hover:bg-scholar-50 transition-colors cursor-pointer"
+                    sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75 }}
                   >
-                    <SlidersHorizontal size={13} />
-                    <span>Feature Flags</span>
-                  </button>
+                    Feature Flags
+                  </Button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfirmActionTarget(institute.status === "ACTIVE" ? "SUSPEND" : "REACTIVATE")
-                  }
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={institute.status === "ACTIVE" ? <Ban size={13} /> : <CheckCircle2 size={13} />}
+                  onClick={() => setConfirmActionTarget(institute.status === "ACTIVE" ? "SUSPEND" : "REACTIVATE")}
                   disabled={actionLoading}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors shadow-2xs cursor-pointer ${
-                    institute.status === "ACTIVE"
-                      ? "bg-danger-50 text-danger-700 border border-danger-200 hover:bg-danger-100"
-                      : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                  }`}
+                  sx={{
+                    borderRadius: "12px",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    textTransform: "none",
+                    py: 1,
+                    px: 1.75,
+                    bgcolor: institute.status === "ACTIVE" ? "#FEF2F2" : "#ECFDF5",
+                    color: institute.status === "ACTIVE" ? "#DC2626" : "#059669",
+                    borderColor: institute.status === "ACTIVE" ? "#FECACA" : "#A7F3D0",
+                    "&:hover": { bgcolor: institute.status === "ACTIVE" ? "#FEE2E2" : "#D1FAE5" },
+                  }}
                 >
-                  {institute.status === "ACTIVE" ? <Ban size={13} /> : <CheckCircle2 size={13} />}
-                  <span>{institute.status === "ACTIVE" ? "Suspend Account" : "Reactivate Account"}</span>
-                </button>
+                  {institute.status === "ACTIVE" ? "Suspend Account" : "Reactivate Account"}
+                </Button>
               </>
             )}
-          </div>
-        </div>
-      </div>
+          </Stack>
+        </Paper>
+      </Box>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog — keep executeStatusAction exactly */}
       <ConfirmDialog
         open={!!confirmActionTarget}
         onClose={() => setConfirmActionTarget(null)}

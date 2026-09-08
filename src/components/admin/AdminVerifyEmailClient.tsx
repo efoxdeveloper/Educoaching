@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, Loader2, AlertCircle, CheckCircle2, Mail } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Paper from "@mui/material/Paper";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type VerifyData = {
   valid: boolean;
@@ -65,60 +74,117 @@ export function AdminVerifyEmailClient() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper p-4">
-      <div className="w-full max-w-md rounded-2xl border border-scholar-100 bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-scholar-50 text-scholar-700">
+    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#F7F5F0", p: 2 }}>
+      <Card
+        variant="outlined"
+        sx={{
+          width: "100%",
+          maxWidth: 448,
+          p: 4,
+          borderRadius: "16px",
+          borderColor: "#D6E0EB",
+          boxShadow: "0 1px 2px rgba(13,26,42,0.04), 0 1px 8px rgba(13,26,42,0.06)",
+        }}
+      >
+        <Box sx={{ mb: 3, textAlign: "center" }}>
+          <Avatar variant="rounded" sx={{ width: 48, height: 48, borderRadius: "12px", bgcolor: "#EEF2F7", color: "#1E3A5F", mx: "auto", mb: 1.5 }}>
             <ShieldCheck size={24} />
-          </div>
-          <h1 className="font-display text-xl font-bold text-ink">Platform Admin Email Verification</h1>
-          {data?.adminName && <p className="mt-1 text-xs font-medium text-scholar-500">{data.adminName}</p>}
-        </div>
+          </Avatar>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1.25rem", fontFamily: "var(--font-sora)" }}>Platform Admin Email Verification</Typography>
+          {data?.adminName && <Typography variant="caption" sx={{ mt: 0.5, display: "block", fontSize: "0.75rem", fontWeight: 500, color: "#7E9BBC" }}>{data.adminName}</Typography>}
+        </Box>
 
         {loading && (
-          <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="mb-2 animate-spin text-scholar-600" size={32} />
-            <p className="text-sm text-scholar-500">Verifying authorization link…</p>
-          </div>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 4 }}>
+            <CircularProgress size={32} sx={{ color: "#1E3A5F", mb: 1 }} />
+            <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>Verifying authorization link…</Typography>
+          </Box>
         )}
 
         {error && !loading && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700">
-            <div className="flex items-center gap-2 font-semibold"><AlertCircle size={16} /> Verification Error</div>
-            <p className="mt-1">{error}</p>
-            <div className="mt-4 text-center">
-              <Link href="/login" className="inline-flex items-center text-xs font-semibold text-scholar-700 hover:underline">Back to Sign In</Link>
-            </div>
-          </div>
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="error" icon={<AlertCircle size={16} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#991b1b", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.75 }}>
+                <AlertCircle size={16} /> Verification Error
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#991b1b", display: "block", mt: 0.5 }}>{error}</Typography>
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Button component={Link} href="/login" size="small" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", textTransform: "none" }}>
+                  Back to Sign In
+                </Button>
+              </Box>
+            </Alert>
+          </Box>
         )}
 
         {success && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-800">
-            <CheckCircle2 size={36} className="mx-auto mb-2 text-emerald-600" />
-            <h3 className="mb-1 text-base font-semibold">Email Updated!</h3>
-            <p className="mb-6 text-xs leading-relaxed text-emerald-700">{success}</p>
-            <p className="mb-4 text-[11px] text-emerald-600">Confirmation has been sent to both your old and new email addresses.</p>
-            <Link href="/login?portal=admin" className="inline-flex w-full items-center justify-center rounded-xl bg-scholar-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-scholar-800">Sign In with New Email</Link>
-          </div>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              borderRadius: "12px",
+              borderColor: "#A7F3D0",
+              bgcolor: "#ECFDF5",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <CheckCircle2 size={36} style={{ color: "#059669", marginBottom: 8 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "#065f46", fontSize: "1rem", mb: 0.5 }}>Email Updated!</Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#047857", lineHeight: 1.6 }}>{success}</Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#059669", mt: 1 }}>Confirmation has been sent to both your old and new email addresses.</Typography>
+            <Button
+              component={Link}
+              href="/login?portal=admin"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 2, borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+            >
+              Sign In with New Email
+            </Button>
+          </Paper>
         )}
 
         {!loading && !error && !success && data && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
-              <div className="flex items-center gap-2 font-semibold text-amber-800"><Mail size={16} /> Confirm Platform Admin Email Change</div>
-              <p className="mt-2 text-scholar-600">You requested to change your account email from:</p>
-              <p className="mt-1 font-mono text-xs font-semibold text-ink line-through opacity-70">{data.currentEmail}</p>
-              <p className="mt-2 text-scholar-600">To new email address:</p>
-              <p className="mt-1 font-mono text-xs font-bold text-emerald-700">{data.targetEmail}</p>
-            </div>
-            <p className="text-xs leading-relaxed text-scholar-500">Click below to approve this change. This link expires in 1 hour, can be used only once, and is tied to your admin account.</p>
-            <button onClick={handleConfirm} disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-xl bg-scholar-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-scholar-800 disabled:opacity-50">
-              {submitting && <Loader2 size={14} className="animate-spin" />} Approve Email Change
-            </button>
-            <p className="text-center text-[11px] text-scholar-400">If you did not request this, ignore this page — your account will remain unchanged.</p>
-          </div>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Alert
+              severity="warning"
+              icon={<Mail size={16} />}
+              sx={{ borderRadius: "12px", bgcolor: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400e", fontSize: "0.75rem" }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#92400e", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Mail size={16} /> Confirm Platform Admin Email Change
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", display: "block", mt: 1 }}>You requested to change your account email from:</Typography>
+              <Paper variant="outlined" sx={{ mt: 0.5, px: 1, py: 0.5, borderRadius: "8px", bgcolor: "white", borderColor: "#FDE68A" }}>
+                <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 600, fontSize: "0.75rem", color: "#171A21", textDecoration: "line-through", opacity: 0.7 }}>{data.currentEmail}</Typography>
+              </Paper>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", display: "block", mt: 1 }}>To new email address:</Typography>
+              <Paper variant="outlined" sx={{ mt: 0.5, px: 1, py: 0.5, borderRadius: "8px", bgcolor: "white", borderColor: "#A7F3D0" }}>
+                <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, fontSize: "0.75rem", color: "#065f46" }}>{data.targetEmail}</Typography>
+              </Paper>
+            </Alert>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC", lineHeight: 1.6 }}>
+              Click below to approve this change. This link expires in 1 hour, can be used only once, and is tied to your admin account.
+            </Typography>
+            <Button
+              fullWidth
+              variant="contained"
+              disabled={submitting}
+              onClick={handleConfirm}
+              startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : undefined}
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+            >
+              Approve Email Change
+            </Button>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", textAlign: "center" }}>
+              If you did not request this, ignore this page — your account will remain unchanged.
+            </Typography>
+          </Box>
         )}
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 }

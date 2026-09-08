@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { Drawer } from "@/components/ui/Drawer";
 import { type FeatureFlags, DEFAULT_FEATURE_FLAGS } from "@/lib/institute-settings";
-import { SlidersHorizontal, Loader2, Check } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Switch from "@mui/material/Switch";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type InstituteTarget = {
   id: string;
@@ -124,77 +132,74 @@ export function FeatureFlagsDrawer({
       maxWidth="max-w-md"
     >
       {loading ? (
-        <div className="flex h-64 items-center justify-center text-xs text-scholar-400">
-          <Loader2 size={20} className="animate-spin text-scholar-600 mr-2" />
-          Loading module permissions...
-        </div>
+        <Box sx={{ height: 256, display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: "#7E9BBC" }}>
+          <CircularProgress size={20} sx={{ color: "#4E6E93" }} />
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>Loading module permissions...</Typography>
+        </Box>
       ) : (
-        <div className="space-y-5">
-          <p className="text-xs text-scholar-500">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", lineHeight: 1.5 }}>
             Control which functional modules are enabled or disabled for this institute based on their subscription tier or custom contract.
-          </p>
+          </Typography>
 
           {error && (
-            <div className="rounded-xl bg-danger-50 p-3 text-xs font-semibold text-danger-700">
+            <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.75rem" }}>
               {error}
-            </div>
+            </Alert>
           )}
 
           {success && (
-            <div className="rounded-xl bg-success-50 p-3 text-xs font-semibold text-success-700 flex items-center gap-1.5">
-              <Check size={14} />
+            <Alert severity="success" sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
               Feature flags updated successfully!
-            </div>
+            </Alert>
           )}
 
-          <div className="divide-y divide-scholar-100 rounded-2xl border border-scholar-100 bg-white">
+          <Paper variant="outlined" sx={{ borderRadius: "16px", borderColor: "#D6E0EB", overflow: "hidden", divideY: "1px solid #D6E0EB" }}>
             {(Object.keys(FEATURE_DESCRIPTIONS) as (keyof FeatureFlags)[]).map((key) => {
               const info = FEATURE_DESCRIPTIONS[key];
               const enabled = flags[key];
 
               return (
-                <div key={key} className="flex items-start justify-between gap-3 p-3.5 hover:bg-scholar-50/40 transition-colors">
-                  <div className="pr-2">
-                    <p className="text-xs font-semibold text-ink">{info.label}</p>
-                    <p className="text-[11px] text-scholar-400 mt-0.5">{info.desc}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(key)}
-                    className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      enabled ? "bg-scholar-600" : "bg-scholar-200"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                        enabled ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                </div>
+                <Box key={key} sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, p: 1.75, "&:hover": { bgcolor: "rgba(238,242,247,0.3)" }, borderBottom: "1px solid #F1F5F9", "&:last-child": { borderBottom: "none" } }}>
+                  <Box sx={{ flex: 1, pr: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>{info.label}</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", display: "block", mt: 0.25 }}>{info.desc}</Typography>
+                  </Box>
+                  <Switch
+                    checked={enabled}
+                    onChange={() => handleToggle(key)}
+                    size="small"
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: "#1E3A5F" },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#1E3A5F" },
+                    }}
+                  />
+                </Box>
               );
             })}
-          </div>
+          </Paper>
 
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
+          <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+            <Button
+              variant="outlined"
+              fullWidth
               onClick={onClose}
-              className="flex-1 rounded-xl border border-scholar-100 py-2 text-xs font-semibold text-scholar-600 hover:bg-scholar-50"
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}
             >
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="contained"
+              fullWidth
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 rounded-xl bg-scholar-600 py-2 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              startIcon={saving ? <CircularProgress size={13} color="inherit" /> : <SlidersHorizontal size={13} />}
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : <SlidersHorizontal size={13} />}
               {saving ? "Saving..." : "Apply Feature Flags"}
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Stack>
+        </Box>
       )}
     </Drawer>
   );

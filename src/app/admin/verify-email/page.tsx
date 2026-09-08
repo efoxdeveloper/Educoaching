@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import { AdminVerifyEmailClient } from "@/components/admin/AdminVerifyEmailClient";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export default function AdminVerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-paper">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-scholar-600 border-t-transparent" />
-        </div>
+        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#F7F5F0" }}>
+          <CircularProgress size={32} sx={{ color: "#1E3A5F" }} />
+        </Box>
       }
     >
       <AdminVerifyEmailClient />

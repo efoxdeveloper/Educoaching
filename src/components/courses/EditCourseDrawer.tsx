@@ -31,6 +31,7 @@ type BranchOption = {
   id: string;
   name: string;
   city: string | null;
+  isMainBranch?: boolean;
 };
 
 const COMMON_EXAMS = [
@@ -327,7 +328,7 @@ export function EditCourseDrawer({
             </Typography>
           </Box>
 
-          {availableBranches.length === 0 ? (
+          {availableBranches.filter((b) => !b.isMainBranch).length === 0 ? (
             <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "#EEF2F7", borderColor: "#D6E0EB" }}>
               This institute has only one branch (Main Branch) — no branch selection needed.
             </Alert>

@@ -5,6 +5,17 @@ import { Badge } from "@/components/ui/Badge";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import TablePagination from "@mui/material/TablePagination";
+import Chip from "@mui/material/Chip";
 
 const PAGE_SIZE = 50;
 
@@ -20,6 +31,7 @@ export default async function AuditLogsPage() {
   const role = (session?.user as { role?: string } | undefined)?.role;
   if (!session || role !== "PLATFORM_ADMIN") redirect("/login");
 
+  // Read-only log viewer — cursor-based pagination (take PAGE_SIZE, no filter) — visual restyle only, query unchanged
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE,
@@ -28,56 +40,76 @@ export default async function AuditLogsPage() {
 
   return (
     <AdminShell title="Audit Logs" userName={session.user?.name ?? undefined}>
-      <div className="mb-6">
-        <p className="text-sm text-scholar-400">
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>
           The most recent {PAGE_SIZE} admin and tenant actions across the platform, newest first.
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-scholar-100 text-left text-xs font-medium uppercase tracking-wide text-scholar-400">
-                <th className="py-3 pl-5 pr-4">When</th>
-                <th className="py-3 pr-4">Institute</th>
-                <th className="py-3 pr-4">Actor</th>
-                <th className="py-3 pr-4">Action</th>
-                <th className="py-3 pr-5">Details</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Card sx={{ overflow: "hidden" }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+          <Table size="small" sx={{ minWidth: 880 }}>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "rgba(238,242,247,0.5)", "& th": { fontSize: "0.70rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                <TableCell>When</TableCell>
+                <TableCell>Institute</TableCell>
+                <TableCell>Actor</TableCell>
+                <TableCell>Action</TableCell>
+                <TableCell>Details</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {logs.map((log) => (
-                <tr key={log.id} className="border-b border-scholar-50 last:border-0 hover:bg-paper/60">
-                  <td className="py-3 pl-5 pr-4 whitespace-nowrap text-scholar-500">
+                <TableRow key={log.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                  <TableCell sx={{ whiteSpace: "nowrap", fontSize: "0.75rem", color: "#64748b" }}>
                     {formatDate(log.createdAt.toISOString())}
-                  </td>
-                  <td className="py-3 pr-4 text-scholar-500">{log.institute?.name ?? "—"}</td>
-                  <td className="py-3 pr-4">
-                    <div className="font-medium text-ink">{log.actorName}</div>
-                    <div className="text-xs text-scholar-400">{log.actorRole}</div>
-                  </td>
-                  <td className="py-3 pr-4">
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "0.75rem", color: "#64748b" }}>{log.institute?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>{log.actorName}</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#7E9BBC" }}>{log.actorRole}</Typography>
+                  </TableCell>
+                  <TableCell>
                     <Badge tone={actionTone(log.action)} dot>
                       {log.action}
                     </Badge>
-                  </td>
-                  <td className="py-3 pr-5 max-w-[320px] truncate text-xs text-scholar-400" title={log.metadata ? JSON.stringify(log.metadata) : undefined}>
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", color: "#7E9BBC" }} title={log.metadata ? JSON.stringify(log.metadata) : undefined}>
                     {log.entityType}
                     {log.entityId ? ` · ${log.entityId}` : ""}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {logs.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-10 text-center text-sm text-scholar-400">
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 5, color: "#94A3B8", fontSize: "0.875rem" }}>
                     No audit activity recorded yet.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+          {/* Cursor pagination — visual restyle only, query still take PAGE_SIZE newest first */}
+          <TablePagination
+            count={logs.length < PAGE_SIZE ? logs.length : -1}
+            rowsPerPage={PAGE_SIZE}
+            page={0}
+            onPageChange={() => {}}
+            onRowsPerPageChange={() => {}}
+            rowsPerPageOptions={[PAGE_SIZE]}
+            labelDisplayedRows={({ from, to }) => `${from}–${to} of ${logs.length < PAGE_SIZE ? logs.length : `at least ${logs.length}`}`}
+            labelRowsPerPage="Rows per page:"
+            slotProps={{
+              select: { inputProps: { "aria-label": "rows per page" } },
+            }}
+            sx={{
+              borderTop: "1px solid #D6E0EB",
+              bgcolor: "rgba(238,242,247,0.3)",
+              "& .MuiTablePagination-toolbar": { px: 2 },
+              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.75rem", color: "#475569" },
+            }}
+          />
+        </TableContainer>
       </Card>
     </AdminShell>
   );

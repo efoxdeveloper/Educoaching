@@ -86,14 +86,14 @@ export function AddFacultyDrawer({
   batches: BatchOption[];
   courses?: CourseOption[];
   editing: FacultyRow | null;
-  branches?: Array<{ id: string; name: string; city?: string | null }>;
+  branches?: Array<{ id: string; name: string; city?: string | null; isMainBranch?: boolean }>;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(EMPTY_FORM);
   const [courses, setCourses] = useState<CourseOption[]>(initialCourses);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
-  const [branches, setBranches] = useState<Array<{ id: string; name: string; city?: string | null }>>(initialBranches);
+  const [branches, setBranches] = useState<Array<{ id: string; name: string; city?: string | null; isMainBranch?: boolean }>>(initialBranches);
 
   // Multi-branch allocation
   const [isAllBranches, setIsAllBranches] = useState(false);
@@ -119,7 +119,7 @@ export function AddFacultyDrawer({
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => {
           if (Array.isArray(data)) {
-            setBranches(data.filter((b: any) => !b.isMainBranch && b.status === "ACTIVE"));
+            setBranches(data.filter((b: any) => b.status === "ACTIVE"));
           }
         })
         .catch(() => {});
@@ -538,7 +538,7 @@ export function AddFacultyDrawer({
             )}
           </div>
 
-          {branches.length === 0 ? (
+          {branches.filter((b) => !b.isMainBranch).length === 0 ? (
             <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
               This institute has only one branch (Main Branch) — no branch selection needed.
             </p>

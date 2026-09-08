@@ -262,6 +262,9 @@ export default async function StudentPortalPage({
     fileUrl: m.fileUrl,
     description: m.description,
     createdAt: m.createdAt.toISOString(),
+    batchId: m.batchId,
+    courseId: m.courseId,
+    branchId: m.branchId,
   }));
 
   const assignments = rawAssignments.map((a) => {
@@ -274,6 +277,9 @@ export default async function StudentPortalPage({
       dueDate: a.dueDate.toISOString(),
       totalMarks: a.totalMarks || 100,
       attachmentUrl: a.attachmentUrl,
+      batchId: a.batchId,
+      courseId: a.courseId,
+      branchId: a.branchId,
       submission: firstSub
         ? {
             status: firstSub.status,

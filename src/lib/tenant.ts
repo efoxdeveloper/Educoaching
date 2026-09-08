@@ -318,12 +318,15 @@ export async function requireFeature(feature: keyof FeatureFlags) {
 }
 
 /**
- * Returns only real sub-branches for an institute (excluding Main Branch), with ACTIVE status.
- * Used to feed multi-branch/branch-picker UI in create/edit forms.
+ * Returns all ACTIVE branches for an institute (including Main Branch), with ACTIVE status.
+ * Used to feed branch-picker UI in create/edit forms (Add Student, Add Course, Add Batch, etc.).
+ * Main Branch now appears alongside sub-branches so it can be explicitly selected.
+ * Previously this excluded Main Branch (isMainBranch:false) and relied on isAllBranches to cover it;
+ * that prevented assigning a course/batch/student specifically to Main Branch when sub-branches exist.
  */
 export async function getSubBranches(instituteId: string) {
   return prisma.branch.findMany({
-    where: { instituteId, isMainBranch: false, status: "ACTIVE" },
-    orderBy: { name: "asc" },
+    where: { instituteId, status: "ACTIVE" },
+    orderBy: [{ isMainBranch: "desc" }, { name: "asc" }],
   });
 }

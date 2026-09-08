@@ -9,7 +9,6 @@ import {
   Building2,
   Eye,
   SlidersHorizontal,
-  Loader2,
   ShieldCheck,
   Phone,
   Mail,
@@ -23,7 +22,28 @@ import {
   InstituteVerificationDrawer,
   type AdminInstituteDetail,
 } from "./InstituteVerificationDrawer";
-import { formatCurrency, formatDate, initials } from "@/lib/utils";
+import { formatDate, initials } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
+import CircularProgress from "@mui/material/CircularProgress";
 
 function subscriptionTone(status: AdminInstituteDetail["platformSubscriptionStatus"]) {
   if (status === "ACTIVE") return "success" as const;
@@ -104,100 +124,109 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
   };
 
   return (
-    <Card className="p-5">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 sm:max-w-xs sm:flex-1">
-            <Search size={16} className="text-scholar-300" />
-            <input
-              placeholder="Search by name, owner, email, phone or city"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-scholar-300"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-sm text-scholar-600 outline-none"
-          >
-            <option value="">All statuses</option>
-            <option value="PENDING_APPROVAL">Pending Approval</option>
-            <option value="ACTIVE">Active</option>
-            <option value="SUSPENDED">Suspended</option>
-          </select>
-        </div>
-      </div>
+    <Card sx={{ p: 2.5 }}>
+      <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
+          <TextField
+            size="small"
+            placeholder="Search by name, owner, email, phone or city"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: 1, maxWidth: { sm: 360 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" } }}
+          />
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel id="admin-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+            <Select
+              labelId="admin-status-label"
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 500 }}
+            >
+              <MenuItem value="">All statuses</MenuItem>
+              <MenuItem value="PENDING_APPROVAL">Pending Approval</MenuItem>
+              <MenuItem value="ACTIVE">Active</MenuItem>
+              <MenuItem value="SUSPENDED">Suspended</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[850px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-scholar-100 text-xs font-medium uppercase tracking-wide text-scholar-400">
-              <th className="pb-3 pr-4">Institute & Owner</th>
-              <th className="pb-3 pr-4">Location</th>
-              <th className="pb-3 pr-4">Plan & Status</th>
-              <th className="pb-3 pr-4">Renews / Expires</th>
-              <th className="pb-3 pr-4">Stats</th>
-              <th className="pb-3 pr-4 text-right">Verification & Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+        <Table sx={{ minWidth: 850 }} size="small">
+          <TableHead>
+            <TableRow sx={{ bgcolor: "rgba(238,242,247,0.5)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+              <TableCell>Institute & Owner</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Plan & Status</TableCell>
+              <TableCell>Renews / Expires</TableCell>
+              <TableCell>Stats</TableCell>
+              <TableCell align="right">Verification & Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-scholar-400">
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "#94A3B8", fontSize: "0.875rem" }}>
                   No institutes match your filters.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {filtered.map((i) => (
-              <tr key={i.id} className="border-b border-scholar-50 last:border-0 hover:bg-scholar-50/40 transition-colors">
-                <td className="py-3 pr-4">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
+              <TableRow key={i.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75, pr: 2 } }}>
+                <TableCell>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar
                       onClick={() => setVerificationTarget(i)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-scholar-50 text-xs font-semibold text-scholar-600 hover:bg-scholar-100 transition-colors cursor-pointer shrink-0"
-                      title="Click to view full verification details"
+                      sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 700, cursor: "pointer", "&:hover": { bgcolor: "#D6E0EB" } }}
+                      variant="rounded"
                     >
                       {initials(i.name)}
-                    </button>
-                    <div>
-                      <button
-                        type="button"
+                    </Avatar>
+                    <Box>
+                      <Typography
+                        component="button"
                         onClick={() => setVerificationTarget(i)}
-                        className="font-bold text-ink hover:text-scholar-600 hover:underline text-left cursor-pointer"
+                        sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", textAlign: "left", bgcolor: "transparent", border: "none", cursor: "pointer", p: 0, "&:hover": { color: "#4E6E93", textDecoration: "underline" } }}
                       >
                         {i.name}
-                      </button>
-                      <p className="text-xs text-scholar-500 flex items-center gap-1">
-                        <span>{i.ownerName}</span>
-                        <span>&middot;</span>
-                        <span className="text-scholar-400">{i.mobile}</span>
-                      </p>
-                    </div>
-                  </div>
-                </td>
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem", color: "#64748b" }}>
+                        {i.ownerName} <Box component="span" sx={{ color: "#94A3B8" }}>·</Box> <Box component="span" sx={{ color: "#94A3B8" }}>{i.mobile}</Box>
+                      </Typography>
+                    </Box>
+                  </Box>
+                </TableCell>
 
-                <td className="py-3 pr-4 text-xs text-scholar-600">
+                <TableCell>
                   {i.city || i.state || i.address ? (
-                    <div className="space-y-0.5 max-w-[220px]">
-                      <div className="flex items-center gap-1 font-medium text-ink">
-                        <MapPin size={12} className="text-scholar-400 shrink-0" />
-                        <span>{[i.city, i.state].filter(Boolean).join(", ") || "Location set"}</span>
-                      </div>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, maxWidth: 220 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, fontWeight: 500, color: "#171A21", fontSize: "0.75rem" }}>
+                        <MapPin size={12} style={{ color: "#94A3B8", flexShrink: 0 }} />
+                        <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#171A21" }}>{[i.city, i.state].filter(Boolean).join(", ") || "Location set"}</Typography>
+                      </Box>
                       {i.address && (
-                        <p className="text-[11px] text-scholar-500 truncate" title={i.address}>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={i.address}>
                           {i.address}
-                        </p>
+                        </Typography>
                       )}
-                    </div>
+                    </Box>
                   ) : (
-                    <span className="text-scholar-300 italic">Not set</span>
+                    <Typography variant="caption" sx={{ fontStyle: "italic", color: "#94A3B8" }}>Not set</Typography>
                   )}
-                </td>
+                </TableCell>
 
-                <td className="py-3 pr-4">
-                  <div className="flex flex-col gap-1">
+                <TableCell>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                     <Badge
                       tone={
                         i.status === "ACTIVE"
@@ -209,73 +238,87 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
                     >
                       {i.status === "PENDING_APPROVAL" ? "PENDING REVIEW" : i.status}
                     </Badge>
-                    <span className="text-[10px] text-scholar-400 font-medium">
-                      {i.billingCycle} &middot; {i.platformSubscriptionStatus}
-                    </span>
-                  </div>
-                </td>
+                    <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", fontWeight: 500 }}>
+                      {i.billingCycle} · {i.platformSubscriptionStatus}
+                    </Typography>
+                  </Box>
+                </TableCell>
 
-                <td className="py-3 pr-4 text-xs text-scholar-500">
-                  {formatDate(i.currentPeriodEnd ?? i.trialEndsAt)}
-                </td>
+                <TableCell sx={{ fontSize: "0.75rem", color: "#64748b" }}>{formatDate(i.currentPeriodEnd ?? i.trialEndsAt)}</TableCell>
 
-                <td className="py-3 pr-4 text-xs text-scholar-600">
-                  <div className="flex items-center gap-2">
-                    <span title="Students">{i._count.students} St.</span>
-                    <span>&middot;</span>
-                    <span title="Batches">{i._count.batches} Bat.</span>
-                  </div>
-                </td>
+                <TableCell>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "0.75rem", color: "#475569" }}>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>{i._count.students} St.</Typography>
+                    <Typography variant="caption" sx={{ color: "#94A3B8" }}>·</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>{i._count.batches} Bat.</Typography>
+                  </Box>
+                </TableCell>
 
-                <td className="py-3 pr-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {/* Always visible Verify Profile button */}
-                    <button
-                      type="button"
+                <TableCell align="right">
+                  <Stack direction="row" spacing={0.75} sx={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ShieldCheck size={13} />}
                       onClick={() => setVerificationTarget(i)}
-                      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs ${
-                        i.status === "PENDING_APPROVAL"
-                          ? "bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 font-bold"
-                          : "border border-scholar-200 bg-white text-scholar-700 hover:bg-scholar-50"
-                      }`}
+                      sx={{
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        fontSize: "0.70rem",
+                        textTransform: "none",
+                        py: 0.5,
+                        px: 1.25,
+                        borderColor: i.status === "PENDING_APPROVAL" ? "#FDE68A" : "#D6E0EB",
+                        bgcolor: i.status === "PENDING_APPROVAL" ? "#FFFBEB" : "white",
+                        color: i.status === "PENDING_APPROVAL" ? "#92400e" : "#334155",
+                        "&:hover": { bgcolor: i.status === "PENDING_APPROVAL" ? "#FEF3C7" : "#F8FAFC" },
+                      }}
                       title="Inspect full owner details, phone, address, and verification profile"
                     >
-                      <ShieldCheck size={13} className={i.status === "PENDING_APPROVAL" ? "text-amber-700" : "text-scholar-500"} />
-                      <span>{i.status === "PENDING_APPROVAL" ? "Review Details" : "Verify"}</span>
-                    </button>
+                      {i.status === "PENDING_APPROVAL" ? "Review Details" : "Verify"}
+                    </Button>
 
                     {i.status === "PENDING_APPROVAL" ? (
-                      <button
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<CheckCircle2 size={13} />}
                         onClick={() => setStatusTarget({ institute: i, action: "GRANT" })}
                         disabled={busyId === i.id}
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-colors hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                        sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, bgcolor: "#059669", boxShadow: "none", "&:hover": { bgcolor: "#047857" } }}
                         title="Grant Access and send Welcome Email"
                       >
-                        <CheckCircle2 size={13} />
                         {busyId === i.id ? "Granting..." : "Grant Access"}
-                      </button>
+                      </Button>
                     ) : (
                       <>
-                        <button
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={impersonatingId === i.id ? <CircularProgress size={13} color="inherit" /> : <Eye size={13} />}
                           onClick={() => handleImpersonate(i)}
                           disabled={impersonatingId === i.id}
-                          className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-scholar-50 px-2 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-100 transition-colors disabled:opacity-50 cursor-pointer"
+                          sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.25, borderColor: "#D6E0EB", bgcolor: "#F8FAFC", color: "#334155", "&:hover": { bgcolor: "#EEF2F7" } }}
                           title="Impersonate Institute & Access Dashboard"
                         >
-                          {impersonatingId === i.id ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
                           Impersonate
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<SlidersHorizontal size={13} />}
                           onClick={() => setFeatureTarget(i)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-scholar-200 bg-white px-2 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 transition-colors cursor-pointer"
+                          sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.25, borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", "&:hover": { bgcolor: "#F8FAFC" } }}
                           title="Control Feature Flags"
                         >
-                          <SlidersHorizontal size={13} />
                           Features
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={i.status === "ACTIVE" ? <Ban size={13} /> : <CheckCircle2 size={13} />}
                           onClick={() =>
                             setStatusTarget({
                               institute: i,
@@ -283,33 +326,39 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
                             })
                           }
                           disabled={busyId === i.id}
-                          className={
-                            i.status === "ACTIVE"
-                              ? "inline-flex items-center gap-1 rounded-lg border border-danger-500/20 bg-danger-50 px-2 py-1.5 text-xs font-medium text-danger-600 transition-colors hover:bg-danger-100 disabled:opacity-50 cursor-pointer"
-                              : "inline-flex items-center gap-1 rounded-lg border border-success-500/20 bg-success-50 px-2 py-1.5 text-xs font-medium text-success-600 transition-colors hover:bg-success-100 disabled:opacity-50 cursor-pointer"
-                          }
+                          sx={{
+                            borderRadius: "8px",
+                            fontWeight: 600,
+                            fontSize: "0.70rem",
+                            textTransform: "none",
+                            py: 0.5,
+                            px: 1.25,
+                            bgcolor: i.status === "ACTIVE" ? "#FEF2F2" : "#ECFDF5",
+                            color: i.status === "ACTIVE" ? "#DC2626" : "#059669",
+                            borderColor: i.status === "ACTIVE" ? "#FECACA" : "#A7F3D0",
+                            "&:hover": { bgcolor: i.status === "ACTIVE" ? "#FEE2E2" : "#D1FAE5" },
+                          }}
                         >
-                          {i.status === "ACTIVE" ? <Ban size={13} /> : <CheckCircle2 size={13} />}
                           {busyId === i.id ? "..." : i.status === "ACTIVE" ? "Suspend" : "Activate"}
-                        </button>
+                        </Button>
                       </>
                     )}
-                  </div>
-                </td>
-              </tr>
+                  </Stack>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {institutes.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-          <Building2 size={28} className="text-scholar-300" />
-          <p className="text-sm text-scholar-400">No institutes have signed up yet.</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, py: 5, textAlign: "center" }}>
+          <Building2 size={28} style={{ color: "#94A3B8" }} />
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>No institutes have signed up yet.</Typography>
+        </Box>
       )}
 
-      {/* Feature Flags Drawer */}
+      {/* Feature Flags Drawer — restyle-only, logic preserved */}
       <FeatureFlagsDrawer
         institute={featureTarget}
         open={!!featureTarget}
@@ -317,7 +366,7 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
         onUpdated={() => router.refresh()}
       />
 
-      {/* Institute & Owner Verification Profile Drawer */}
+      {/* Institute & Owner Verification Profile Drawer — restyle-only */}
       <InstituteVerificationDrawer
         institute={verificationTarget}
         open={!!verificationTarget}

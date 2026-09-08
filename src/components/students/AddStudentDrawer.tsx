@@ -52,7 +52,7 @@ type Batch = {
   branches?: { id: string; name: string; city?: string | null }[];
 };
 
-type Branch = { id: string; name: string; city?: string | null };
+type Branch = { id: string; name: string; city?: string | null; isMainBranch?: boolean };
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
@@ -513,7 +513,7 @@ export function AddStudentDrawer({
             <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Batches & timings vary by branch</Typography>
           </Box>
 
-          {branches.length === 0 ? (
+          {branches.filter((b) => !b.isMainBranch).length === 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <FormControl fullWidth size="small" required>
                 <InputLabel id="add-student-course-label-single">Course Program *</InputLabel>

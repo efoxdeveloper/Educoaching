@@ -22,7 +22,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { Building2, Clock, Users } from "lucide-react";
 
 type Course = { id: string; name: string };
-type Branch = { id: string; name: string; city?: string | null };
+type Branch = { id: string; name: string; city?: string | null; isMainBranch?: boolean };
 
 function formatTime12h(time24: string): string {
   if (!time24) return "";
@@ -253,7 +253,7 @@ export function AddBatchDrawer({
             )}
           </Box>
 
-          {branches.length === 0 ? (
+          {branches.filter((b) => !b.isMainBranch).length === 0 ? (
             <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "white", borderColor: "#D6E0EB" }}>
               This institute has only one branch (Main Branch) — no branch selection needed.
             </Alert>
