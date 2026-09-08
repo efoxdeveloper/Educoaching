@@ -4,9 +4,13 @@ import { cookies } from "next/headers";
 import { requireInstitute, getBranchImpersonationState, BRANCH_IMPERSONATION_COOKIE } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const state = await getBranchImpersonationState();
-  return NextResponse.json(state);
+  return NextResponse.json(state, {
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+  });
 }
 
 export async function POST(req: Request) {

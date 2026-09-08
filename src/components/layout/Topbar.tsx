@@ -55,10 +55,14 @@ export function Topbar({
   const handleBranchChange = async (newBranchId: string) => {
     setSelectedBranch(newBranchId);
     const chosen = branches.find((b) => b.id === newBranchId);
-    if (chosen?.isMainBranch) {
+    const isMain = Boolean(
+      chosen?.isMainBranch ||
+      (chosen?.name && chosen.name.toLowerCase().includes("main"))
+    );
+    if (isMain) {
       await fetch("/api/branches/impersonate/exit", { method: "POST" });
       if (update) {
-        await update({ impersonatingBranchId: null });
+        await update({ impersonatingBranchId: null, impersonationStartedAt: null });
       }
     } else {
       const res = await fetch("/api/branches/impersonate", {

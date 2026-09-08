@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Building2, LogOut, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export function BranchImpersonationBanner() {
+  const { update } = useSession();
   const [impersonating, setImpersonating] = useState(false);
   const [branchName, setBranchName] = useState<string | null>(null);
   const [guidePhone, setGuidePhone] = useState<string | null>(null);
@@ -34,6 +36,9 @@ export function BranchImpersonationBanner() {
     setExiting(true);
     try {
       await fetch("/api/branches/impersonate/exit", { method: "POST" });
+      if (update) {
+        await update({ impersonatingBranchId: null, impersonationStartedAt: null });
+      }
       window.location.reload();
     } catch {
       alert("Failed to return to Main Branch");

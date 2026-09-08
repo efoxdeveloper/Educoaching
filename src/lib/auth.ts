@@ -61,6 +61,61 @@ class EmailNotVerifiedError extends CredentialsSignin {
   code = "EmailNotVerified";
 }
 
+export const authCallbacks = {
+  jwt: async ({ token, user, trigger, session }: any) => {
+    if (user) {
+      token.role = (user as { role?: string }).role;
+      token.instituteId = (user as { instituteId?: string | null }).instituteId ?? null;
+      token.id = (user as { id?: string }).id;
+      token.branchId = (user as { branchId?: string | null }).branchId ?? null;
+      token.isMainBranch = (user as { isMainBranch?: boolean }).isMainBranch ?? true;
+      // Clear any stale impersonation on fresh login
+      token.impersonatingBranchId = null;
+      token.impersonationStartedAt = null;
+    }
+    // Handle session update for per-session impersonation (client calls update({ impersonatingBranchId }))
+    if (trigger === "update" && session) {
+      const s = session as any;
+      if ("impersonatingBranchId" in s) {
+        if (s.impersonatingBranchId) {
+          token.impersonatingBranchId = s.impersonatingBranchId;
+          token.impersonationStartedAt = s.impersonationStartedAt ?? Date.now();
+        } else {
+          token.impersonatingBranchId = null;
+          token.impersonationStartedAt = null;
+        }
+      }
+      if ("impersonationStartedAt" in s && !s.impersonationStartedAt) {
+        token.impersonationStartedAt = null;
+      }
+    }
+    // Auto-expire after 4 hours
+    if (token.impersonationStartedAt && token.impersonatingBranchId) {
+      const age = Date.now() - (token.impersonationStartedAt as number);
+      if (age > 4 * 60 * 60 * 1000) {
+        token.impersonatingBranchId = null;
+        token.impersonationStartedAt = null;
+      }
+    }
+    return token;
+  },
+  session: async ({ session, token }: any) => {
+    if (session?.user) {
+      (session.user as any).role = token.role as string | undefined;
+      (session.user as any).instituteId =
+        (token.instituteId as string | null | undefined) ?? null;
+      (session.user as any).id = token.id as string | undefined;
+      (session.user as any).branchId = token.branchId as string | null | undefined;
+      (session.user as any).isMainBranch = token.isMainBranch as boolean | undefined;
+      (session.user as any).impersonatingBranchId = (token as any).impersonatingBranchId as string | null | undefined;
+      (session.user as any).impersonationStartedAt = (token as any).impersonationStartedAt as number | null | undefined;
+      // Expose isImpersonating for convenience
+      (session.user as any).isImpersonatingBranch = Boolean((token as any).impersonatingBranchId);
+    }
+    return session;
+  },
+};
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
@@ -202,61 +257,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt: async ({ token, user, trigger, session }) => {
-      if (user) {
-        token.role = (user as { role?: string }).role;
-        token.instituteId = (user as { instituteId?: string | null }).instituteId ?? null;
-        token.id = (user as { id?: string }).id;
-        token.branchId = (user as { branchId?: string | null }).branchId ?? null;
-        token.isMainBranch = (user as { isMainBranch?: boolean }).isMainBranch ?? true;
-        // Clear any stale impersonation on fresh login
-        token.impersonatingBranchId = null;
-        token.impersonationStartedAt = null;
-      }
-      // Handle session update for per-session impersonation (client calls update({ impersonatingBranchId }))
-      if (trigger === "update" && session) {
-        const s = session as any;
-        if ("impersonatingBranchId" in s) {
-          token.impersonatingBranchId = s.impersonatingBranchId ?? null;
-          token.impersonationStartedAt = s.impersonatingBranchId ? Date.now() : null;
-        }
-        if ("impersonationStartedAt" in s) {
-          token.impersonationStartedAt = s.impersonationStartedAt ?? null;
-        }
-        // Explicit exit
-        if (s.impersonatingBranchId === null) {
-          token.impersonatingBranchId = null;
-          token.impersonationStartedAt = null;
-        }
-      }
-      // Auto-expire after 4 hours
-      if (token.impersonationStartedAt && token.impersonatingBranchId) {
-        const age = Date.now() - (token.impersonationStartedAt as number);
-        if (age > 4 * 60 * 60 * 1000) {
-          token.impersonatingBranchId = null;
-          token.impersonationStartedAt = null;
-        }
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      if (session.user) {
-        (session.user as any).role = token.role as string | undefined;
-        (session.user as any).instituteId =
-          (token.instituteId as string | null | undefined) ?? null;
-        (session.user as any).id = token.id as string | undefined;
-        (session.user as any).branchId = token.branchId as string | null | undefined;
-        (session.user as any).isMainBranch = token.isMainBranch as boolean | undefined;
-        (session.user as any).impersonatingBranchId = (token as any).impersonatingBranchId as string | null | undefined;
-        (session.user as any).impersonationStartedAt = (token as any).impersonationStartedAt as number | null | undefined;
-        // Expose isImpersonating for convenience
-        (session.user as any).isImpersonatingBranch = Boolean((token as any).impersonatingBranchId);
-      }
-      return session;
-    },
-
-  },
-
+  callbacks: authCallbacks,
 });
 

@@ -97,7 +97,7 @@ export function BranchesView({
       const res = await fetch("/api/branches/impersonate/exit", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       try {
-        await update({ impersonatingBranchId: null });
+        await update({ impersonatingBranchId: null, impersonationStartedAt: null });
       } catch {}
       window.location.reload();
     } catch {
