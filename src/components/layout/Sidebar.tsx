@@ -82,6 +82,7 @@ const nav: NavItem[] = [
 const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
   OWNER: ["*"], // Full system access
   ADMIN: ["*"], // Full operational access
+  PLATFORM_ADMIN: ["*"], // Full access under institute impersonation
   STAFF: [
     "/dashboard",
     "/students",
@@ -166,8 +167,8 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const isPlatformImpersonating =
     typeof document !== "undefined" ? document.cookie.includes("platform_impersonate_institute") : false;
   const isImpersonating = isImpersonatingBranch || isPlatformImpersonating;
-  // When PLATFORM_ADMIN is impersonating, treat as OWNER for nav so Courses/Faculty/etc. show
-  const effectiveRole = userRole === "PLATFORM_ADMIN" && isImpersonating ? "OWNER" : userRole;
+  // When PLATFORM_ADMIN is in institute dashboard (via impersonation), treat as OWNER for nav
+  const effectiveRole = userRole === "PLATFORM_ADMIN" ? "OWNER" : userRole;
 
   useEffect(() => {
     fetch("/api/institutes/features")
@@ -188,7 +189,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const visibleNav = nav
     .filter((item) => {
       if (item.featureKey && !features[item.featureKey]) return false;
-      if (effectiveRole === "OWNER" || effectiveRole === "ADMIN") {
+      if (effectiveRole === "OWNER" || effectiveRole === "ADMIN" || effectiveRole === "PLATFORM_ADMIN") {
         if (allowedList.includes("*")) return true;
         return allowedList.includes(item.href);
       }

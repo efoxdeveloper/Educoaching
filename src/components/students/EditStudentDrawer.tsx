@@ -29,6 +29,7 @@ export interface EditableStudent {
   parentMobile?: string | null;
   courseId: string;
   batchId?: string | null;
+  branchId?: string | null;
   status: string;
   totalFee: number | string;
   dueDate?: string | null;
@@ -44,6 +45,7 @@ export function EditStudentDrawer({
   student,
   courses,
   batches,
+  branches = [],
   onUpdated,
 }: {
   open: boolean;
@@ -51,6 +53,7 @@ export function EditStudentDrawer({
   student: EditableStudent | null;
   courses: { id: string; name: string; fee: string; duration?: string | null }[];
   batches: { id: string; name: string; courseId: string }[];
+  branches?: { id: string; name: string; city?: string | null; isMainBranch?: boolean }[];
   onUpdated?: () => void;
 }) {
   const router = useRouter();
@@ -62,6 +65,7 @@ export function EditStudentDrawer({
   const [parentMobile, setParentMobile] = useState("");
   const [courseId, setCourseId] = useState("");
   const [batchId, setBatchId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [status, setStatus] = useState("ACTIVE");
   const [totalFee, setTotalFee] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -105,6 +109,15 @@ export function EditStudentDrawer({
       setParentMobile(student.parentMobile || "");
       setCourseId(student.courseId || "");
       setBatchId(student.batchId || "");
+      const existingBranch = (student as any).branchId;
+      if (existingBranch) {
+        setBranchId(existingBranch);
+      } else if (branches.length > 0) {
+        const mainBranch = branches.find((b) => b.isMainBranch) || branches[0];
+        setBranchId(mainBranch ? mainBranch.id : "");
+      } else {
+        setBranchId("");
+      }
       setStatus(student.status || "ACTIVE");
       setTotalFee(String(student.totalFee || ""));
       setDueDate(student.dueDate ? student.dueDate.split("T")[0] : "");
@@ -143,6 +156,7 @@ export function EditStudentDrawer({
           photoUrl: photoUrl || null,
           courseId,
           batchId: batchId || null,
+          branchId: branchId || null,
           status,
           totalFee: plan === "MONTHLY" && monthlyAmount ? Number(monthlyAmount) : Number(totalFee),
           dueDate: dueDate || null,
@@ -327,6 +341,34 @@ export function EditStudentDrawer({
             </Select>
           </FormControl>
         </Box>
+
+        {/* Branch correction — visible when student's branch is missing or institute has multiple branches */}
+        {branches.length > 0 && (
+          <FormControl fullWidth size="small">
+            <InputLabel id="edit-student-branch-label">Branch / Campus</InputLabel>
+            <Select
+              labelId="edit-student-branch-label"
+              label="Branch / Campus"
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "white" }}
+            >
+              <MenuItem value="">
+                <em>Select branch</em>
+              </MenuItem>
+              {branches.map((b) => (
+                <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
+                  {b.name} {b.city ? `(${b.city})` : ""} {b.isMainBranch ? " (Main)" : ""}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+        {student && !(student as any).branchId && (
+          <Alert severity="warning" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "#FFFBEB", borderColor: "#FDE68A" }}>
+            This student has no branch assigned (created when institute had only one branch). Please select a branch to correct.
+          </Alert>
+        )}
 
         <DurationPicker value={courseDuration} onChange={(val) => setCourseDuration(val)} label="Course Duration (Days / Months / Years)" />
 

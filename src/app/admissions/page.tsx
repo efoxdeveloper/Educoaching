@@ -11,7 +11,7 @@ export default async function AdmissionsPage() {
   if (!instituteId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
-  if (role !== "OWNER" && role !== "ADMIN" && role !== "COUNSELLOR") {
+  if (role !== "OWNER" && role !== "ADMIN" && role !== "COUNSELLOR" && role !== "PLATFORM_ADMIN") {
     redirect("/dashboard");
   }
 

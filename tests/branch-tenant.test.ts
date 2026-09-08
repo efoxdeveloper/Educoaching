@@ -56,11 +56,13 @@ jest.mock("@/lib/institute-settings", () => ({
 
 // ─── Import SUT ──────────────────────────────────────────────────────────────
 let requireInstitute: typeof import("@/lib/tenant").requireInstitute;
+let getBranchImpersonationState: typeof import("@/lib/tenant").getBranchImpersonationState;
 let BRANCH_IMPERSONATION_COOKIE: typeof import("@/lib/tenant").BRANCH_IMPERSONATION_COOKIE;
 
 beforeAll(async () => {
   const mod = await import("@/lib/tenant");
   requireInstitute = mod.requireInstitute;
+  getBranchImpersonationState = mod.getBranchImpersonationState;
   BRANCH_IMPERSONATION_COOKIE = mod.BRANCH_IMPERSONATION_COOKIE;
 });
 
@@ -225,5 +227,30 @@ describe("requireInstitute() — branch resolution", () => {
     expect("error" in ctx).toBe(true);
     if (!("error" in ctx)) return;
     expect((ctx.error as any).status).toBe(401);
+  });
+
+  it("Platform Admin impersonating an institute resolves the institute's Main Branch correctly", async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: "admin-1", role: "PLATFORM_ADMIN", instituteId: null },
+    });
+    mockGet.mockImplementation((name: string) => {
+      if (name === "platform_impersonate_institute") {
+        return { value: INST_A };
+      }
+      return undefined;
+    });
+    mockFindFirst.mockResolvedValueOnce(MAIN_BRANCH_A);
+
+    const branchState = await getBranchImpersonationState();
+    expect(branchState.branchId).toBe(MAIN_BRANCH_A.id);
+    expect(branchState.isImpersonating).toBe(false);
+
+    mockFindFirst.mockResolvedValueOnce(MAIN_BRANCH_A);
+    const ctx = await requireInstitute();
+    expect("error" in ctx).toBe(false);
+    if (!("error" in ctx)) return;
+    expect(ctx.instituteId).toBe(INST_A);
+    expect(ctx.branchId).toBe(MAIN_BRANCH_A.id);
+    expect(ctx.isImpersonating).toBe(true);
   });
 });

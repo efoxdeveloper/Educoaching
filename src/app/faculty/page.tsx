@@ -14,7 +14,7 @@ export default async function FacultyPage() {
   if (!activeBranchId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
-  if (role !== "OWNER" && role !== "ADMIN") {
+  if (role !== "OWNER" && role !== "ADMIN" && role !== "PLATFORM_ADMIN") {
     redirect("/dashboard");
   }
 

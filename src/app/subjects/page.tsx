@@ -3,17 +3,17 @@ import { Shell } from "@/components/layout/Shell";
 import { SubjectsTable } from "@/components/subjects/SubjectsTable";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
 
 export default async function SubjectsPage() {
   const session = await auth();
+  const instituteId = await getInstituteId();
   const { branchId: activeBranchId, branch } = await getBranchImpersonationState();
-  const instituteId = (session?.user as any)?.instituteId as string | null;
   if (!instituteId || !activeBranchId) redirect("/login");
 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
-  const canEdit = userRole === "OWNER" || userRole === "ADMIN";
+  const canEdit = userRole === "OWNER" || userRole === "ADMIN" || userRole === "PLATFORM_ADMIN";
 
   const [subjects, courses] = await Promise.all([
     prisma.subject.findMany({

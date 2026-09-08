@@ -50,22 +50,30 @@ export function Topbar({
       .catch(() => {});
   }, []);
 
+  const { data: session, update } = useSession();
+
   const handleBranchChange = async (newBranchId: string) => {
     setSelectedBranch(newBranchId);
     const chosen = branches.find((b) => b.id === newBranchId);
     if (chosen?.isMainBranch) {
       await fetch("/api/branches/impersonate/exit", { method: "POST" });
+      if (update) {
+        await update({ impersonatingBranchId: null });
+      }
     } else {
-      await fetch("/api/branches/impersonate", {
+      const res = await fetch("/api/branches/impersonate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ branchId: newBranchId }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (update) {
+        await update({ impersonatingBranchId: data.impersonatingBranchId || newBranchId });
+      }
     }
     window.location.reload();
   };
 
-  const { data: session } = useSession();
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "";
   const userRole = String(rawRole).toUpperCase();
   const userBranchId = (session?.user as { branchId?: string | null } | undefined)?.branchId;

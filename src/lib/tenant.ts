@@ -127,9 +127,17 @@ async function resolveBranchContext(
     return { isImpersonating: false, branchId: null, branch: null };
   }
 
-  // Per-session impersonation via JWT claim (tied to userId, not global cookie/DB)
-  const impersonatingBranchId = (user as any)?.impersonatingBranchId as string | null | undefined;
+  // Per-session impersonation via JWT claim (tied to userId) or fallback branch cookie
+  let impersonatingBranchId = (user as any)?.impersonatingBranchId as string | null | undefined;
   const impersonationStartedAt = (user as any)?.impersonationStartedAt as number | null | undefined;
+
+  if (!impersonatingBranchId) {
+    try {
+      const cookieStore = cookies();
+      impersonatingBranchId = cookieStore.get(BRANCH_IMPERSONATION_COOKIE)?.value || null;
+    } catch {}
+  }
+
   if (impersonatingBranchId) {
     // Auto-expire after 4 hours
     if (impersonationStartedAt && Date.now() - impersonationStartedAt > 4 * 60 * 60 * 1000) {
@@ -173,7 +181,17 @@ export async function getBranchImpersonationState(): Promise<{
 }> {
   const session = await auth();
   const user = session?.user as (SessionUser & { isMainBranch?: boolean; branchId?: string | null }) | undefined;
-  const instituteId = user?.instituteId || "";
+  let instituteId = user?.instituteId || "";
+
+  if (user?.role === "PLATFORM_ADMIN") {
+    try {
+      const cookieStore = cookies();
+      const impersonated = cookieStore.get(IMPERSONATION_COOKIE)?.value;
+      if (impersonated) {
+        instituteId = impersonated;
+      }
+    } catch {}
+  }
 
   if (!instituteId) {
     return { isImpersonating: false, branchId: null, branch: null };

@@ -9,8 +9,18 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const ctx = await requireInstitute();
   if ("error" in ctx) return ctx.error;
 
+  const upperRole = String((ctx.session?.user as any)?.role || "").toUpperCase();
+  const isInstituteAdmin =
+    upperRole === "OWNER" ||
+    upperRole === "PLATFORM_ADMIN" ||
+    Boolean((ctx.session?.user as any)?.isMainBranch);
+
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
+    where: {
+      id: params.id,
+      instituteId: ctx.instituteId,
+      ...(!isInstituteAdmin && ctx.branchId ? { branchId: ctx.branchId as string } : {}),
+    },
     include: {
       course: { select: { id: true, name: true, fee: true, duration: true } },
       batch: { select: { id: true, name: true, timing: true } },
@@ -215,8 +225,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const ctx = await requirePermission("students:write");
   if ("error" in ctx) return ctx.error;
 
+  const upperRole = String((ctx.session?.user as any)?.role || "").toUpperCase();
+  const isInstituteAdmin =
+    upperRole === "OWNER" ||
+    upperRole === "PLATFORM_ADMIN" ||
+    Boolean((ctx.session?.user as any)?.isMainBranch);
+
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
+    where: {
+      id: params.id,
+      instituteId: ctx.instituteId,
+      ...(!isInstituteAdmin && ctx.branchId ? { branchId: ctx.branchId as string } : {}),
+    },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
@@ -361,15 +381,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   if (branchId !== undefined) {
     if (branchId === null || branchId === "") {
-      return NextResponse.json({ error: "Branch must remain as your active branch" }, { status: 403 });
+      const defaultBranch = await prisma.branch.findFirst({
+        where: { instituteId: ctx.instituteId, isMainBranch: true },
+      });
+      updateData.branchId = ctx.branchId || defaultBranch?.id;
     } else {
-      if (branchId !== ctx.branchId) {
-        return NextResponse.json({ error: "Branch mismatch" }, { status: 403 });
+      if (!isInstituteAdmin && branchId !== ctx.branchId) {
+        return NextResponse.json({ error: "Branch mismatch: cannot assign student to a different branch." }, { status: 403 });
       }
       const branch = await prisma.branch.findFirst({
         where: { id: branchId, instituteId: ctx.instituteId },
       });
-      if (!branch) return NextResponse.json({ error: "Branch not found" }, { status: 400 });
+      if (!branch) return NextResponse.json({ error: "Branch not found for this institute" }, { status: 400 });
       updateData.branchId = branchId;
     }
   }
@@ -418,8 +441,18 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const { searchParams } = new URL(req.url);
   const permanent = searchParams.get("permanent") === "true";
 
+  const upperRole = String((ctx.session?.user as any)?.role || "").toUpperCase();
+  const isInstituteAdmin =
+    upperRole === "OWNER" ||
+    upperRole === "PLATFORM_ADMIN" ||
+    Boolean((ctx.session?.user as any)?.isMainBranch);
+
   const student = await prisma.student.findFirst({
-    where: { id: params.id, instituteId: ctx.instituteId, branchId: ctx.branchId as string },
+    where: {
+      id: params.id,
+      instituteId: ctx.instituteId,
+      ...(!isInstituteAdmin && ctx.branchId ? { branchId: ctx.branchId as string } : {}),
+    },
   });
 
   if (!student) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute, getBranchImpersonationState } from "@/lib/tenant";
+import { cookies } from "next/headers";
+import { requireInstitute, getBranchImpersonationState, BRANCH_IMPERSONATION_COOKIE } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
 
 export async function GET() {
@@ -51,7 +52,9 @@ export async function POST(req: Request) {
   }
 
   const isMain = Boolean(branch.isMainBranch || (branch.name && branch.name.toLowerCase().includes("main")));
+  const cookieStore = cookies();
   if (isMain) {
+    cookieStore.delete(BRANCH_IMPERSONATION_COOKIE);
     // Switching to Main — client will clear JWT via update({ impersonatingBranchId: null })
     await logAudit({
       instituteId: ctx.instituteId,
@@ -71,6 +74,14 @@ export async function POST(req: Request) {
       impersonatingBranchId: null,
     });
   }
+
+  cookieStore.set(BRANCH_IMPERSONATION_COOKIE, branch.id, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 4,
+  });
 
   await logAudit({
     instituteId: ctx.instituteId,

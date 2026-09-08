@@ -191,6 +191,20 @@ export function AddStudentDrawer({
     });
   }, [batches, form.courseId, form.branchId]);
 
+  // Single-branch institutes: auto-set branchId to Main Branch id when branch selector is hidden
+  // Prevents branchId staying "" -> null -> invisible student under branch impersonation
+  useEffect(() => {
+    if (branches.length > 0 && !form.branchId) {
+      const hasOnlyMain = branches.filter((b) => !b.isMainBranch).length === 0;
+      if (hasOnlyMain) {
+        const mainBranch = branches.find((b) => b.isMainBranch) || branches[0];
+        if (mainBranch) {
+          setForm((prev) => (prev.branchId ? prev : { ...prev, branchId: mainBranch.id }));
+        }
+      }
+    }
+  }, [branches, open, form.branchId]);
+
   // Auto-fill duration and default fee mode when course selection changes
   useEffect(() => {
     if (selectedCourse) {
@@ -317,12 +331,16 @@ export function AddStudentDrawer({
         dueDateVal = firstPending ? firstPending.dueDate : null;
       }
 
+      const hasOnlyMain = branches.filter((b) => !b.isMainBranch).length === 0;
+      const defaultMainBranch = hasOnlyMain ? (branches.find((b) => b.isMainBranch) || branches[0]) : null;
+      const effectiveBranchId = form.branchId || defaultMainBranch?.id || null;
+
       const res = await fetch("/api/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          branchId: form.branchId || null,
+          branchId: effectiveBranchId,
           totalFee: feeMode === "MONTHLY" ? Number(monthlyAmount || 0) * durationMonths : Number(totalFee),
           paidFee: initialPaid,
           dueDate: dueDateVal,
@@ -354,7 +372,7 @@ export function AddStudentDrawer({
         parentMobile: "",
         parentEmail: "",
         courseId: "",
-        branchId: "",
+        branchId: defaultMainBranch?.id || "",
         batchId: "",
       });
       setPhotoUrl(null);

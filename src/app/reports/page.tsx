@@ -2,17 +2,17 @@ import { redirect } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { ReportsView } from "@/components/reports/ReportsView";
 import { auth } from "@/lib/auth";
-import { getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
 import { getReportsData } from "@/lib/reports-data";
 
 export default async function ReportsPage() {
   const session = await auth();
+  const instituteId = await getInstituteId();
   const { branchId: activeBranchId } = await getBranchImpersonationState();
-  const instituteId = (session?.user as any)?.instituteId as string | null;
   if (!instituteId || !activeBranchId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
-  if (role !== "OWNER" && role !== "ADMIN" && role !== "ACCOUNTANT") {
+  if (role !== "OWNER" && role !== "ADMIN" && role !== "ACCOUNTANT" && role !== "PLATFORM_ADMIN") {
     redirect("/dashboard");
   }
 

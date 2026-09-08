@@ -141,6 +141,7 @@ export function StudentProfileDrawer({
   onClose,
   courses,
   batches,
+  branches = [],
   onRefreshParent,
 }: {
   studentId: string | null;
@@ -148,6 +149,7 @@ export function StudentProfileDrawer({
   onClose: () => void;
   courses: { id: string; name: string; fee: string; duration?: string | null }[];
   batches: { id: string; name: string; courseId: string }[];
+  branches?: { id: string; name: string; city?: string | null; isMainBranch?: boolean }[];
   onRefreshParent?: () => void;
 }) {
   const router = useRouter();
@@ -217,6 +219,7 @@ export function StudentProfileDrawer({
         parentMobile: data.parentMobile,
         courseId: data.course.id,
         batchId: data.batch?.id,
+        branchId: (data as any).branchId || data.branch?.id || null,
         status: data.status,
         totalFee: data.feeStats.totalFee,
         dueDate: data.feeStats.dueDate,
@@ -831,6 +834,7 @@ export function StudentProfileDrawer({
         student={editableStudent}
         courses={courses}
         batches={batches}
+        branches={branches}
         onUpdated={() => {
           loadDetails();
           if (onRefreshParent) onRefreshParent();

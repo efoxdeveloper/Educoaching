@@ -452,6 +452,7 @@ export function StudentsTable({
         onClose={() => setProfileStudentId(null)}
         courses={courses}
         batches={batches}
+        branches={branches}
         onRefreshParent={() => router.refresh()}
       />
 
@@ -461,6 +462,7 @@ export function StudentsTable({
         student={editStudent}
         courses={courses}
         batches={batches}
+        branches={branches}
         onUpdated={() => router.refresh()}
       />
 

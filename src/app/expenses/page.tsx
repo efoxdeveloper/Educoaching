@@ -10,7 +10,7 @@ export default async function ExpensesPage() {
   if (!instituteId) redirect("/login");
 
   const role = String((session?.user as { role?: string })?.role || "").toUpperCase();
-  if (role !== "OWNER" && role !== "ADMIN" && role !== "ACCOUNTANT") {
+  if (role !== "OWNER" && role !== "ADMIN" && role !== "ACCOUNTANT" && role !== "PLATFORM_ADMIN") {
     redirect("/dashboard");
   }
 

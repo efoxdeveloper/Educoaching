@@ -70,8 +70,11 @@ export async function POST(req: Request) {
 
   const user: any = session.user;
   const userId = user.id as string;
-  const role = String(user.role || "").toUpperCase();
-  const instituteId = user.instituteId as string | null;
+  let instituteId = user.instituteId as string | null;
+  if (role === "PLATFORM_ADMIN") {
+    const { getInstituteId } = await import("@/lib/tenant");
+    instituteId = await getInstituteId();
+  }
 
   // Branch context via existing helper (respects impersonation)
   let branchId: string | null = null;

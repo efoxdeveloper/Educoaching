@@ -3,12 +3,12 @@ import { Shell } from "@/components/layout/Shell";
 import { AttendanceView } from "@/components/attendance/AttendanceView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getBranchImpersonationState } from "@/lib/tenant";
+import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
 
 export default async function AttendancePage() {
   const session = await auth();
+  const instituteId = await getInstituteId();
   const { branchId: activeBranchId } = await getBranchImpersonationState();
-  const instituteId = (session?.user as any)?.instituteId as string | null;
   if (!instituteId || !activeBranchId) redirect("/login");
 
   const [courses, batches, students] = await Promise.all([
