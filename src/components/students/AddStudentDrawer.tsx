@@ -517,8 +517,8 @@ export function AddStudentDrawer({
           {branches.filter((b) => !b.isMainBranch).length === 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <FormControl fullWidth size="small" required>
-                <InputLabel id="add-student-course-label-single">Course Program *</InputLabel>
-                <Select displayEmpty labelId="add-student-course-label-single" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                <InputLabel shrink id="add-student-course-label-single">Course Program *</InputLabel>
+                <Select notched displayEmpty labelId="add-student-course-label-single" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   <MenuItem value="" disabled>
                     <em>Select course</em>
                   </MenuItem>
@@ -536,8 +536,8 @@ export function AddStudentDrawer({
           ) : (
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
               <FormControl fullWidth size="small" required>
-                <InputLabel id="add-student-course-label">Course Program *</InputLabel>
-                <Select displayEmpty labelId="add-student-course-label" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                <InputLabel shrink id="add-student-course-label">Course Program *</InputLabel>
+                <Select notched displayEmpty labelId="add-student-course-label" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   <MenuItem value="" disabled>
                     <em>Select course</em>
                   </MenuItem>
@@ -554,8 +554,13 @@ export function AddStudentDrawer({
                 <Select labelId="add-student-branch-label" label="Branch / Campus Location" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   <MenuItem value="">All Branches / Main Branch</MenuItem>
                   {branches.map((b) => (
-                    <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
-                      {b.name} {b.city ? `(${b.city})` : ""}
+                    <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 0.75 }}>
+                      <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <span>
+                          {b.name} {b.city ? `(${b.city})` : ""}
+                        </span>
+                        {b.isMainBranch && <Chip label="Main" size="small" sx={{ height: 16, fontSize: "9px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#4C1D95", border: "1px solid #DDD6FE" }} />}
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>

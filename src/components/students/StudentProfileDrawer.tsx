@@ -496,7 +496,7 @@ export function StudentProfileDrawer({
                 </Box>
 
                 <Card sx={{ overflow: "hidden" }}>
-                  <TableContainer>
+                  <TableContainer sx={{ overflowX: "auto" }}>
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1.25, borderBottom: "1px solid #D6E0EB" } }}>
@@ -541,7 +541,7 @@ export function StudentProfileDrawer({
                   <Box>
                     <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem", mb: 1, display: "block" }}>Monthly Subscription Renewals</Typography>
                     <Card sx={{ overflow: "hidden" }}>
-                      <TableContainer>
+                      <TableContainer sx={{ overflowX: "auto" }}>
                         <Table size="small">
                           <TableHead>
                             <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1 } }}>
@@ -674,7 +674,7 @@ export function StudentProfileDrawer({
                 </Paper>
 
                 <Card sx={{ overflow: "hidden" }}>
-                  <TableContainer>
+                  <TableContainer sx={{ overflowX: "auto" }}>
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1 } }}>

@@ -27,8 +27,18 @@ export function Drawer({
     "max-w-lg": 512,
     "max-w-xl": 576,
     "max-w-2xl": 672,
+    "max-w-3xl": 768,
+    "max-w-4xl": 896,
   };
-  const paperWidth = widthMap[maxWidth] || 448;
+  // Support responsive compound strings like "max-w-2xl lg:max-w-3xl"
+  // by taking the last (largest breakpoint) max-w-* token.
+  const rawTokens = maxWidth.trim().split(/\s+/);
+  const lastToken = rawTokens[rawTokens.length - 1] || "";
+  const resolvedKey = lastToken.includes(":") ? (lastToken.split(":").pop() as string) : lastToken;
+  const paperWidth = widthMap[resolvedKey] || widthMap[maxWidth] || 448;
+  if (process.env.NODE_ENV !== "production" && !widthMap[resolvedKey] && !widthMap[maxWidth]) {
+    console.warn(`[Drawer] Unknown maxWidth "${maxWidth}" (resolved "${resolvedKey}") — falling back to 448px. Add it to widthMap.`);
+  }
 
   return (
     <DrawerMUI

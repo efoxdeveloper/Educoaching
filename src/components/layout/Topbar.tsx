@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Menu, Search, LogOut, Building2, KeyRound, AlertCircle, CheckCircle2, Loader2, X, Mail } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { initials } from "@/lib/utils";
+import Chip from "@mui/material/Chip";
 
 export function Topbar({
   onMenuClick,
@@ -79,7 +80,9 @@ export function Topbar({
     !isSubBranchUser &&
     (userRole === "OWNER" || (userRole === "ADMIN" && isMainBranch) || userRole === "PLATFORM_ADMIN");
 
-  const currentBranchName = branches.find((b) => b.id === (isSubBranchUser ? userBranchId : selectedBranch))?.name;
+  const currentBranch = branches.find((b) => b.id === (isSubBranchUser ? userBranchId : selectedBranch));
+  const currentBranchName = currentBranch?.name;
+  const currentBranchIsMain = !!currentBranch?.isMainBranch;
 
   // Change Password State for logged-in user
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -137,7 +140,7 @@ export function Topbar({
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.isMainBranch ? `🏛️ ${b.name}` : `📍 ${b.name}`}
+                    {b.isMainBranch ? `🏛️ ${b.name} (Main)` : `📍 ${b.name}`}
                   </option>
                 ))}
               </select>
@@ -147,6 +150,7 @@ export function Topbar({
           <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-scholar-50 px-2.5 py-1 text-xs font-semibold text-scholar-700">
             <Building2 size={13} className="text-scholar-500" />
             <span>{currentBranchName ? `📍 ${currentBranchName} Campus` : "Assigned Campus Credentials"}</span>
+            {currentBranchIsMain && currentBranchName && <Chip label="Main" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#4C1D95", border: "1px solid #DDD6FE" }} />}
           </div>
         )}
 

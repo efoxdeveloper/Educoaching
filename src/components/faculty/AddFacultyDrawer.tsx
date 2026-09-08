@@ -575,6 +575,7 @@ export function AddFacultyDrawer({
                         >
                           <span className="truncate">
                             {b.name} {b.city ? `(${b.city})` : ""}
+                            {b.isMainBranch ? " (Main)" : ""}
                           </span>
                           {isSelected && <Check size={14} className="shrink-0 ml-1" />}
                         </button>

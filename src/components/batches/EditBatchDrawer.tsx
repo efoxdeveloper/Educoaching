@@ -506,9 +506,15 @@ export function EditBatchDrawer({
                             "&:hover": { bgcolor: isSelected ? "#182F4C" : "#F8FAFC" },
                           }}
                         >
-                          <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 600 : 500, color: isSelected ? "white" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {b.name} {b.city ? `(${b.city})` : ""}
-                          </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+                            <Typography
+                              variant="caption"
+                              sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 600 : 500, color: isSelected ? "white" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            >
+                              {b.name} {b.city ? `(${b.city})` : ""}
+                            </Typography>
+                            {b.isMainBranch && <Chip label="Main" size="small" sx={{ height: 14, fontSize: "8px", fontWeight: 700, bgcolor: isSelected ? "white" : "#F5F3FF", color: isSelected ? "#1E3A5F" : "#4C1D95", border: `1px solid ${isSelected ? "white" : "#DDD6FE"}` }} />}
+                          </Box>
                           {isSelected && (
                             <Box sx={{ width: 16, height: 16, borderRadius: "9999px", bgcolor: "white", color: "#1E3A5F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, flexShrink: 0, ml: 1 }}>
                               ✓

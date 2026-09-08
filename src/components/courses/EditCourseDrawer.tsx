@@ -408,6 +408,7 @@ export function EditCourseDrawer({
                             <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 700 : 500, color: isSelected ? "#1E3A5F" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {branch.name} {branch.city ? `(${branch.city})` : ""}
                             </Typography>
+                            {branch.isMainBranch && <Chip label="Main" size="small" sx={{ height: 14, fontSize: "8px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#4C1D95", border: "1px solid #DDD6FE" }} />}
                           </Box>
                           {isSelected && <Chip label="✓" size="small" sx={{ height: 18, minWidth: 18, fontSize: "10px", bgcolor: "#1E3A5F", color: "white", "& .MuiChip-label": { px: 0.5 } }} />}
                         </Paper>

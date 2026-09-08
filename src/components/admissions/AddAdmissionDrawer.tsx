@@ -198,7 +198,7 @@ export function AddAdmissionDrawer({
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
-                    {b.isMainBranch ? " (Main Branch)" : ""}
+                    {b.isMainBranch ? " (Main)" : ""}
                   </option>
                 ))}
               </select>
