@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Users,
   Wallet,
   IndianRupee,
-  TrendingUp,
-  TrendingDown,
   ArrowUpRight,
-  UserCheck,
   Target,
   Clock,
   AlertCircle,
