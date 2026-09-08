@@ -26,6 +26,13 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
 
 export function OverviewTab({
   data,
@@ -37,145 +44,118 @@ export function OverviewTab({
   const { overview, batchReport, admissionReport, feeReport, attendanceReport, resultReport } = data;
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
-      {/* Top Level 6-Domain Summary KPIs */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 w-full max-w-full min-w-0">
-        {/* Students */}
-        <div
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
+      {/* Top Level 6-Domain Summary KPIs — MUI Card/Paper */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr", xl: "repeat(6, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("students")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-scholar-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#94A3B8", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Students</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-scholar-50 text-scholar-600 group-hover:bg-scholar-600 group-hover:text-white transition-colors">
-              <Users size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">{overview.totalStudents}</p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>{overview.activeStudents} active ({overview.activeStudentsPct}%)</span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Students</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93" }}><Users size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.5rem" }}>{overview.totalStudents}</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{overview.activeStudents} active ({overview.activeStudentsPct}%)</Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
 
-        {/* Batches */}
-        <div
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("batches")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-scholar-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#94A3B8", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Batches</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-scholar-50 text-scholar-600 group-hover:bg-scholar-600 group-hover:text-white transition-colors">
-              <Layers size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">{overview.totalBatches}</p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>{overview.overallBatchOccupancy}% occupancy</span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Batches</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93" }}><Layers size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.5rem" }}>{overview.totalBatches}</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{overview.overallBatchOccupancy}% occupancy</Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
 
-        {/* Admissions */}
-        <div
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("admissions")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-marigold-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#E8A33D", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Admissions</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-marigold-50 text-marigold-600 group-hover:bg-marigold-500 group-hover:text-white transition-colors">
-              <ClipboardList size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">{overview.totalAdmissions}</p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>{overview.enrolledAdmissions} enrolled ({overview.admissionConversionRate}%)</span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Admissions</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#FFFBEB", color: "#D97706" }}><ClipboardList size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.5rem" }}>{overview.totalAdmissions}</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{overview.enrolledAdmissions} enrolled ({overview.admissionConversionRate}%)</Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
 
-        {/* Fee Collection */}
-        <div
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("fees")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-success-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#10B981", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Collection</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-50 text-success-600 group-hover:bg-success-600 group-hover:text-white transition-colors">
-              <Wallet size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-xl font-bold text-ink truncate">
-            {formatCurrency(overview.totalPaidFee)}
-          </p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>{overview.feeCollectionEfficiency}% recovered</span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Collection</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#ECFDF5", color: "#059669" }}><Wallet size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatCurrency(overview.totalPaidFee)}</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{overview.feeCollectionEfficiency}% recovered</Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
 
-        {/* Attendance */}
-        <div
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("attendance")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-scholar-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#94A3B8", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Attendance</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-scholar-50 text-scholar-600 group-hover:bg-scholar-600 group-hover:text-white transition-colors">
-              <CalendarCheck size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">
-            {overview.overallAttendanceRate}%
-          </p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>
-              {overview.lowAttendanceStudentsCount > 0 ? (
-                <span className="text-danger-600 font-medium">
-                  {overview.lowAttendanceStudentsCount} low (&lt;75%)
-                </span>
-              ) : (
-                "Healthy rates"
-              )}
-            </span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Attendance</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93" }}><CalendarCheck size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.5rem" }}>{overview.overallAttendanceRate}%</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: overview.lowAttendanceStudentsCount > 0 ? "#DC2626" : "#7E9BBC", fontWeight: overview.lowAttendanceStudentsCount > 0 ? 600 : 400 }}>
+              {overview.lowAttendanceStudentsCount > 0 ? `${overview.lowAttendanceStudentsCount} low (<75%)` : "Healthy rates"}
+            </Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
 
-        {/* Results */}
-        <div
+        <Paper
+          variant="outlined"
           onClick={() => onNavigateTab("results")}
-          className="group cursor-pointer rounded-2xl border border-scholar-100 bg-white p-4 shadow-card transition-all hover:border-marigold-300 hover:shadow-md"
+          sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", cursor: "pointer", transition: "all 0.15s", "&:hover": { borderColor: "#E8A33D", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Test Pass %</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-marigold-50 text-marigold-600 group-hover:bg-marigold-500 group-hover:text-white transition-colors">
-              <Award size={16} />
-            </div>
-          </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">
-            {overview.overallPassRate}%
-          </p>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-scholar-400">
-            <span>Avg {overview.instituteAverageScore}% ({overview.totalTests} tests)</span>
-            <ArrowRight size={12} className="text-scholar-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
-      </div>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Test Pass %</Typography>
+            <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#FFFBEB", color: "#D97706" }}><Award size={16} /></Avatar>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700, color: "#171A21", fontSize: "1.5rem" }}>{overview.overallPassRate}%</Typography>
+          <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Avg {overview.instituteAverageScore}% ({overview.totalTests} tests)</Typography>
+            <ArrowRight size={12} style={{ color: "#94A3B8", opacity: 0.6 }} />
+          </Box>
+        </Paper>
+      </Box>
 
-      {/* Visual Charts Grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Monthly Fee Collection Growth */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Fee Collection Trend</h3>
-              <p className="text-xs text-scholar-400">Monthly total collections (INR)</p>
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600">
-              <TrendingUp size={12} /> {overview.feeCollectionEfficiency}% Recovered
-            </span>
-          </div>
+      {/* Visual Charts Grid — keep recharts exactly */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Fee Collection Trend</Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>Monthly total collections (INR)</Typography>
+            </Box>
+            <Chip icon={<TrendingUp size={12} />} label={`${overview.feeCollectionEfficiency}% Recovered`} size="small" sx={{ bgcolor: "#ECFDF5", color: "#065f46", border: "1px solid #A7F3D0", fontWeight: 600, fontSize: "0.70rem", height: 22 }} />
+          </Box>
 
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={overview.monthlyCollectionTrend} margin={{ left: -10, right: 10, top: 10 }}>
@@ -194,7 +174,7 @@ export function OverviewTab({
                 tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                 formatter={(val) => [`₹${Number(val ?? 0).toLocaleString("en-IN")}`, "Collected"]}
               />
               <Area type="monotone" dataKey="amount" stroke="#1E3A5F" strokeWidth={2.5} fill="url(#reportsFeeFill)" />
@@ -202,25 +182,21 @@ export function OverviewTab({
           </ResponsiveContainer>
         </Card>
 
-        {/* Student Enrollments by Course */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Students by Course</h3>
-              <p className="text-xs text-scholar-400">Enrollment distribution across active offerings</p>
-            </div>
-            <button
-              onClick={() => onNavigateTab("students")}
-              className="text-xs font-medium text-scholar-600 hover:text-scholar-800"
-            >
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Students by Course</Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>Enrollment distribution across active offerings</Typography>
+            </Box>
+            <Button size="small" onClick={() => onNavigateTab("students")} sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#4E6E93", textTransform: "none" }}>
               View list →
-            </button>
-          </div>
+            </Button>
+          </Box>
 
           {overview.studentCourseBreakdown.length === 0 ? (
-            <div className="flex h-60 items-center justify-center text-xs text-scholar-400">
-              No students enrolled yet.
-            </div>
+            <Box sx={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>No students enrolled yet.</Typography>
+            </Box>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
@@ -235,34 +211,30 @@ export function OverviewTab({
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: "#4E6E93" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                   formatter={(val, name, props) => [`${val} students`, props?.payload?.fullName ?? "Course"]}
                 />
-                <Bar dataKey="count" fill="#E8A33D" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="count" fill="#E8A33D" radius={[6, 6, 0, 0] as any} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
 
-        {/* Batch Capacity Utilization */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Batch Capacity vs Enrolled</h3>
-              <p className="text-xs text-scholar-400">Classroom utilization across batches</p>
-            </div>
-            <button
-              onClick={() => onNavigateTab("batches")}
-              className="text-xs font-medium text-scholar-600 hover:text-scholar-800"
-            >
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Batch Capacity vs Enrolled</Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>Classroom utilization across batches</Typography>
+            </Box>
+            <Button size="small" onClick={() => onNavigateTab("batches")} sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#4E6E93", textTransform: "none" }}>
               Manage batches →
-            </button>
-          </div>
+            </Button>
+          </Box>
 
           {batchReport.batches.length === 0 ? (
-            <div className="flex h-60 items-center justify-center text-xs text-scholar-400">
-              No batches created yet.
-            </div>
+            <Box sx={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>No batches created yet.</Typography>
+            </Box>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
@@ -278,36 +250,32 @@ export function OverviewTab({
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: "#4E6E93" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                   formatter={(val, name) => [val, name === "enrolled" ? "Enrolled" : "Total Capacity"]}
                 />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-                <Bar dataKey="enrolled" name="Enrolled" fill="#1E3A5F" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                <Bar dataKey="capacity" name="Capacity" fill="#D6E0EB" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 } as any} />
+                <Bar dataKey="enrolled" name="Enrolled" fill="#1E3A5F" radius={[4, 4, 0, 0] as any} maxBarSize={24} />
+                <Bar dataKey="capacity" name="Capacity" fill="#D6E0EB" radius={[4, 4, 0, 0] as any} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
 
-        {/* Daily Attendance Trend */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Recent Daily Attendance</h3>
-              <p className="text-xs text-scholar-400">Present vs Absent (last 14 days)</p>
-            </div>
-            <button
-              onClick={() => onNavigateTab("attendance")}
-              className="text-xs font-medium text-scholar-600 hover:text-scholar-800"
-            >
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Recent Daily Attendance</Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>Present vs Absent (last 14 days)</Typography>
+            </Box>
+            <Button size="small" onClick={() => onNavigateTab("attendance")} sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#4E6E93", textTransform: "none" }}>
               Detailed view →
-            </button>
-          </div>
+            </Button>
+          </Box>
 
           {attendanceReport.dailyTrend.filter((d) => d.total > 0).length === 0 ? (
-            <div className="flex h-60 items-center justify-center text-xs text-scholar-400">
-              No recent attendance marked.
-            </div>
+            <Box sx={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>No recent attendance marked.</Typography>
+            </Box>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
@@ -318,110 +286,99 @@ export function OverviewTab({
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: "#4E6E93" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                   formatter={(val, name) => [val, name === "present" ? "Present" : "Absent"]}
                 />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-                <Bar dataKey="present" name="Present" fill="#2E7D52" radius={[4, 4, 0, 0]} stackId="a" maxBarSize={24} />
-                <Bar dataKey="absent" name="Absent" fill="#C93B2B" radius={[4, 4, 0, 0]} stackId="a" maxBarSize={24} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 } as any} />
+                <Bar dataKey="present" name="Present" fill="#2E7D52" radius={[4, 4, 0, 0] as any} stackId="a" maxBarSize={24} />
+                <Bar dataKey="absent" name="Absent" fill="#C93B2B" radius={[4, 4, 0, 0] as any} stackId="a" maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
-      </div>
+      </Box>
 
       {/* Financial Health Summary Callout */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col justify-between p-5 bg-gradient-to-br from-scholar-800 to-scholar-900 text-white">
-          <div>
-            <div className="flex items-center justify-between text-scholar-200">
-              <span className="text-xs uppercase tracking-wider font-semibold">Total Dues Outstanding</span>
-              <AlertTriangle size={16} className="text-marigold-400" />
-            </div>
-            <p className="mt-3 font-display text-3xl font-bold text-white">
-              {formatCurrency(overview.totalPendingFee)}
-            </p>
-            <p className="mt-1 text-xs text-scholar-200">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "repeat(3, 1fr)" }, gap: 2 }}>
+        <Card sx={{ p: 2.5, background: "linear-gradient(135deg, #1E3A5F 0%, #182F4C 100%)", color: "white", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "none" }}>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "rgba(255,255,255,0.7)" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "rgba(255,255,255,0.7)" }}>Total Dues Outstanding</Typography>
+              <AlertTriangle size={16} style={{ color: "#E8A33D" }} />
+            </Box>
+            <Typography variant="h5" sx={{ mt: 1.5, fontWeight: 700, color: "white", fontSize: "1.75rem" }}>{formatCurrency(overview.totalPendingFee)}</Typography>
+            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "rgba(255,255,255,0.7)", fontSize: "0.75rem" }}>
               Total assessed across all active students: {formatCurrency(overview.totalBilledFee)}
-            </p>
-          </div>
-          <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-            <span className="text-xs text-scholar-300">
+            </Typography>
+          </Box>
+          <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.7)" }}>
               {feeReport.kpis.overdueCount} student(s) past due date
-            </span>
-            <button
-              onClick={() => onNavigateTab("fees")}
-              className="text-xs font-semibold text-marigold-300 hover:text-white transition-colors"
-            >
+            </Typography>
+            <Button size="small" onClick={() => onNavigateTab("fees")} sx={{ fontSize: "0.70rem", fontWeight: 600, color: "#E8A33D", textTransform: "none", p: 0, minWidth: 0, "&:hover": { color: "white", bgcolor: "transparent" } }}>
               Review Dues →
-            </button>
-          </div>
+            </Button>
+          </Box>
         </Card>
 
-        <Card className="flex flex-col justify-between p-5">
-          <div>
-            <div className="flex items-center justify-between text-scholar-500">
-              <span className="text-xs uppercase tracking-wider font-semibold">Admissions Pipeline</span>
-              <ClipboardList size={16} className="text-scholar-400" />
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-scholar-50 p-3">
-                <p className="text-xs text-scholar-400">Total Enquiries</p>
-                <p className="font-display text-xl font-bold text-ink">{admissionReport.kpis.totalApplications}</p>
-              </div>
-              <div className="rounded-xl bg-success-50 p-3">
-                <p className="text-xs text-success-600">Enrolled</p>
-                <p className="font-display text-xl font-bold text-success-700">{admissionReport.kpis.enrolledCount}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-scholar-500">
-              <span>Pending Decisions: {admissionReport.kpis.pendingCount}</span>
-              <span className="font-semibold text-ink">{admissionReport.kpis.conversionRate}% conversion</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-scholar-100 flex items-center justify-between">
-            <span className="text-xs text-scholar-400">Pipeline: {formatCurrency(admissionReport.kpis.pipelineValue)}</span>
-            <button
-              onClick={() => onNavigateTab("admissions")}
-              className="text-xs font-semibold text-scholar-600 hover:text-scholar-900"
-            >
+        <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#64748b" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b" }}>Admissions Pipeline</Typography>
+              <ClipboardList size={16} style={{ color: "#64748b" }} />
+            </Box>
+            <Box sx={{ mt: 1.5, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#7E9BBC" }}>Total Enquiries</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>{admissionReport.kpis.totalApplications}</Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#A7F3D0", bgcolor: "#ECFDF5" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#065f46" }}>Enrolled</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#065f46", fontSize: "1.25rem" }}>{admissionReport.kpis.enrolledCount}</Typography>
+              </Paper>
+            </Box>
+            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>Pending Decisions: {admissionReport.kpis.pendingCount}</Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#171A21" }}>{admissionReport.kpis.conversionRate}% conversion</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #D6E0EB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>Pipeline: {formatCurrency(admissionReport.kpis.pipelineValue)}</Typography>
+            <Button size="small" onClick={() => onNavigateTab("admissions")} sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#4E6E93", textTransform: "none" }}>
               Admissions →
-            </button>
-          </div>
+            </Button>
+          </Box>
         </Card>
 
-        <Card className="flex flex-col justify-between p-5">
-          <div>
-            <div className="flex items-center justify-between text-scholar-500">
-              <span className="text-xs uppercase tracking-wider font-semibold">Academic Examinations</span>
-              <Award size={16} className="text-scholar-400" />
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-scholar-50 p-3">
-                <p className="text-xs text-scholar-400">Exams Conducted</p>
-                <p className="font-display text-xl font-bold text-ink">{resultReport.kpis.totalTests}</p>
-              </div>
-              <div className="rounded-xl bg-marigold-50 p-3">
-                <p className="text-xs text-marigold-700">Submissions</p>
-                <p className="font-display text-xl font-bold text-marigold-800">{resultReport.kpis.totalEvaluations}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-scholar-500">
-              <span>Overall Pass Rate: {resultReport.kpis.overallPassRate}%</span>
-              <span className="font-semibold text-ink">Highest: {resultReport.kpis.highestMarkOverall} pts</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-scholar-100 flex items-center justify-between">
-            <span className="text-xs text-scholar-400">Institute Avg: {resultReport.kpis.instituteAverageScore}%</span>
-            <button
-              onClick={() => onNavigateTab("results")}
-              className="text-xs font-semibold text-scholar-600 hover:text-scholar-900"
-            >
+        <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#64748b" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b" }}>Academic Examinations</Typography>
+              <Award size={16} style={{ color: "#64748b" }} />
+            </Box>
+            <Box sx={{ mt: 1.5, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#7E9BBC" }}>Exams Conducted</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>{resultReport.kpis.totalTests}</Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#92400e" }}>Submissions</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#92400e", fontSize: "1.25rem" }}>{resultReport.kpis.totalEvaluations}</Typography>
+              </Paper>
+            </Box>
+            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>Overall Pass Rate: {resultReport.kpis.overallPassRate}%</Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#171A21" }}>Highest: {resultReport.kpis.highestMarkOverall} pts</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #D6E0EB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>Institute Avg: {resultReport.kpis.instituteAverageScore}%</Typography>
+            <Button size="small" onClick={() => onNavigateTab("results")} sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#4E6E93", textTransform: "none" }}>
               Exam Results →
-            </button>
-          </div>
+            </Button>
+          </Box>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -25,6 +25,21 @@ import { FeeReportsTab } from "./FeeReportsTab";
 import { ProfitLossReportsTab } from "./ProfitLossReportsTab";
 import { AttendanceReportsTab } from "./AttendanceReportsTab";
 import { ResultReportsTab } from "./ResultReportsTab";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export type ReportTabKey =
   | "overview"
@@ -53,7 +68,7 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
   const [batchFilter, setBatchFilter] = useState("ALL");
   const [isPending, startTransition] = useTransition();
 
-  // Fetch updated data from API
+  // Fetch updated data from API — branch-isolated via getReportsData(instituteId, activeBranchId) on page.tsx:19
   const applyFilters = (
     preset: "ALL" | "30D" | "90D" | "YTD" | "CUSTOM",
     customStart = startDate,
@@ -137,180 +152,193 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
       : data.meta.batches.filter((b) => b.courseId === courseFilter);
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
-      {/* Top Filter & Control Bar */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-scholar-100 bg-white p-4 shadow-card w-full max-w-full min-w-0">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between w-full max-w-full min-w-0">
-          {/* Date Presets */}
-          <div className="flex flex-wrap items-center gap-2 max-w-full">
-            <span className="text-xs font-semibold uppercase tracking-wider text-scholar-400 flex items-center gap-1 shrink-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
+      {/* Top Filter & Control Bar — MUI Paper */}
+      <Paper
+        variant="outlined"
+        sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "0 1px 2px rgba(13,26,42,0.04)", display: "flex", flexDirection: "column", gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}
+      >
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", xl: "row" }, gap: 2, alignItems: { xl: "center" }, justifyContent: "space-between", width: "100%", maxWidth: "100%", minWidth: 0 }}>
+          {/* Date Presets — MUI Chip group + TextField for custom range */}
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, maxWidth: "100%" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
               <Calendar size={13} /> Timeframe:
-            </span>
-            <div className="flex flex-wrap rounded-xl bg-scholar-50 p-1 border border-scholar-100">
-              <button
-                type="button"
-                onClick={() => handlePresetChange("ALL")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                  datePreset === "ALL"
-                    ? "bg-white text-scholar-900 shadow-sm font-semibold"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                All Time
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePresetChange("30D")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                  datePreset === "30D"
-                    ? "bg-white text-scholar-900 shadow-sm font-semibold"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Last 30 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePresetChange("90D")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                  datePreset === "90D"
-                    ? "bg-white text-scholar-900 shadow-sm font-semibold"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Last 90 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePresetChange("YTD")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                  datePreset === "YTD"
-                    ? "bg-white text-scholar-900 shadow-sm font-semibold"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                This Year
-              </button>
-            </div>
+            </Typography>
+            <Paper variant="outlined" sx={{ display: "flex", flexWrap: "wrap", borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", p: 0.5, gap: 0.5 }}>
+              {[
+                { id: "ALL", label: "All Time" },
+                { id: "30D", label: "Last 30 Days" },
+                { id: "90D", label: "Last 90 Days" },
+                { id: "YTD", label: "This Year" },
+              ].map((preset) => (
+                <Chip
+                  key={preset.id}
+                  label={preset.label}
+                  clickable
+                  onClick={() => handlePresetChange(preset.id as any)}
+                  size="small"
+                  sx={{
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "0.70rem",
+                    height: 26,
+                    bgcolor: datePreset === preset.id ? "white" : "transparent",
+                    color: datePreset === preset.id ? "#1E3A5F" : "#475569",
+                    border: datePreset === preset.id ? "1px solid #D6E0EB" : "1px solid transparent",
+                    boxShadow: datePreset === preset.id ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                    "&:hover": { bgcolor: datePreset === preset.id ? "white" : "#EEF2F7" },
+                  }}
+                />
+              ))}
+            </Paper>
 
-            {/* Custom Range Form */}
-            <form onSubmit={handleCustomDateSubmit} className="flex flex-wrap items-center gap-1.5 ml-0 sm:ml-1">
-              <input
+            {/* Custom Range Form — MUI TextField */}
+            <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.75, ml: { sm: 0.5 } }}>
+              <TextField
+                size="small"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Start Date"
-                className="rounded-lg border border-scholar-100 bg-scholar-50/50 px-2 py-1 text-xs text-scholar-700 focus:bg-white focus:outline-none"
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 28 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
               />
-              <span className="text-xs text-scholar-400">to</span>
-              <input
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>to</Typography>
+              <TextField
+                size="small"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                placeholder="End Date"
-                className="rounded-lg border border-scholar-100 bg-scholar-50/50 px-2 py-1 text-xs text-scholar-700 focus:bg-white focus:outline-none"
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 28 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
               />
-              <button
+              <Button
                 type="submit"
+                variant="contained"
+                size="small"
                 disabled={!startDate || !endDate}
-                className="rounded-lg bg-scholar-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-scholar-700 disabled:opacity-40 cursor-pointer"
+                sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, minHeight: 28, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
               >
                 Apply
-              </button>
-            </form>
-          </div>
+              </Button>
+            </Box>
+          </Box>
 
           {/* Right Action Tools */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Course Filter */}
-            <select
-              value={courseFilter}
-              onChange={(e) => handleCourseChange(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-white px-3 py-1.5 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none shadow-2xs"
-            >
-              <option value="ALL">All Courses</option>
-              {data.meta.courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", alignItems: "center" }}>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel id="reports-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
+              <Select
+                labelId="reports-course-label"
+                label="Course"
+                value={courseFilter}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+              >
+                <MenuItem value="ALL">All Courses</MenuItem>
+                {data.meta.courses.map((c) => (
+                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            {/* Batch Filter */}
-            <select
-              value={batchFilter}
-              onChange={(e) => handleBatchChange(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-white px-3 py-1.5 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none shadow-2xs"
-            >
-              <option value="ALL">All Batches</option>
-              {availableBatches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel id="reports-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
+              <Select
+                labelId="reports-batch-label"
+                label="Batch"
+                value={batchFilter}
+                onChange={(e) => handleBatchChange(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+              >
+                <MenuItem value="ALL">All Batches</MenuItem>
+                {availableBatches.map((b) => (
+                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>
+                    {b.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            {/* Refresh */}
-            <button
-              type="button"
+            <IconButton
+              size="small"
               onClick={() => applyFilters(datePreset)}
               disabled={isPending}
-              className="flex h-8 w-8 items-center justify-center rounded-xl border border-scholar-100 bg-white text-scholar-500 hover:text-scholar-900 disabled:opacity-50 shadow-2xs cursor-pointer"
+              sx={{ width: 32, height: 32, borderRadius: "12px", border: "1px solid #D6E0EB", bgcolor: "white", color: "#64748b", "&:hover": { color: "#1E3A5F", bgcolor: "#F8FAFC" } }}
               title="Refresh reports data"
             >
-              <RotateCw size={14} className={isPending ? "animate-spin text-scholar-600" : ""} />
-            </button>
+              {isPending ? <CircularProgress size={14} sx={{ color: "#4E6E93" }} /> : <RotateCw size={14} />}
+            </IconButton>
 
-            {/* Print View */}
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Printer size={14} />}
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 rounded-xl border border-scholar-100 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 shadow-2xs transition-colors cursor-pointer"
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
             >
-              <Printer size={14} />
               Print
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Stack>
+        </Box>
 
-        {/* Tab Navigation Bar */}
-        <div className="w-full max-w-full overflow-x-auto border-t border-scholar-100 pt-3 no-scrollbar">
-          <div className="flex gap-1.5 min-w-max pb-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-scholar-700 text-white shadow-xs"
-                      : "text-scholar-600 hover:bg-scholar-50 hover:text-scholar-900"
-                  }`}
-                >
-                  <Icon size={15} className={isActive ? "text-marigold-400" : "text-scholar-400"} />
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && (
-                    <span
-                      className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-scholar-100 text-scholar-600"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        {/* Tab Navigation Bar — MUI Tabs */}
+        <Box sx={{ width: "100%", maxWidth: "100%", overflowX: "auto", borderTop: "1px solid #D6E0EB", pt: 1, "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v as ReportTabKey)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 36,
+              "& .MuiTabs-indicator": { bgcolor: "#1E3A5F", height: 2, borderRadius: 999 },
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                minHeight: 36,
+                py: 0.75,
+                px: 1.75,
+                borderRadius: "12px",
+                color: "#64748b",
+                "&.Mui-selected": { color: "#1E3A5F", bgcolor: "rgba(30,58,95,0.06)" },
+              },
+            }}
+          >
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.key}
+                value={tab.key}
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <tab.icon size={15} style={{ color: activeTab === tab.key ? "#E8A33D" : "#94A3B8" }} />
+                    {tab.label}
+                    {tab.count !== undefined && (
+                      <Chip
+                        label={tab.count}
+                        size="small"
+                        sx={{
+                          ml: 0.5,
+                          height: 16,
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          bgcolor: activeTab === tab.key ? "rgba(30,58,95,0.1)" : "#EEF2F7",
+                          color: activeTab === tab.key ? "#1E3A5F" : "#475569",
+                          border: "1px solid #D6E0EB",
+                        }}
+                      />
+                    )}
+                  </Box>
+                }
+              />
+            ))}
+          </Tabs>
+        </Box>
+      </Paper>
 
       {/* Active Tab Content */}
-      <div className={`transition-opacity duration-150 w-full max-w-full min-w-0 ${isPending ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
+      <Box sx={{ opacity: isPending ? 0.6 : 1, pointerEvents: isPending ? "none" : "auto", transition: "opacity 0.15s", width: "100%", maxWidth: "100%", minWidth: 0 }}>
         {activeTab === "overview" && (
           <OverviewTab data={data} onNavigateTab={(tab) => setActiveTab(tab as ReportTabKey)} />
         )}
@@ -321,7 +349,7 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
         {activeTab === "fees" && <FeeReportsTab data={data} />}
         {activeTab === "attendance" && <AttendanceReportsTab data={data} />}
         {activeTab === "results" && <ResultReportsTab data={data} />}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

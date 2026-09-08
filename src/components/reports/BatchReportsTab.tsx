@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Layers,
-  Search,
-  Download,
-  Users,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-} from "lucide-react";
+import { Search, Download, Clock } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatCurrency } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
@@ -24,6 +16,22 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
 export function BatchReportsTab({ data }: { data: ReportsData }) {
   const { batchReport } = data;
@@ -86,9 +94,9 @@ export function BatchReportsTab({ data }: { data: ReportsData }) {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
       {/* Batch KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-full min-w-0">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
         <KpiCard
           label="Total Batches"
           value={batchReport.kpis.totalBatches.toString()}
@@ -121,24 +129,26 @@ export function BatchReportsTab({ data }: { data: ReportsData }) {
           }
           trendTone={batchReport.kpis.highOccupancyBatches > 0 ? "danger" : "success"}
         />
-      </div>
+      </Box>
 
-      {/* Chart: Capacity vs Enrolled */}
+      {/* Chart: Capacity vs Enrolled — keep recharts exactly wrapped in MUI Card */}
       {batchReport.batches.length > 0 && (
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem", fontFamily: "var(--font-sora)" }}>
                 Batch Capacity vs Enrolled Comparison
-              </h3>
-              <p className="text-xs text-scholar-400">
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
                 Seat utilization per batch section
-              </p>
-            </div>
-            <span className="text-xs font-semibold text-scholar-600">
-              Avg Utilization: {batchReport.kpis.overallOccupancy}%
-            </span>
-          </div>
+              </Typography>
+            </Box>
+            <Chip
+              label={`Avg Utilization: ${batchReport.kpis.overallOccupancy}%`}
+              size="small"
+              sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", height: 22, border: "1px solid #D6E0EB" }}
+            />
+          </Box>
 
           <ResponsiveContainer width="100%" height={260}>
             <BarChart
@@ -155,198 +165,168 @@ export function BatchReportsTab({ data }: { data: ReportsData }) {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                 formatter={(val, name) => [
-                  val,
+                  val as any,
                   name === "enrolled" ? "Enrolled" : name === "capacity" ? "Capacity" : "Available Seats",
                 ]}
               />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-              <Bar dataKey="enrolled" name="Enrolled" fill="#1E3A5F" radius={[4, 4, 0, 0]} maxBarSize={28} />
-              <Bar dataKey="capacity" name="Capacity" fill="#D6E0EB" radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="enrolled" name="Enrolled" fill="#1E3A5F" radius={[4, 4, 0, 0] as any} maxBarSize={28} />
+              <Bar dataKey="capacity" name="Capacity" fill="#D6E0EB" radius={[4, 4, 0, 0] as any} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       )}
 
       {/* Filter and Export Toolbar */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-scholar-400" />
-            <input
-              type="text"
-              placeholder="Search batches by name, course, or faculty..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-scholar-100 bg-white py-2 pl-9 pr-4 text-sm text-ink placeholder:text-scholar-300 focus:border-scholar-500 focus:outline-none"
-            />
-          </div>
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 1.5, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <TextField
+            size="small"
+            placeholder="Search batches by name, course, or faculty..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" } }}
+          />
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none"
-            >
-              <option value="ALL">All Batches ({batchReport.batches.length})</option>
-              <option value="ACTIVE">Active ({batchReport.kpis.activeBatches})</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.25 }}>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="batch-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+              <Select
+                labelId="batch-status-label"
+                label="Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+              >
+                <MenuItem value="ALL">All Batches ({batchReport.batches.length})</MenuItem>
+                <MenuItem value="ACTIVE">Active ({batchReport.kpis.activeBatches})</MenuItem>
+                <MenuItem value="INACTIVE">Inactive</MenuItem>
+              </Select>
+            </FormControl>
 
-            <button
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Download size={14} />}
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-scholar-700 transition-colors"
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              <Download size={14} />
               Export CSV
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
-        <div className="mt-3 flex items-center justify-between border-t border-scholar-50 pt-2 text-xs text-scholar-400">
-          <span>Showing {filteredBatches.length} of {batchReport.batches.length} batches</span>
+        <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #F1F5F9", pt: 1.25 }}>
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>Showing {filteredBatches.length} of {batchReport.batches.length} batches</Typography>
           {(searchTerm || statusFilter !== "ALL") && (
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("ALL");
-              }}
-              className="text-scholar-600 hover:underline"
-            >
+            <Button size="small" onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); }} sx={{ fontSize: "0.70rem", fontWeight: 500, color: "#475569", textTransform: "none", p: 0, minWidth: 0 }}>
               Reset filters
-            </button>
+            </Button>
           )}
-        </div>
+        </Box>
       </Card>
 
-      {/* Batches Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Batch & Course</th>
-                <th className="px-4 py-3 font-semibold">Schedule</th>
-                <th className="px-4 py-3 font-semibold">Faculty</th>
-                <th className="px-4 py-3 font-semibold text-center">Capacity</th>
-                <th className="px-4 py-3 font-semibold text-center">Enrolled</th>
-                <th className="px-4 py-3 font-semibold">Occupancy Rate</th>
-                <th className="px-4 py-3 font-semibold text-right">Fee Volume</th>
-                <th className="px-4 py-3 font-semibold text-center">Avg Attendance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-scholar-50">
+      {/* Batches Table — MUI Table */}
+      <Card sx={{ overflow: "hidden" }}>
+        <TableContainer>
+          <Table size="small" sx={{ minWidth: 1000 }}>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                <TableCell>Batch &amp; Course</TableCell>
+                <TableCell>Schedule</TableCell>
+                <TableCell>Faculty</TableCell>
+                <TableCell align="center">Capacity</TableCell>
+                <TableCell align="center">Enrolled</TableCell>
+                <TableCell>Occupancy Rate</TableCell>
+                <TableCell align="right">Fee Volume</TableCell>
+                <TableCell align="center">Avg Attendance</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredBatches.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-scholar-400">
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                     No batches found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredBatches.map((b) => (
-                  <tr key={b.id} className="hover:bg-scholar-50/40 transition-colors">
-                    {/* Batch & Course */}
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-ink">{b.name}</p>
-                      <p className="text-[11px] text-scholar-400">{b.courseName}</p>
-                    </td>
-
-                    {/* Schedule */}
-                    <td className="px-4 py-3 text-scholar-600 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={12} className="text-scholar-400" />
-                        <span>{b.timing}</span>
-                      </div>
-                    </td>
-
-                    {/* Faculty */}
-                    <td className="px-4 py-3">
+                  <TableRow key={b.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{b.name}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{b.courseName}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <Clock size={12} style={{ color: "#7E9BBC" }} />
+                        {b.timing}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
                       {b.facultyNames.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                           {b.facultyNames.map((f, i) => (
-                            <span
-                              key={i}
-                              className="rounded-md bg-scholar-100/70 px-2 py-0.5 text-[11px] font-medium text-scholar-700"
-                            >
-                              {f}
-                            </span>
+                            <Chip key={i} label={f} size="small" sx={{ bgcolor: "rgba(238,242,247,0.7)", color: "#334155", fontWeight: 500, fontSize: "0.70rem", height: 22, borderRadius: "6px" }} />
                           ))}
-                        </div>
+                        </Box>
                       ) : (
-                        <span className="text-scholar-400">Not assigned</span>
+                        <Typography variant="caption" sx={{ color: "#94A3B8" }}>Not assigned</Typography>
                       )}
-                    </td>
-
-                    {/* Capacity */}
-                    <td className="px-4 py-3 text-center font-medium text-ink tabular-nums">
-                      {b.capacity}
-                    </td>
-
-                    {/* Enrolled */}
-                    <td className="px-4 py-3 text-center tabular-nums">
-                      <span className="font-semibold text-ink">{b.enrolledCount}</span>
-                      <span className="text-[10px] text-scholar-400 block">
-                        {b.availableSeats} open
-                      </span>
-                    </td>
-
-                    {/* Occupancy Progress Bar */}
-                    <td className="px-4 py-3 min-w-[140px]">
-                      <div className="flex items-center justify-between text-[11px] mb-1">
-                        <span className="font-semibold tabular-nums text-ink">{b.occupancyRate}%</span>
-                        <span className="text-[10px] text-scholar-400">
-                          {b.occupancyRate >= 90 ? (
-                            <span className="text-danger-600 font-bold">NEAR FULL</span>
-                          ) : b.occupancyRate >= 60 ? (
-                            <span className="text-success-600">Optimal</span>
-                          ) : (
-                            <span>Available</span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-scholar-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            b.occupancyRate >= 90
-                              ? "bg-danger-500"
-                              : b.occupancyRate >= 60
-                              ? "bg-success-600"
-                              : "bg-marigold-500"
-                          }`}
-                          style={{ width: `${Math.min(100, b.occupancyRate)}%` }}
-                        />
-                      </div>
-                    </td>
-
-                    {/* Fee Volume */}
-                    <td className="px-4 py-3 text-right font-medium text-ink tabular-nums">
-                      {formatCurrency(b.totalFees)}
-                    </td>
-
-                    {/* Attendance Rate */}
-                    <td className="px-4 py-3 text-center tabular-nums">
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{b.capacity}</TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{b.enrolledCount}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", display: "block" }}>{b.availableSeats} open</Typography>
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 140 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "11px" }}>{b.occupancyRate}%</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "10px", color: b.occupancyRate >= 90 ? "#DC2626" : b.occupancyRate >= 60 ? "#059669" : "#64748b", fontWeight: b.occupancyRate >= 90 ? 700 : 400 }}>
+                          {b.occupancyRate >= 90 ? "NEAR FULL" : b.occupancyRate >= 60 ? "Optimal" : "Available"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ height: 8, width: "100%", borderRadius: "9999px", bgcolor: "#EEF2F7", overflow: "hidden" }}>
+                        <Box sx={{ height: "100%", borderRadius: "9999px", width: `${Math.min(100, b.occupancyRate)}%`, bgcolor: b.occupancyRate >= 90 ? "#EF4444" : b.occupancyRate >= 60 ? "#059669" : "#F59E0B" }} />
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>{formatCurrency(b.totalFees)}</TableCell>
+                    <TableCell align="center">
                       {b.attendanceRate !== null ? (
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            b.attendanceRate >= 75
-                              ? "bg-success-50 text-success-700"
-                              : "bg-danger-50 text-danger-700"
-                          }`}
-                        >
-                          {b.attendanceRate}%
-                        </span>
+                        <Chip
+                          label={`${b.attendanceRate}%`}
+                          size="small"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.70rem",
+                            height: 22,
+                            borderRadius: "9999px",
+                            bgcolor: b.attendanceRate >= 75 ? "#ECFDF5" : "#FEF2F2",
+                            color: b.attendanceRate >= 75 ? "#065F46" : "#DC2626",
+                            border: `1px solid ${b.attendanceRate >= 75 ? "#A7F3D0" : "#FECACA"}`,
+                          }}
+                        />
                       ) : (
-                        <span className="text-scholar-400">—</span>
+                        <Typography variant="caption" sx={{ color: "#94A3B8" }}>—</Typography>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
-    </div>
+    </Box>
   );
 }

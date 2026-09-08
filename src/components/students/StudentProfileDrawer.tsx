@@ -27,6 +27,23 @@ import { EditStudentDrawer, type EditableStudent } from "./EditStudentDrawer";
 import { RecordPaymentDrawer } from "@/components/fees/RecordPaymentDrawer";
 import { Split } from "lucide-react";
 import type { FeeInstallment } from "@/lib/installments";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 
 type StudentDetails = {
   id: string;
@@ -219,665 +236,564 @@ export function StudentProfileDrawer({
         maxWidth="max-w-2xl lg:max-w-3xl"
       >
         {loading && !data && (
-          <div className="flex h-64 items-center justify-center text-scholar-400">
-            <RotateCw size={24} className="animate-spin text-scholar-600 mr-2" />
-            <span>Loading student profile...</span>
-          </div>
+          <Box sx={{ height: 256, display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, color: "#7E9BBC" }}>
+            <CircularProgress size={24} sx={{ color: "#1E3A5F" }} />
+            <Typography variant="body2" sx={{ color: "#7E9BBC" }}>Loading student profile...</Typography>
+          </Box>
         )}
 
         {data && (
-          <div className="space-y-6">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             {/* Header Profile Card */}
-            <div className="rounded-2xl border border-scholar-100 bg-scholar-50/50 p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                   {data.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={data.photoUrl}
-                      alt={data.name}
-                      className="h-13 w-13 shrink-0 rounded-2xl object-cover border-2 border-white shadow-sm"
-                    />
+                    <Avatar src={data.photoUrl} alt={data.name} sx={{ width: 52, height: 52, borderRadius: "12px", border: "2px solid white", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }} variant="rounded" />
                   ) : (
-                    <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-scholar-600 font-display text-lg font-bold text-white shadow-sm">
+                    <Avatar sx={{ width: 52, height: 52, borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "1.125rem" }} variant="rounded">
                       {initials(data.name)}
-                    </div>
+                    </Avatar>
                   )}
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-display text-lg font-bold text-ink">{data.name}</h2>
+                  <Box>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1.125rem" }}>{data.name}</Typography>
                       <Badge tone={studentStatusTone(data.status)} dot>
                         {data.status}
                       </Badge>
-                      <span className="rounded-full bg-scholar-100 border border-scholar-200 px-2 py-0.5 text-[10px] font-bold text-scholar-800">
-                        {data.plan === "DEMO"
-                          ? "7-Day Trial"
-                          : data.plan === "INSTALLMENTS"
-                          ? "Installment Plan"
-                          : data.plan === "QUARTERLY"
-                          ? "Quarterly Recurring"
-                          : data.plan === "ONE_TIME"
-                          ? "Full Course Fee"
-                          : "Regular Monthly"}
-                      </span>
+                      <Chip
+                        label={
+                          data.plan === "DEMO"
+                            ? "7-Day Trial"
+                            : data.plan === "INSTALLMENTS"
+                            ? "Installment Plan"
+                            : data.plan === "QUARTERLY"
+                            ? "Quarterly Recurring"
+                            : data.plan === "ONE_TIME"
+                            ? "Full Course Fee"
+                            : "Regular Monthly"
+                        }
+                        size="small"
+                        sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", height: 20 }}
+                      />
                       {data.courseDuration && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                          <Clock size={11} /> {data.courseDuration}
-                        </span>
+                        <Chip icon={<Clock size={11} />} label={data.courseDuration} size="small" sx={{ fontSize: "10px", fontWeight: 600, bgcolor: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE", height: 20 }} />
                       )}
 
                       {data.isSeatBooked && (
-                        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                          🎫 Seat Booked {data.registrationFee ? `(₹${formatCurrency(data.registrationFee)})` : ""}
-                        </span>
+                        <Chip label={`🎫 Seat Booked ${data.registrationFee ? `(₹${formatCurrency(data.registrationFee)})` : ""}`} size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", height: 20 }} />
                       )}
 
                       {data.discountApprovalStatus === "PENDING_OWNER_APPROVAL" && (
-                        <span className="rounded-full bg-amber-50 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-800 animate-pulse">
-                          ⏳ Special Discount ({data.discountPercent}%) Pending Approval
-                        </span>
+                        <Chip label={`⏳ Special Discount (${data.discountPercent}%) Pending Approval`} size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A", height: 20 }} />
                       )}
 
                       {data.discountApprovalStatus === "APPROVED" && (
-                        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                          ✓ {data.discountPercent}% Discount Allowed by Owner
-                        </span>
+                        <Chip label={`✓ ${data.discountPercent}% Discount Allowed by Owner`} size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", height: 20 }} />
                       )}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-scholar-500">
-                      <span>{data.course.name}</span>
-                      <span>•</span>
-                      <span>{data.batch ? `${data.batch.name} (${data.batch.timing})` : "Unassigned Batch"}</span>
+                    </Box>
+                    <Box sx={{ mt: 0.5, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, fontSize: "0.75rem", color: "#64748b" }}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>{data.course.name}</Typography>
+                      <Typography variant="caption" sx={{ color: "#94A3B8" }}>•</Typography>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>{data.batch ? `${data.batch.name} (${data.batch.timing})` : "Unassigned Batch"}</Typography>
                       {data.branch && (
                         <>
-                          <span>•</span>
-                          <span className="text-scholar-700 font-medium">📍 {data.branch.name}</span>
+                          <Typography variant="caption" sx={{ color: "#94A3B8" }}>•</Typography>
+                          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#1E3A5F", fontWeight: 600 }}>📍 {data.branch.name}</Typography>
                         </>
                       )}
                       {data.courseEndDate && (
                         <>
-                          <span>•</span>
-                          <span className="text-scholar-700 font-medium">Valid until {formatDate(data.courseEndDate)}</span>
+                          <Typography variant="caption" sx={{ color: "#94A3B8" }}>•</Typography>
+                          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#1E3A5F", fontWeight: 600 }}>Valid until {formatDate(data.courseEndDate)}</Typography>
                         </>
                       )}
-                    </div>
-                  </div>
-                </div>
+                    </Box>
+                  </Box>
+                </Box>
 
                 {/* Header Action Buttons */}
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button
+                <Stack direction="row" spacing={1} sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Plus size={13} />}
                     onClick={() => setPaymentOpen(true)}
-                    className="flex items-center gap-1 rounded-xl bg-success-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-success-700 transition-colors"
+                    sx={{ borderRadius: "12px", bgcolor: "#1F9D66", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 0.75, px: 1.5, boxShadow: "none", "&:hover": { bgcolor: "#188050" } }}
                   >
-                    <Plus size={13} />
                     Record Payment
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Pencil size={13} />}
                     onClick={() => setEditOpen(true)}
-                    className="flex items-center gap-1 rounded-xl border border-scholar-100 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 shadow-sm hover:bg-scholar-50 transition-colors"
+                    sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 0.75, px: 1.5, bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
                   >
-                    <Pencil size={13} />
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Archive size={13} />}
                     onClick={() => setConfirmArchiveOpen(true)}
                     disabled={archiveBusy}
-                    className={`flex items-center gap-1 rounded-xl border border-scholar-100 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
-                      data.status === "INACTIVE"
-                        ? "text-success-700 hover:bg-success-50"
-                        : "text-danger-600 hover:bg-danger-50"
-                    }`}
+                    sx={{
+                      borderRadius: "12px",
+                      borderColor: "#D6E0EB",
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      textTransform: "none",
+                      py: 0.75,
+                      px: 1.5,
+                      bgcolor: "white",
+                      color: data.status === "INACTIVE" ? "#1F9D66" : "#DC2626",
+                      "&:hover": { bgcolor: data.status === "INACTIVE" ? "#ECFDF5" : "#FEF2F2" },
+                    }}
                   >
-                    <Archive size={13} />
                     {data.status === "INACTIVE" ? "Re-activate" : "Archive"}
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </Stack>
+              </Box>
 
               {/* Quick Contacts Bar */}
-              <div className="mt-4 pt-3 border-t border-scholar-100 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-scholar-600">
-                <div className="flex items-center gap-2">
-                  <Phone size={13} className="text-scholar-400" />
-                  <span>Student: <a href={`tel:${data.mobile}`} className="font-semibold text-ink hover:underline">{data.mobile}</a></span>
-                  <a
-                    href={`https://wa.me/91${data.mobile}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-success-600 hover:opacity-80"
-                    title="Send WhatsApp"
-                  >
+              <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #D6E0EB", display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "0.75rem", color: "#475569" }}>
+                  <Phone size={13} style={{ color: "#94A3B8" }} />
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>
+                    Student: <Box component="a" href={`tel:${data.mobile}`} sx={{ fontWeight: 600, color: "#171A21", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>{data.mobile}</Box>
+                  </Typography>
+                  <Box component="a" href={`https://wa.me/91${data.mobile}`} target="_blank" rel="noreferrer" sx={{ color: "#1F9D66", display: "flex" }} title="Send WhatsApp">
                     <MessageSquare size={13} />
-                  </a>
-                </div>
+                  </Box>
+                </Box>
 
                 {data.parentMobile && (
-                  <div className="flex items-center gap-2">
-                    <Phone size={13} className="text-scholar-400" />
-                    <span>Parent: <a href={`tel:${data.parentMobile}`} className="font-semibold text-ink hover:underline">{data.parentMobile}</a></span>
-                    <a
-                      href={`https://wa.me/91${data.parentMobile}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-success-600 hover:opacity-80"
-                      title="Send WhatsApp to Parent"
-                    >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "0.75rem", color: "#475569" }}>
+                    <Phone size={13} style={{ color: "#94A3B8" }} />
+                    <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>
+                      Parent: <Box component="a" href={`tel:${data.parentMobile}`} sx={{ fontWeight: 600, color: "#171A21", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>{data.parentMobile}</Box>
+                    </Typography>
+                    <Box component="a" href={`https://wa.me/91${data.parentMobile}`} target="_blank" rel="noreferrer" sx={{ color: "#1F9D66", display: "flex" }} title="Send WhatsApp to Parent">
                       <MessageSquare size={13} />
-                    </a>
-                  </div>
+                    </Box>
+                  </Box>
                 )}
 
                 {data.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail size={13} className="text-scholar-400" />
-                    <a href={`mailto:${data.email}`} className="text-scholar-600 truncate hover:underline">
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Mail size={13} style={{ color: "#94A3B8" }} />
+                    <Typography variant="caption" component="a" href={`mailto:${data.email}`} sx={{ fontSize: "0.75rem", color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
                       {data.email}
-                    </a>
-                  </div>
+                    </Typography>
+                  </Box>
                 )}
-              </div>
-            </div>
+              </Box>
+            </Paper>
 
             {/* 3 Summary Metric Cards */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {/* Fee Card */}
-              <Card className="p-3.5 bg-white">
-                <div className="flex items-center justify-between text-scholar-400">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider">Fee Balance</span>
-                  <Wallet size={15} className="text-marigold-500" />
-                </div>
-                <p className="mt-1 font-display text-xl font-bold text-ink">
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1.5 }}>
+              <Card sx={{ p: 1.75, bgcolor: "white" }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#94A3B8" }}>Fee Balance</Typography>
+                  <Wallet size={15} style={{ color: "#E8A33D" }} />
+                </Box>
+                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>
                   {data.feeStats.pendingFee > 0 ? (
-                    <span className="text-danger-600">{formatCurrency(data.feeStats.pendingFee)}</span>
+                    <Box component="span" sx={{ color: "#DC2626" }}>{formatCurrency(data.feeStats.pendingFee)}</Box>
                   ) : (
-                    <span className="text-success-600">All Paid</span>
+                    <Box component="span" sx={{ color: "#16a34a" }}>All Paid</Box>
                   )}
-                </p>
-                <div className="mt-1 text-[11px] text-scholar-400 flex items-center justify-between">
-                  <span>Paid: {formatCurrency(data.feeStats.paidFee)}</span>
+                </Typography>
+                <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8" }}>Paid: {formatCurrency(data.feeStats.paidFee)}</Typography>
                   {data.feeStats.isOverdue && (
-                    <span className="text-danger-600 font-bold">OVERDUE</span>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#DC2626", fontWeight: 700 }}>OVERDUE</Typography>
                   )}
-                </div>
+                </Box>
               </Card>
 
-              {/* Attendance Card */}
-              <Card className="p-3.5 bg-white">
-                <div className="flex items-center justify-between text-scholar-400">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider">Attendance</span>
-                  <CalendarCheck size={15} className="text-scholar-500" />
-                </div>
-                <p className="mt-1 font-display text-xl font-bold text-ink">
+              <Card sx={{ p: 1.75, bgcolor: "white" }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#94A3B8" }}>Attendance</Typography>
+                  <CalendarCheck size={15} style={{ color: "#64748b" }} />
+                </Box>
+                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>
                   {data.attendanceStats.rate}%
-                </p>
-                <div className="mt-1 text-[11px] text-scholar-400 flex items-center justify-between">
-                  <span>{data.attendanceStats.present} present of {data.attendanceStats.total}</span>
+                </Typography>
+                <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8" }}>{data.attendanceStats.present} present of {data.attendanceStats.total}</Typography>
                   {data.attendanceStats.isLow && (
-                    <span className="text-danger-600 font-bold">LOW</span>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#DC2626", fontWeight: 700 }}>LOW</Typography>
                   )}
-                </div>
+                </Box>
               </Card>
 
-              {/* Exam Results Card */}
-              <Card className="p-3.5 bg-white">
-                <div className="flex items-center justify-between text-scholar-400">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider">Academic Score</span>
-                  <Award size={15} className="text-scholar-500" />
-                </div>
-                <p className="mt-1 font-display text-xl font-bold text-ink">
+              <Card sx={{ p: 1.75, bgcolor: "white" }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#94A3B8" }}>Academic Score</Typography>
+                  <Award size={15} style={{ color: "#64748b" }} />
+                </Box>
+                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>
                   {data.academicStats.averagePercentage}%
-                </p>
-                <div className="mt-1 text-[11px] text-scholar-400 flex items-center justify-between">
-                  <span>Pass Rate: {data.academicStats.passRate}%</span>
-                  <span>{data.academicStats.testsPassed}/{data.academicStats.testsAppeared} passed</span>
-                </div>
+                </Typography>
+                <Box sx={{ mt: 0.5, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#94A3B8" }}>
+                  <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8" }}>Pass Rate: {data.academicStats.passRate}%</Typography>
+                  <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8" }}>{data.academicStats.testsPassed}/{data.academicStats.testsAppeared} passed</Typography>
+                </Box>
               </Card>
-            </div>
+            </Box>
 
             {/* Dossier Tabs */}
-            <div className="flex rounded-xl bg-scholar-50 p-1 border border-scholar-100">
-              <button
-                type="button"
-                onClick={() => setActiveTab("fees")}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
-                  activeTab === "fees"
-                    ? "bg-white text-scholar-900 shadow-sm"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Payment Ledger ({data.payments.length})
-              </button>
-              {data.installmentPlan && data.installmentPlan.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("installments")}
-                  className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
-                    activeTab === "installments"
-                      ? "bg-white text-scholar-900 shadow-sm"
-                      : "text-scholar-600 hover:text-scholar-900"
-                  }`}
+            <Paper variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "#F8FAFC", p: 0.5, display: "flex", gap: 0.5 }}>
+              {[
+                { id: "fees", label: `Payment Ledger (${data.payments.length})` },
+                ...(data.installmentPlan && data.installmentPlan.length > 0 ? [{ id: "installments", label: `Installments (${data.installmentPlan.length})` }] : []),
+                { id: "attendance", label: `Attendance (${data.attendance.length})` },
+                { id: "tests", label: `Tests (${data.testResults.length})` },
+                { id: "profile", label: "Profile & Bio" },
+              ].map((t) => (
+                <Button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id as any)}
+                  variant={activeTab === t.id ? "contained" : "text"}
+                  size="small"
+                  sx={{
+                    flex: 1,
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "0.70rem",
+                    textTransform: "none",
+                    py: 1,
+                    bgcolor: activeTab === t.id ? "white" : "transparent",
+                    color: activeTab === t.id ? "#1E3A5F" : "#64748b",
+                    boxShadow: activeTab === t.id ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                    border: activeTab === t.id ? "1px solid #D6E0EB" : "1px solid transparent",
+                    "&:hover": { bgcolor: activeTab === t.id ? "white" : "#EEF2F7" },
+                  }}
                 >
-                  Installments ({data.installmentPlan.length})
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setActiveTab("attendance")}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
-                  activeTab === "attendance"
-                    ? "bg-white text-scholar-900 shadow-sm"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Attendance ({data.attendance.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("tests")}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
-                  activeTab === "tests"
-                    ? "bg-white text-scholar-900 shadow-sm"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Tests ({data.testResults.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("profile")}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
-                  activeTab === "profile"
-                    ? "bg-white text-scholar-900 shadow-sm"
-                    : "text-scholar-600 hover:text-scholar-900"
-                }`}
-              >
-                Profile & Bio
-              </button>
-            </div>
+                  {t.label}
+                </Button>
+              ))}
+            </Paper>
 
             {/* Tab 1: Payment Ledger */}
             {activeTab === "fees" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-ink">Recorded Payment Receipts</span>
-                  <button
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>Recorded Payment Receipts</Typography>
+                  <Button
+                    size="small"
+                    startIcon={<Plus size={13} />}
                     onClick={() => {
                       setPreselectedInstallmentNumber(undefined);
                       setPaymentOpen(true);
                     }}
-                    className="text-xs font-semibold text-scholar-600 hover:underline flex items-center gap-1"
+                    sx={{ fontSize: "0.70rem", fontWeight: 600, color: "#475569", textTransform: "none" }}
                   >
-                    <Plus size={13} /> Add Payment
-                  </button>
-                </div>
+                    Add Payment
+                  </Button>
+                </Box>
 
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                        <tr>
-                          <th className="px-3 py-2.5 font-semibold">Date</th>
-                          <th className="px-3 py-2.5 font-semibold text-right">Amount</th>
-                          <th className="px-3 py-2.5 font-semibold">Method</th>
-                          <th className="px-3 py-2.5 font-semibold">Note / Allocation</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-scholar-50">
+                <Card sx={{ overflow: "hidden" }}>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1.25, borderBottom: "1px solid #D6E0EB" } }}>
+                          <TableCell>Date</TableCell>
+                          <TableCell align="right">Amount</TableCell>
+                          <TableCell>Method</TableCell>
+                          <TableCell>Note / Allocation</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                         {data.payments.length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="py-8 text-center text-scholar-400">
+                          <TableRow>
+                            <TableCell colSpan={4} align="center" sx={{ py: 4, color: "#94A3B8", fontSize: "0.875rem" }}>
                               No payments recorded yet for this student.
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ) : (
                           data.payments.map((p) => (
-                            <tr key={p.id} className="hover:bg-scholar-50/40">
-                              <td className="px-3 py-2.5 text-scholar-600 whitespace-nowrap">
-                                {formatDate(p.paidAt)}
-                              </td>
-                              <td className="px-3 py-2.5 text-right font-display font-semibold text-success-700 tabular-nums">
-                                +{formatCurrency(p.amount)}
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <span className="inline-flex items-center gap-1 rounded-full bg-scholar-100 px-2 py-0.5 text-[11px] font-medium text-scholar-700">
-                                  <CreditCard size={10} />
-                                  {p.method}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <div className="flex flex-col">
-                                  <span className="text-scholar-600 truncate max-w-xs">{p.note || "—"}</span>
+                            <TableRow key={p.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9" } }}>
+                              <TableCell sx={{ fontSize: "0.75rem", color: "#64748b", whiteSpace: "nowrap" }}>{formatDate(p.paidAt)}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 600, color: "#059669", fontSize: "0.75rem" }}>+{formatCurrency(p.amount)}</TableCell>
+                              <TableCell>
+                                <Chip icon={<CreditCard size={10} />} label={p.method} size="small" sx={{ fontSize: "11px", fontWeight: 500, bgcolor: "#EEF2F7", color: "#334155", border: "1px solid #D6E0EB", height: 20 }} />
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                                  <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>{p.note || "—"}</Typography>
                                   {(p.installmentTitle || p.installmentNumber) && (
-                                    <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded bg-scholar-100 px-1.5 py-0.5 text-[10px] font-bold text-scholar-700">
-                                      <Split size={10} /> {p.installmentTitle || `Installment ${p.installmentNumber}`}
-                                    </span>
+                                    <Chip icon={<Split size={10} />} label={p.installmentTitle || `Installment ${p.installmentNumber}`} size="small" sx={{ mt: 0.5, fontSize: "10px", fontWeight: 700, bgcolor: "#EEF2F7", color: "#334155", border: "1px solid #D6E0EB", height: 18, width: "fit-content" }} />
                                   )}
-                                </div>
-                              </td>
-                            </tr>
+                                </Box>
+                              </TableCell>
+                            </TableRow>
                           ))
                         )}
-                      </tbody>
-                    </table>
-                  </div>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </Card>
 
-                {/* Subscriptions / Renewals */}
                 {data.renewals.length > 0 && (
-                  <div>
-                    <span className="font-semibold text-xs text-ink mb-2 block">Monthly Subscription Renewals</span>
-                    <Card className="overflow-hidden">
-                      <table className="w-full text-left text-xs divide-y divide-scholar-50">
-                        <thead className="bg-scholar-50/70 text-scholar-500">
-                          <tr>
-                            <th className="px-3 py-2 font-semibold">Renewed Date</th>
-                            <th className="px-3 py-2 font-semibold text-right">Amount</th>
-                            <th className="px-3 py-2 font-semibold">Valid Period</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.renewals.map((r) => (
-                            <tr key={r.id}>
-                              <td className="px-3 py-2 text-scholar-600">{formatDate(r.renewedAt)}</td>
-                              <td className="px-3 py-2 text-right font-semibold text-ink">{formatCurrency(r.amount)}</td>
-                              <td className="px-3 py-2 text-scholar-500">{formatDate(r.validFrom)} - {formatDate(r.validUntil)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem", mb: 1, display: "block" }}>Monthly Subscription Renewals</Typography>
+                    <Card sx={{ overflow: "hidden" }}>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1 } }}>
+                              <TableCell>Renewed Date</TableCell>
+                              <TableCell align="right">Amount</TableCell>
+                              <TableCell>Valid Period</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {data.renewals.map((r) => (
+                              <TableRow key={r.id} hover>
+                                <TableCell sx={{ fontSize: "0.75rem", color: "#475569" }}>{formatDate(r.renewedAt)}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>{formatCurrency(r.amount)}</TableCell>
+                                <TableCell sx={{ fontSize: "0.75rem", color: "#64748b" }}>{formatDate(r.validFrom)} - {formatDate(r.validUntil)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
                     </Card>
-                  </div>
+                  </Box>
                 )}
-              </div>
+              </Box>
             )}
 
             {/* Tab: Installment Schedule */}
             {activeTab === "installments" && data.installmentPlan && (
-              <div className="space-y-4">
-                {/* Summary card */}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {(() => {
                   const plan = data.installmentPlan;
                   const totalInst = plan.length;
                   const paidInst = plan.filter((i) => i.status === "PAID").length;
                   const pct = totalInst > 0 ? Math.round((paidInst / totalInst) * 100) : 0;
                   const pendingTotal = Math.max(0, data.feeStats.totalFee - data.feeStats.paidFee);
-
                   return (
-                    <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center gap-1.5">
-                            <Split size={14} className="text-scholar-600" />
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+                            <Split size={14} style={{ color: "#4E6E93" }} />
                             Installment Schedule & Relaxation
-                          </span>
-                          <p className="text-[11px] text-scholar-500 mt-0.5">
-                            Fee split into {totalInst} relaxation installments
-                          </p>
-                        </div>
-                        <span className="text-sm font-bold text-scholar-800 tabular-nums">
-                          {paidInst} of {totalInst} Cleared ({pct}%)
-                        </span>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="h-2.5 w-full rounded-full bg-scholar-200 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-success-600 transition-all duration-300"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-
-                      <div className="flex justify-between text-xs pt-1 text-scholar-700">
-                        <span>Paid: <strong>{formatCurrency(data.feeStats.paidFee)}</strong></span>
-                        <span>Pending: <strong className="text-danger-700">{formatCurrency(pendingTotal)}</strong></span>
-                      </div>
-                    </div>
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Fee split into {totalInst} relaxation installments</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "#1E293b", fontSize: "0.875rem" }}>{paidInst} of {totalInst} Cleared ({pct}%)</Typography>
+                      </Box>
+                      <Box sx={{ height: 10, width: "100%", borderRadius: 999, bgcolor: "#E2E8F0", overflow: "hidden" }}>
+                        <Box sx={{ height: 10, borderRadius: 999, width: `${pct}%`, bgcolor: "#1F9D66", transition: "width 0.3s" }} />
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#475569" }}>
+                        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>Paid: <Box component="span" sx={{ fontWeight: 700 }}>{formatCurrency(data.feeStats.paidFee)}</Box></Typography>
+                        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#DC2626", fontWeight: 700 }}>Pending: {formatCurrency(pendingTotal)}</Typography>
+                      </Box>
+                    </Paper>
                   );
                 })()}
 
-                {/* List of Installments */}
-                <div className="space-y-2.5">
+                <Stack spacing={1.5}>
                   {data.installmentPlan.map((inst) => {
                     const isPaid = inst.status === "PAID";
                     const isOverdue = inst.status === "OVERDUE";
                     const isPartial = inst.status === "PARTIAL";
                     const remaining = Math.max(0, inst.amount - inst.paidAmount);
-
                     return (
-                      <Card key={inst.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-scholar-100">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-scholar-200 text-[10px] font-bold text-scholar-800">
-                              {inst.installmentNumber}
-                            </span>
-                            <span className="font-semibold text-xs text-ink">{inst.title}</span>
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
-                                isPaid
-                                  ? "bg-success-50 text-success-700 border-success-200"
-                                  : isOverdue
-                                  ? "bg-danger-50 text-danger-700 border-danger-200"
-                                  : isPartial
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-scholar-50 text-scholar-700 border-scholar-200"
-                              }`}
-                            >
-                              {inst.status}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-3 text-xs text-scholar-500 pl-7">
-                            <span>Amount: <strong className="text-ink">{formatCurrency(inst.amount)}</strong></span>
-                            <span>Due Date: <strong>{formatDate(inst.dueDate)}</strong></span>
+                      <Card key={inst.id} sx={{ p: 1.75, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between", borderColor: "#D6E0EB" }}>
+                        <Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Avatar sx={{ width: 20, height: 20, fontSize: "10px", fontWeight: 700, bgcolor: "#D6E0EB", color: "#1E3A5F" }}>{inst.installmentNumber}</Avatar>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>{inst.title}</Typography>
+                            <Chip
+                              label={inst.status}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                border: "1px solid",
+                                borderColor: isPaid ? "#A7F3D0" : isOverdue ? "#FECACA" : isPartial ? "#FDE68A" : "#D6E0EB",
+                                bgcolor: isPaid ? "#ECFDF5" : isOverdue ? "#FEF2F2" : isPartial ? "#FFFBEB" : "#F8FAFC",
+                                color: isPaid ? "#065f46" : isOverdue ? "#991b1b" : isPartial ? "#92400e" : "#475569",
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mt: 0.5, pl: 3.5, fontSize: "0.75rem", color: "#64748b" }}>
+                            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>Amount: <Box component="span" sx={{ fontWeight: 700, color: "#171A21" }}>{formatCurrency(inst.amount)}</Box></Typography>
+                            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>Due Date: <Box component="span" sx={{ fontWeight: 700 }}>{formatDate(inst.dueDate)}</Box></Typography>
                             {inst.paidAmount > 0 && (
-                              <span className="text-success-700">Paid: {formatCurrency(inst.paidAmount)}</span>
+                              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#059669" }}>Paid: {formatCurrency(inst.paidAmount)}</Typography>
                             )}
-                          </div>
-                        </div>
-
+                          </Box>
+                        </Box>
                         {!isPaid && (
-                          <div className="flex items-center gap-2 self-end sm:self-auto">
-                            <span className="text-xs font-bold text-danger-700">
-                              Due: {formatCurrency(remaining)}
-                            </span>
-                            <button
-                              type="button"
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, alignSelf: { xs: "flex-end", sm: "center" } }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#DC2626", fontSize: "0.75rem" }}>Due: {formatCurrency(remaining)}</Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              startIcon={<CreditCard size={12} />}
                               onClick={() => {
                                 setPreselectedInstallmentNumber(inst.installmentNumber);
                                 setPaymentOpen(true);
                               }}
-                              className="flex items-center gap-1 rounded-xl bg-scholar-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-scholar-700 transition-colors shadow-xs"
+                              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.75, px: 1.5, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
                             >
-                              <CreditCard size={12} />
                               Pay Installment
-                            </button>
-                          </div>
+                            </Button>
+                          </Box>
                         )}
                       </Card>
                     );
                   })}
-                </div>
-              </div>
+                </Stack>
+              </Box>
             )}
 
-            {/* Tab 2: Attendance History */}
             {activeTab === "attendance" && (
-              <div className="space-y-4">
-                {/* Attendance rate bar */}
-                <div className="rounded-xl border border-scholar-100 bg-scholar-50/40 p-3">
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-semibold text-ink">Attendance Fulfillment</span>
-                    <span className="font-bold text-ink">{data.attendanceStats.rate}%</span>
-                  </div>
-                  <div className="h-2.5 w-full rounded-full bg-scholar-200 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        data.attendanceStats.isLow ? "bg-danger-500" : "bg-success-600"
-                      }`}
-                      style={{ width: `${data.attendanceStats.rate}%` }}
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-scholar-500">
-                    <span>Target: 75% minimum</span>
-                    <span>{data.attendanceStats.present} Present • {data.attendanceStats.absent} Absent • {data.attendanceStats.late} Late</span>
-                  </div>
-                </div>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>Attendance Fulfillment</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>{data.attendanceStats.rate}%</Typography>
+                  </Box>
+                  <Box sx={{ height: 10, width: "100%", borderRadius: 999, bgcolor: "#E2E8F0", overflow: "hidden" }}>
+                    <Box sx={{ height: 10, borderRadius: 999, width: `${data.attendanceStats.rate}%`, bgcolor: data.attendanceStats.isLow ? "#DC2626" : "#1F9D66" }} />
+                  </Box>
+                  <Box sx={{ mt: 1, display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#7E9BBC" }}>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Target: 75% minimum</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{data.attendanceStats.present} Present • {data.attendanceStats.absent} Absent • {data.attendanceStats.late} Late</Typography>
+                  </Box>
+                </Paper>
 
-                <Card className="overflow-hidden">
-                  <table className="w-full text-left text-xs divide-y divide-scholar-50">
-                    <thead className="bg-scholar-50/70 text-scholar-500">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold">Date</th>
-                        <th className="px-3 py-2 font-semibold">Status</th>
-                        <th className="px-3 py-2 font-semibold">Batch</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.attendance.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="py-6 text-center text-scholar-400">
-                            No attendance records on file.
-                          </td>
-                        </tr>
-                      ) : (
-                        data.attendance.map((a) => (
-                          <tr key={a.id}>
-                            <td className="px-3 py-2 text-scholar-600">{formatDate(a.date)}</td>
-                            <td className="px-3 py-2">
-                              <Badge
-                                tone={
-                                  a.status === "PRESENT"
-                                    ? "success"
-                                    : a.status === "LATE"
-                                    ? "warning"
-                                    : "danger"
-                                }
-                              >
-                                {a.status}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2 text-scholar-500">{a.batchName}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                <Card sx={{ overflow: "hidden" }}>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1 } }}>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Batch</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {data.attendance.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={3} align="center" sx={{ py: 3, color: "#94A3B8" }}>No attendance records on file.</TableCell>
+                          </TableRow>
+                        ) : (
+                          data.attendance.map((a) => (
+                            <TableRow key={a.id} hover>
+                              <TableCell sx={{ fontSize: "0.75rem", color: "#475569" }}>{formatDate(a.date)}</TableCell>
+                              <TableCell>
+                                <Badge tone={a.status === "PRESENT" ? "success" : a.status === "LATE" ? "warn" : "danger"}>{a.status}</Badge>
+                              </TableCell>
+                              <TableCell sx={{ fontSize: "0.75rem", color: "#64748b" }}>{a.batchName}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </Card>
-              </div>
+              </Box>
             )}
 
-            {/* Tab 3: Academic Tests */}
             {activeTab === "tests" && (
-              <div className="space-y-4">
-                <Card className="overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                      <tr>
-                        <th className="px-3 py-2.5 font-semibold">Test Title & Subject</th>
-                        <th className="px-3 py-2.5 font-semibold">Test Date</th>
-                        <th className="px-3 py-2.5 font-semibold text-right">Score</th>
-                        <th className="px-3 py-2.5 font-semibold">Outcome</th>
-                        <th className="px-3 py-2.5 font-semibold">Remarks</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-scholar-50">
+              <Card sx={{ overflow: "hidden" }}>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, color: "#64748b", py: 1.25, borderBottom: "1px solid #D6E0EB" } }}>
+                        <TableCell>Test Title & Subject</TableCell>
+                        <TableCell>Test Date</TableCell>
+                        <TableCell align="right">Score</TableCell>
+                        <TableCell>Outcome</TableCell>
+                        <TableCell>Remarks</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                       {data.testResults.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-scholar-400">
-                            No test results evaluated yet.
-                          </td>
-                        </tr>
+                        <TableRow>
+                          <TableCell colSpan={5} align="center" sx={{ py: 4, color: "#94A3B8" }}>No test results evaluated yet.</TableCell>
+                        </TableRow>
                       ) : (
                         data.testResults.map((r) => (
-                          <tr key={r.id} className="hover:bg-scholar-50/40">
-                            <td className="px-3 py-2.5">
-                              <span className="font-semibold text-ink block">{r.title}</span>
-                              <span className="text-[11px] text-scholar-400">{r.subject}</span>
-                            </td>
-                            <td className="px-3 py-2.5 text-scholar-600 whitespace-nowrap">
-                              {formatDate(r.testDate)}
-                            </td>
-                            <td className="px-3 py-2.5 text-right font-semibold tabular-nums">
+                          <TableRow key={r.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9" } }}>
+                            <TableCell>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{r.title}</Typography>
+                              <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{r.subject}</Typography>
+                            </TableCell>
+                            <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>{formatDate(r.testDate)}</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
                               {r.marksObtained !== null ? (
-                                <span>
-                                  {r.marksObtained} / {r.totalMarks}{" "}
-                                  <span className="text-scholar-400 font-normal">({r.percentage}%)</span>
-                                </span>
+                                <Box>
+                                  {r.marksObtained} / {r.totalMarks} <Box component="span" sx={{ color: "#94A3B8", fontWeight: 400 }}>({r.percentage}%)</Box>
+                                </Box>
                               ) : (
                                 "—"
                               )}
-                            </td>
-                            <td className="px-3 py-2.5">
+                            </TableCell>
+                            <TableCell>
                               {r.status === "PASSED" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-bold text-success-700">
-                                  <CheckCircle2 size={10} /> PASSED
-                                </span>
+                                <Chip icon={<CheckCircle2 size={10} />} label="PASSED" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#ECFDF5", color: "#065f46", border: "1px solid #A7F3D0", height: 20 }} />
                               ) : r.status === "FAILED" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-[10px] font-bold text-danger-700">
-                                  <XCircle size={10} /> FAILED
-                                </span>
+                                <Chip icon={<XCircle size={10} />} label="FAILED" size="small" sx={{ fontSize: "10px", fontWeight: 700, bgcolor: "#FEF2F2", color: "#991b1b", border: "1px solid #FECACA", height: 20 }} />
                               ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-scholar-100 px-2 py-0.5 text-[10px] font-semibold text-scholar-600">
-                                  <Clock size={10} /> ABSENT
-                                </span>
+                                <Chip icon={<Clock size={10} />} label="ABSENT" size="small" sx={{ fontSize: "10px", fontWeight: 600, bgcolor: "#F1F5F9", color: "#475569", border: "1px solid #D6E0EB", height: 20 }} />
                               )}
-                            </td>
-                            <td className="px-3 py-2.5 text-scholar-500 max-w-xs truncate">
-                              {r.remarks || "—"}
-                            </td>
-                          </tr>
+                            </TableCell>
+                            <TableCell sx={{ fontSize: "0.75rem", color: "#64748b", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.remarks || "—"}</TableCell>
+                          </TableRow>
                         ))
                       )}
-                    </tbody>
-                  </table>
-                </Card>
-              </div>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Card>
             )}
 
-            {/* Tab 4: Profile & Bio */}
             {activeTab === "profile" && (
-              <Card className="p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Enrolled Course</span>
-                    <span className="font-semibold text-ink text-sm">{data.course.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Assigned Batch</span>
-                    <span className="font-semibold text-ink text-sm">
-                      {data.batch ? `${data.batch.name} (${data.batch.timing})` : "Unassigned"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Course Duration</span>
-                    <span className="font-semibold text-ink flex items-center gap-1">
-                      <Clock size={12} className="text-scholar-500" />
-                      {data.courseDuration || data.course.duration || "1 Year"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Expected Course Finish</span>
-                    <span className="font-semibold text-ink">
-                      {data.courseEndDate ? formatDate(data.courseEndDate) : "—"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Admission Date</span>
-                    <span className="font-semibold text-ink">{formatDate(data.admissionDate)}</span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Total Course Fee</span>
-                    <span className="font-semibold text-ink">{formatCurrency(data.feeStats.totalFee)}</span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Next Due Date</span>
-                    <span className="font-semibold text-ink">
-                      {data.feeStats.dueDate ? formatDate(data.feeStats.dueDate) : "Not set"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-scholar-400 block mb-0.5">Payment Billing Model</span>
-                    <span className="font-semibold text-ink">
+              <Card sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Enrolled Course</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{data.course.name}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Assigned Batch</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{data.batch ? `${data.batch.name} (${data.batch.timing})` : "Unassigned"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Course Duration</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 0.5 }}><Clock size={12} style={{ color: "#64748b" }} />{data.courseDuration || data.course.duration || "1 Year"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Expected Course Finish</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{data.courseEndDate ? formatDate(data.courseEndDate) : "—"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Admission Date</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{formatDate(data.admissionDate)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Total Course Fee</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{formatCurrency(data.feeStats.totalFee)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Next Due Date</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{data.feeStats.dueDate ? formatDate(data.feeStats.dueDate) : "Not set"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.70rem" }}>Payment Billing Model</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>
                       {data.plan === "DEMO"
                         ? "Free 7-Day Demo"
                         : data.plan === "INSTALLMENTS"
@@ -887,23 +803,24 @@ export function StudentProfileDrawer({
                         : data.plan === "ONE_TIME"
                         ? "Full One-Time Payment"
                         : "Regular Monthly Subscription"}
-                    </span>
-                  </div>
-                </div>
+                    </Typography>
+                  </Box>
+                </Box>
 
-                <div className="pt-4 border-t border-scholar-100 flex justify-end">
-                  <button
-                    type="button"
+                <Divider sx={{ borderColor: "#D6E0EB", my: 1 }} />
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<Pencil size={13} />}
                     onClick={() => setEditOpen(true)}
-                    className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-4 py-2 text-xs font-semibold text-white hover:bg-scholar-700 transition-colors"
+                    sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 2, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
                   >
-                    <Pencil size={13} />
                     Edit Student Information
-                  </button>
-                </div>
+                  </Button>
+                </Box>
               </Card>
             )}
-          </div>
+          </Box>
         )}
       </Drawer>
 

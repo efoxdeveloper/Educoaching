@@ -10,10 +10,29 @@ import {
   Send,
   ShieldCheck,
   HelpCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Field, inputClass } from "@/components/ui/Field";
 import type { PublicSmsConfig, SmsProviderType } from "@/lib/institute-settings";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export function SmsGatewaySection({ canManage }: { canManage: boolean }) {
   const [config, setConfig] = useState<PublicSmsConfig>({
@@ -27,6 +46,7 @@ export function SmsGatewaySection({ canManage }: { canManage: boolean }) {
   const [provider, setProvider] = useState<SmsProviderType>("MSG91");
   const [senderId, setSenderId] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [isReplacingKey, setIsReplacingKey] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [dltTemplateIds, setDltTemplateIds] = useState<Record<string, string>>({});
@@ -98,6 +118,7 @@ export function SmsGatewaySection({ canManage }: { canManage: boolean }) {
 
       setSavedSuccess(true);
       setApiKey("");
+      setShowApiKey(false);
       setIsReplacingKey(false);
       fetchConfig();
       setTimeout(() => setSavedSuccess(false), 4000);
@@ -150,185 +171,184 @@ export function SmsGatewaySection({ canManage }: { canManage: boolean }) {
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-center gap-2 text-xs text-scholar-500">
-          <Loader2 size={16} className="animate-spin text-scholar-600" />
-          <span>Loading SMS Gateway configuration...</span>
-        </div>
+      <Card sx={{ p: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, color: "#7E9BBC" }}>
+          <CircularProgress size={16} sx={{ color: "#4E6E93" }} />
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>Loading SMS Gateway configuration...</Typography>
+        </Box>
       </Card>
     );
   }
 
   return (
-    <Card className="p-6 space-y-6">
+    <Card sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-scholar-100 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, borderBottom: "1px solid #D6E0EB", pb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Avatar variant="rounded" sx={{ width: 40, height: 40, borderRadius: "12px", bgcolor: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" }}>
             <Smartphone size={20} />
-          </div>
-          <div>
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+          </Avatar>
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1rem" }}>
               SMS Gateway (BYOK — Bring Your Own Key)
-            </h3>
-            <p className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
               Send promotional & transactional SMS via your own MSG91, Textlocal, or Fast2SMS account.
-            </p>
-          </div>
-        </div>
+            </Typography>
+          </Box>
+        </Box>
 
-        <div className="flex items-center gap-2">
+        <Box>
           {config.isConfigured ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-              <ShieldCheck size={14} /> Key Configured
-            </span>
+            <Chip icon={<ShieldCheck size={14} />} label="Key Configured" size="small" sx={{ bgcolor: "#ECFDF5", color: "#065f46", border: "1px solid #A7F3D0", fontWeight: 700, fontSize: "0.75rem", height: 26 }} />
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-scholar-100 px-3 py-1 text-xs font-semibold text-scholar-600">
-              Not Configured
-            </span>
+            <Chip label="Not Configured" size="small" sx={{ bgcolor: "#F1F5F9", color: "#475569", border: "1px solid #D6E0EB", fontWeight: 600, fontSize: "0.75rem", height: 26 }} />
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {error && (
-        <div className="rounded-xl border border-danger-200 bg-danger-50 p-3.5 text-xs text-danger-700 flex items-center gap-2">
-          <AlertCircle size={16} className="shrink-0" />
-          <span>{error}</span>
-        </div>
+        <Alert severity="error" icon={<AlertCircle size={16} />} sx={{ borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
+          {error}
+        </Alert>
       )}
 
       {savedSuccess && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-          <span>SMS Gateway settings saved securely!</span>
-        </div>
+        <Alert severity="success" icon={<CheckCircle2 size={16} />} sx={{ borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
+          SMS Gateway settings saved securely!
+        </Alert>
       )}
 
-      <form onSubmit={handleSave} className="space-y-5">
+      <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         {/* Enable Gateway Toggle */}
-        <div className="flex items-center justify-between rounded-xl bg-scholar-50/70 p-4 border border-scholar-200/80">
-          <div>
-            <span className="text-xs font-bold text-ink block">Enable SMS Channel</span>
-            <span className="text-[11px] text-scholar-500">
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21", display: "block" }}>Enable SMS Channel</Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
               When enabled, SMS option appears in broadcast communications and alerts.
-            </span>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={enabled}
-              disabled={!canManage}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-scholar-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-scholar-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-          </label>
-        </div>
+            </Typography>
+          </Box>
+          <FormControlLabel
+            control={<Switch checked={enabled} disabled={!canManage} onChange={(e) => setEnabled(e.target.checked)} sx={{ "& .MuiSwitch-switchBase.Mui-checked": { color: "#E8A33D" }, "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#E8A33D" } }} />}
+            label=""
+            sx={{ m: 0 }}
+          />
+        </Paper>
 
         {/* Provider & Sender ID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="SMS Provider">
-            <select
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel id="sms-provider-label">SMS Provider</InputLabel>
+            <Select
+              labelId="sms-provider-label"
+              label="SMS Provider"
               value={provider}
               disabled={!canManage}
               onChange={(e) => setProvider(e.target.value as SmsProviderType)}
-              className={inputClass}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
             >
-              <option value="MSG91">MSG91 (Flow API & Transactional)</option>
-              <option value="TEXTLOCAL">Textlocal India</option>
-              <option value="FAST2SMS">Fast2SMS (Quick DLT / Transactional)</option>
-            </select>
-          </Field>
+              <MenuItem value="MSG91">MSG91 (Flow API & Transactional)</MenuItem>
+              <MenuItem value="TEXTLOCAL">Textlocal India</MenuItem>
+              <MenuItem value="FAST2SMS">Fast2SMS (Quick DLT / Transactional)</MenuItem>
+            </Select>
+          </FormControl>
 
-          <Field label="DLT-Approved Sender ID / Header">
-            <input
-              type="text"
-              placeholder="e.g. VIDYAL / APEXAC"
-              value={senderId}
-              disabled={!canManage}
-              onChange={(e) => setSenderId(e.target.value.toUpperCase())}
-              className={inputClass}
-            />
-          </Field>
-        </div>
+          <TextField
+            label="DLT-Approved Sender ID / Header"
+            fullWidth
+            size="small"
+            value={senderId}
+            disabled={!canManage}
+            onChange={(e) => setSenderId(e.target.value.toUpperCase())}
+            placeholder="e.g. VIDYAL / APEXAC"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-        <div className="rounded-xl border border-amber-200/70 bg-amber-50/50 p-3 text-[11px] text-amber-900 flex items-start gap-2">
-          <HelpCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-          <span>
-            <strong>TRAI DLT Compliance Note:</strong> In India, SMS headers (Sender IDs) and message templates must be
-            registered on your telecom DLT portal (e.g. Jio / Airtel / Vodafone). Unregistered headers will be rejected by carriers.
-          </span>
-        </div>
+        <Alert severity="warning" icon={<HelpCircle size={15} />} sx={{ borderRadius: "12px", bgcolor: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400e", fontSize: "11px", py: 1 }}>
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e" }}>
+            <Box component="span" sx={{ fontWeight: 700 }}>TRAI DLT Compliance Note:</Box> In India, SMS headers (Sender IDs) and message templates must be registered on your telecom DLT portal (e.g. Jio / Airtel / Vodafone). Unregistered headers will be rejected by carriers.
+          </Typography>
+        </Alert>
 
-        {/* API Key Input */}
-        <div>
-          <label className="text-xs font-semibold text-scholar-700 block mb-1.5">
+        {/* API Key Input — sensitive, masked with Eye toggle */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#1E293b" }}>
             Provider Auth Key / API Secret (Write-Only & Encrypted)
-          </label>
+          </Typography>
 
           {config.isConfigured && !isReplacingKey ? (
-            <div className="flex items-center justify-between rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5">
-              <div className="flex items-center gap-2">
-                <KeyRound size={15} className="text-scholar-500" />
-                <span className="font-mono text-xs font-bold text-ink">•••••••••••••••••••••••• (Encrypted at rest)</span>
-              </div>
+            <Paper variant="outlined" sx={{ p: 1.75, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <KeyRound size={15} style={{ color: "#7E9BBC" }} />
+                <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, fontSize: "0.75rem", color: "#171A21" }}>•••••••••••••••••••••••• (Encrypted at rest)</Typography>
+              </Box>
               {canManage && (
-                <button
-                  type="button"
-                  onClick={() => setIsReplacingKey(true)}
-                  className="text-xs font-bold text-scholar-600 hover:underline"
-                >
+                <Button size="small" onClick={() => setIsReplacingKey(true)} sx={{ fontSize: "0.70rem", fontWeight: 700, color: "#475569", textTransform: "none" }}>
                   Replace Key
-                </button>
+                </Button>
               )}
-            </div>
+            </Paper>
           ) : (
-            <div className="space-y-1.5">
-              <input
-                type="password"
-                autoComplete="new-password"
-                placeholder={config.isConfigured ? "Enter new API key to replace..." : "Paste your provider API auth key here..."}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+              <TextField
+                fullWidth
+                size="small"
+                type={showApiKey ? "text" : "password"}
                 value={apiKey}
                 disabled={!canManage}
                 onChange={(e) => setApiKey(e.target.value)}
-                className={inputClass}
+                placeholder={config.isConfigured ? "Enter new API key to replace..." : "Paste your provider API auth key here..."}
+                autoComplete="new-password"
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          edge="end"
+                          aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                          sx={{ color: "#7E9BBC", "&:hover": { color: "#1E3A5F" } }}
+                        >
+                          {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
               />
-              <div className="flex items-center justify-between text-[11px] text-scholar-500">
-                <span>Encrypted via AES-256-GCM. Never transmitted back to browsers.</span>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Encrypted via AES-256-GCM. Never transmitted back to browsers.</Typography>
                 {config.isConfigured && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsReplacingKey(false);
-                      setApiKey("");
-                    }}
-                    className="text-scholar-600 hover:underline font-semibold"
-                  >
+                  <Button size="small" onClick={() => { setIsReplacingKey(false); setApiKey(""); setShowApiKey(false); }} sx={{ fontSize: "11px", fontWeight: 600, color: "#475569", textTransform: "none", p: 0, minWidth: 0 }}>
                     Cancel
-                  </button>
+                  </Button>
                 )}
-              </div>
-            </div>
+              </Box>
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* DLT Template IDs Map */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-scholar-700 block">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#1E293b" }}>
             DLT Template IDs (Optional mapping for pre-approved templates)
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          </Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
             {[
               { key: "GENERAL_BROADCAST", label: "General Announcements Template ID" },
               { key: "FEE_REMINDER", label: "Fee Reminder Template ID" },
               { key: "ADMISSION_INQUIRY", label: "Admission Follow-up Template ID" },
               { key: "TEST_SCORE", label: "Exam / Marks Alert Template ID" },
             ].map((tpl) => (
-              <div key={tpl.key} className="space-y-1">
-                <span className="text-[11px] text-scholar-600 font-medium">{tpl.label}</span>
-                <input
-                  type="text"
-                  placeholder="e.g. 1707161829384729102"
+              <Box key={tpl.key} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", fontWeight: 500 }}>{tpl.label}</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
                   value={dltTemplateIds[tpl.key] || ""}
                   disabled={!canManage}
                   onChange={(e) =>
@@ -337,78 +357,76 @@ export function SmsGatewaySection({ canManage }: { canManage: boolean }) {
                       [tpl.key]: e.target.value.trim(),
                     }))
                   }
-                  className={inputClass}
+                  placeholder="e.g. 1707161829384729102"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
                 />
-              </div>
+              </Box>
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* Save Button */}
         {canManage && (
-          <div className="flex justify-end pt-2">
-            <button
+          <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
+            <Button
               type="submit"
+              variant="contained"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-scholar-700 transition-colors disabled:opacity-50 cursor-pointer"
+              startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <ShieldCheck size={14} />}
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", px: 3, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-              <span>{saving ? "Saving Credentials..." : "Save SMS Gateway Config"}</span>
-            </button>
-          </div>
+              {saving ? "Saving Credentials..." : "Save SMS Gateway Config"}
+            </Button>
+          </Box>
         )}
-      </form>
+      </Box>
 
       {/* Test SMS Dispatch Card */}
-      <div className="rounded-2xl border border-scholar-200 bg-scholar-50/50 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-display font-bold text-xs text-ink flex items-center gap-1.5">
-              <Send size={13} className="text-scholar-600" />
+      <Paper variant="outlined" sx={{ p: 2.5, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#171A21", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Send size={13} style={{ color: "#4E6E93" }} />
               Live Test SMS Dispatch
-            </h4>
-            <p className="text-[11px] text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
               Send a test SMS to verify your sender ID and API credentials before live broadcasting.
-            </p>
-          </div>
-        </div>
+            </Typography>
+          </Box>
+        </Box>
 
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <input
-            type="tel"
-            placeholder="Enter 10-digit test mobile number (e.g. 9876543210)"
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.25, alignItems: { sm: "center" } }}>
+          <TextField
+            fullWidth
+            size="small"
             value={testMobile}
             onChange={(e) => setTestMobile(e.target.value)}
-            className={`w-full sm:flex-1 ${inputClass}`}
+            placeholder="Enter 10-digit test mobile number (e.g. 9876543210)"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
-          <button
-            type="button"
+          <Button
+            variant="contained"
             disabled={sendingTest || (!config.isConfigured && !apiKey.trim())}
             onClick={handleSendTestSms}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-scholar-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-scholar-800 transition-colors disabled:opacity-50 cursor-pointer"
+            startIcon={sendingTest ? <CircularProgress size={13} color="inherit" /> : <Send size={13} />}
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", px: 2.5, py: 1.25, boxShadow: "none", whiteSpace: "nowrap", "&:hover": { bgcolor: "#182F4C" } }}
           >
-            {sendingTest ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            <span>{sendingTest ? "Dispatching..." : "Send Test SMS"}</span>
-          </button>
-        </div>
+            {sendingTest ? "Dispatching..." : "Send Test SMS"}
+          </Button>
+        </Box>
 
         {testResult && (
-          <div
-            className={`rounded-xl p-3 text-xs flex items-start gap-2 ${
-              testResult.success
-                ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border border-rose-200 text-rose-800"
-            }`}
+          <Alert
+            severity={testResult.success ? "success" : "error"}
+            icon={testResult.success ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+            sx={{ borderRadius: "12px", fontSize: "0.75rem", border: testResult.success ? "1px solid #A7F3D0" : "1px solid #FECACA", bgcolor: testResult.success ? "#ECFDF5" : "#FEF2F2" }}
           >
-            {testResult.success ? (
-              <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
-            )}
-            <span className="font-medium">{testResult.message}</span>
-          </div>
+            {testResult.message}
+          </Alert>
         )}
-      </div>
+      </Paper>
     </Card>
   );
 }

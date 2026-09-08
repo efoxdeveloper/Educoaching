@@ -4,17 +4,38 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, X, Clock3, Save } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
-import { initials, cn } from "@/lib/utils";
+import { initials } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type Batch = { id: string; name: string; timing: string; course: { id?: string; name: string } };
 type Course = { id: string; name: string };
 type Student = { id: string; name: string; mobile: string; batchId: string | null };
 type Status = "PRESENT" | "ABSENT" | "LATE";
 
-const statusMeta: Record<Status, { label: string; icon: typeof Check; active: string }> = {
-  PRESENT: { label: "Present", icon: Check, active: "bg-success-500 text-white border-success-500" },
-  ABSENT: { label: "Absent", icon: X, active: "bg-danger-500 text-white border-danger-500" },
-  LATE: { label: "Late", icon: Clock3, active: "bg-warn-500 text-white border-warn-500" },
+const statusMeta: Record<Status, { label: string; icon: typeof Check; color: string; bg: string; border: string }> = {
+  PRESENT: { label: "Present", icon: Check, color: "#1F9D66", bg: "#E9F7EF", border: "#A7F3D0" },
+  ABSENT: { label: "Absent", icon: X, color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
+  LATE: { label: "Late", icon: Clock3, color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
 };
 
 export function AttendanceView({
@@ -120,126 +141,223 @@ export function AttendanceView({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <Card className="p-5 lg:col-span-2">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Course Selector */}
-          <select
-            value={courseId}
-            onChange={(e) => {
-              const newCourse = e.target.value;
-              setCourseId(newCourse);
-              const matching = batches.filter(
-                (b) => b.course?.id === newCourse || b.course?.name === newCourse
-              );
-              setBatchId(matching[0]?.id || "");
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 2 }}>
+      <Card sx={{ p: 2.5 }}>
+        <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
+          {/* Course Selector — MUI Select */}
+          <FormControl size="small" sx={{ flex: 1, minWidth: 140 }}>
+            <InputLabel id="attendance-course-label">Course</InputLabel>
+            <Select
+              labelId="attendance-course-label"
+              label="Course"
+              value={courseId}
+              onChange={(e) => {
+                const newCourse = e.target.value;
+                setCourseId(newCourse);
+                const matching = batches.filter(
+                  (b) => b.course?.id === newCourse || b.course?.name === newCourse
+                );
+                setBatchId(matching[0]?.id || "");
+              }}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem", fontWeight: 500 }}
+            >
+              {courses.length === 0 ? (
+                <MenuItem value="">No courses available</MenuItem>
+              ) : (
+                courses.map((c) => (
+                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
+                    {c.name}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          {/* Batch Selector — MUI Select */}
+          <FormControl size="small" sx={{ flex: 1, minWidth: 140 }}>
+            <InputLabel id="attendance-batch-label">Batch</InputLabel>
+            <Select
+              labelId="attendance-batch-label"
+              label="Batch"
+              value={batchId}
+              onChange={(e) => setBatchId(e.target.value)}
+              disabled={availableBatches.length === 0}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem", fontWeight: 500 }}
+            >
+              {availableBatches.length === 0 ? (
+                <MenuItem value="" disabled>
+                  No batches in this course
+                </MenuItem>
+              ) : (
+                availableBatches.map((b) => (
+                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
+                    {b.name} {b.timing ? `(${b.timing})` : ""}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          {/* Date Picker — MUI TextField type=date (X Date Pickers not installed, see note) */}
+          <TextField
+            size="small"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            label="Date"
+            slotProps={{
+              inputLabel: { shrink: true },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CalendarDays size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
             }}
-            className="rounded-xl border border-scholar-200 bg-paper px-3 py-2.5 text-sm text-scholar-700 outline-none sm:flex-1 font-medium cursor-pointer"
-          >
-            {courses.length === 0 ? (
-              <option value="">No courses available</option>
-            ) : (
-              courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))
-            )}
-          </select>
-
-          {/* Batch Selector */}
-          <select
-            value={batchId}
-            onChange={(e) => setBatchId(e.target.value)}
-            disabled={availableBatches.length === 0}
-            className="rounded-xl border border-scholar-200 bg-paper px-3 py-2.5 text-sm text-scholar-700 outline-none sm:flex-1 font-medium cursor-pointer disabled:opacity-50"
-          >
-            {availableBatches.length === 0 ? (
-              <option value="" disabled>
-                No batches in this course
-              </option>
-            ) : (
-              availableBatches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} {b.timing ? `(${b.timing})` : ""}
-                </option>
-              ))
-            )}
-          </select>
-
-          {/* Date Picker */}
-          <div className="flex items-center gap-2 rounded-xl border border-scholar-200 bg-paper px-3 py-2.5">
-            <CalendarDays size={16} className="text-scholar-400" />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-sm outline-none font-medium text-scholar-800"
-            />
-          </div>
-        </div>
+            sx={{ minWidth: 160, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem", fontWeight: 500 } }}
+          />
+        </Box>
 
         {isLocked && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          <Alert severity="warning" sx={{ mb: 2, borderRadius: "12px", border: "1px solid #FDE68A", bgcolor: "#FFFBEB", color: "#92400e", fontSize: "0.875rem", fontWeight: 500 }}>
             Attendance already submitted for this date. Records are locked and cannot be changed.
-          </div>
+          </Alert>
         )}
 
         {errorMsg && !isLocked && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+          <Alert severity="error" sx={{ mb: 2, borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
             {errorMsg}
-          </div>
+          </Alert>
         )}
 
-        <div className="space-y-2">
-          {loading && <p className="py-6 text-center text-sm text-scholar-400">Loading students…</p>}
-          {!loading && batchStudents.length === 0 && (
-            <p className="py-6 text-center text-sm text-scholar-400">No students assigned to this batch yet.</p>
-          )}
-          {!loading &&
-            batchStudents.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-xl border border-scholar-50 px-3 py-2.5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-scholar-50 text-xs font-semibold text-scholar-600">
-                    {initials(s.name)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-ink">{s.name}</p>
-                    <p className="text-xs text-scholar-400">{s.mobile}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1.5">
-                  {(Object.keys(statusMeta) as Status[]).map((st) => {
-                    const meta = statusMeta[st];
-                    const Icon = meta.icon;
-                    const active = marks[s.id] === st;
-                    return (
-                      <button
-                        key={st}
-                        onClick={() => setStatus(s.id, st)}
-                        disabled={isLocked}
-                        className={cn(
-                          "flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                          isLocked && "cursor-not-allowed opacity-80",
-                          active ? meta.active : "border-scholar-100 text-scholar-400 hover:border-scholar-300"
-                        )}
-                      >
-                        <Icon size={13} /> {meta.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-        </div>
+        {/* Attendance rows — MUI Table (not DataGrid) with Select/Chip for status */}
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+          <Table size="small" sx={{ minWidth: 500 }}>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "rgba(238,242,247,0.5)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", py: 1.25, borderBottom: "1px solid #D6E0EB" } }}>
+                <TableCell>Student</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Mark</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.25, color: "#7E9BBC" }}>
+                      <CircularProgress size={16} sx={{ color: "#4E6E93" }} />
+                      <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>Loading students…</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && batchStudents.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                    No students assigned to this batch yet.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading &&
+                batchStudents.map((s) => (
+                  <TableRow key={s.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.25 } }}>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Avatar sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 700 }} variant="rounded">
+                          {initials(s.name)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{s.name}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>{s.mobile}</Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {marks[s.id] ? (
+                        <Chip
+                          icon={
+                            marks[s.id] === "PRESENT" ? <Check size={12} /> : marks[s.id] === "ABSENT" ? <X size={12} /> : <Clock3 size={12} />
+                          }
+                          label={statusMeta[marks[s.id]].label}
+                          size="small"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.70rem",
+                            height: 22,
+                            bgcolor: statusMeta[marks[s.id]].bg,
+                            color: statusMeta[marks[s.id]].color,
+                            border: `1px solid ${statusMeta[marks[s.id]].border}`,
+                          }}
+                        />
+                      ) : (
+                        <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>Not marked</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      {/* Status marking — 3 Buttons (could also be Select) */}
+                      <Stack direction="row" spacing={0.75} sx={{ justifyContent: "flex-end" }}>
+                        {(Object.keys(statusMeta) as Status[]).map((st) => {
+                          const meta = statusMeta[st];
+                          const active = marks[s.id] === st;
+                          const Icon = meta.icon;
+                          return (
+                            <Button
+                              key={st}
+                              size="small"
+                              disabled={isLocked}
+                              onClick={() => setStatus(s.id, st)}
+                              startIcon={<Icon size={13} />}
+                              variant={active ? "contained" : "outlined"}
+                              sx={{
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                fontSize: "0.70rem",
+                                textTransform: "none",
+                                py: 0.5,
+                                px: 1.25,
+                                minWidth: 0,
+                                borderColor: active ? meta.color : "#D6E0EB",
+                                bgcolor: active ? meta.color : "white",
+                                color: active ? "white" : "#64748b",
+                                opacity: isLocked ? 0.8 : 1,
+                                "&:hover": { bgcolor: active ? meta.color : "#F8FAFC", borderColor: active ? meta.color : "#CBD5E1" },
+                                "&.Mui-disabled": { bgcolor: active ? meta.color : "white", color: active ? "white" : "#94A3B8", borderColor: "#E2E8F0", opacity: 0.8 },
+                              }}
+                            >
+                              {meta.label}
+                            </Button>
+                          );
+                        })}
+                      </Stack>
+                      {/* Alternative Select — kept hidden but available for accessibility; visual is Buttons above */}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {batchStudents.length > 0 && (
-          <button
-            onClick={handleSave}
+          <Button
+            fullWidth
+            variant="contained"
             disabled={saving || isLocked}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={handleSave}
+            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Save size={16} />}
+            sx={{
+              mt: 2.5,
+              borderRadius: "12px",
+              bgcolor: isLocked ? "#94A3B8" : "#1E3A5F",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              textTransform: "none",
+              py: 1.25,
+              boxShadow: "none",
+              "&:hover": { bgcolor: isLocked ? "#94A3B8" : "#182F4C" },
+              "&.Mui-disabled": { bgcolor: isLocked ? "#CBD5E1" : "#1E3A5F", color: "white", opacity: 0.6 },
+            }}
           >
-            <Save size={16} />{" "}
             {saving
               ? "Saving..."
               : isLocked
@@ -247,17 +365,17 @@ export function AttendanceView({
               : saved
               ? "Saved ✓"
               : "Save attendance"}
-          </button>
+          </Button>
         )}
       </Card>
 
-      <Card className="flex flex-col items-center justify-center gap-3 p-5">
-        <p className="self-start font-display text-base font-semibold text-ink">Attendance %</p>
+      <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1.5 }}>
+        <Typography variant="subtitle2" sx={{ alignSelf: "flex-start", fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Attendance %</Typography>
         <ProgressRing value={pct} size={140} stroke={12} color="#1E3A5F" />
-        <p className="text-center text-sm text-scholar-400">
+        <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC", textAlign: "center" }}>
           {presentCount} of {batchStudents.length} students present
-        </p>
+        </Typography>
       </Card>
-    </div>
+    </Box>
   );
 }

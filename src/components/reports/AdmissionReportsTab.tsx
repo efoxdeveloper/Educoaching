@@ -1,19 +1,29 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  ClipboardList,
-  Search,
-  Download,
-  Clock,
-  IndianRupee,
-  TrendingUp,
-} from "lucide-react";
+import { Search, Download } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { Badge, admissionStatusTone } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
 import type { ReportsData } from "@/lib/reports-data";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
 
 export function AdmissionReportsTab({ data }: { data: ReportsData }) {
   const { admissionReport } = data;
@@ -75,9 +85,9 @@ export function AdmissionReportsTab({ data }: { data: ReportsData }) {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
       {/* Admission KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-full min-w-0">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
         <KpiCard
           label="Total Applications"
           value={admissionReport.kpis.totalApplications.toString()}
@@ -106,171 +116,162 @@ export function AdmissionReportsTab({ data }: { data: ReportsData }) {
           trend={`${formatCurrency(admissionReport.kpis.enrolledValue)} realized`}
           trendTone="success"
         />
-      </div>
+      </Box>
 
       {/* Admission Funnel Pills */}
-      <Card className="p-4 bg-scholar-50/50">
-        <p className="text-xs font-semibold text-scholar-500 uppercase tracking-wider mb-2.5">
+      <Card sx={{ p: 2, bgcolor: "rgba(238,242,247,0.5)" }}>
+        <Typography
+          variant="caption"
+          sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", display: "block", mb: 1.25 }}
+        >
           Admission Funnel Distribution
-        </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-scholar-100 bg-white p-3 shadow-sm">
-            <span className="text-[11px] font-medium text-scholar-400">1. Total Inquiries</span>
-            <p className="mt-1 font-display text-xl font-bold text-ink">
+        </Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", boxShadow: "0 1px 2px rgba(13,26,42,0.04)" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#94A3B8" }}>1. Total Inquiries</Typography>
+            <Typography sx={{ mt: 0.5, fontFamily: "var(--font-sora)", fontSize: "1.25rem", fontWeight: 700, color: "#171A21" }}>
               {admissionReport.kpis.totalApplications}
-            </p>
-          </div>
-          <div className="rounded-xl border border-scholar-100 bg-white p-3 shadow-sm">
-            <span className="text-[11px] font-medium text-scholar-500">2. Pending Action</span>
-            <p className="mt-1 font-display text-xl font-bold text-scholar-700">
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", boxShadow: "0 1px 2px rgba(13,26,42,0.04)" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#64748b" }}>2. Pending Action</Typography>
+            <Typography sx={{ mt: 0.5, fontFamily: "var(--font-sora)", fontSize: "1.25rem", fontWeight: 700, color: "#1E3A5F" }}>
               {admissionReport.kpis.pendingCount}
-            </p>
-          </div>
-          <div className="rounded-xl border border-marigold-200 bg-white p-3 shadow-sm">
-            <span className="text-[11px] font-medium text-marigold-600">3. Approved</span>
-            <p className="mt-1 font-display text-xl font-bold text-marigold-700">
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "white", boxShadow: "0 1px 2px rgba(13,26,42,0.04)" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#D68F26" }}>3. Approved</Typography>
+            <Typography sx={{ mt: 0.5, fontFamily: "var(--font-sora)", fontSize: "1.25rem", fontWeight: 700, color: "#92400E" }}>
               {admissionReport.kpis.approvedCount}
-            </p>
-          </div>
-          <div className="rounded-xl border border-success-200 bg-white p-3 shadow-sm">
-            <span className="text-[11px] font-medium text-success-600">4. Enrolled</span>
-            <p className="mt-1 font-display text-xl font-bold text-success-700">
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#A7F3D0", bgcolor: "white", boxShadow: "0 1px 2px rgba(13,26,42,0.04)" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#059669" }}>4. Enrolled</Typography>
+            <Typography sx={{ mt: 0.5, fontFamily: "var(--font-sora)", fontSize: "1.25rem", fontWeight: 700, color: "#065F46" }}>
               {admissionReport.kpis.enrolledCount} ({admissionReport.kpis.conversionRate}%)
-            </p>
-          </div>
-        </div>
+            </Typography>
+          </Paper>
+        </Box>
       </Card>
 
       {/* Filters Toolbar */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-scholar-400" />
-            <input
-              type="text"
-              placeholder="Search admissions by applicant name, mobile, email, course..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-scholar-100 bg-white py-2 pl-9 pr-4 text-sm text-ink placeholder:text-scholar-300 focus:border-scholar-500 focus:outline-none"
-            />
-          </div>
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 1.5, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <TextField
+            size="small"
+            placeholder="Search admissions by applicant name, mobile, email, course..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" } }}
+          />
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none"
-            >
-              <option value="ALL">All Application Statuses ({admissionReport.admissions.length})</option>
-              <option value="ENROLLED">Enrolled ({admissionReport.kpis.enrolledCount})</option>
-              <option value="APPROVED">Approved ({admissionReport.kpis.approvedCount})</option>
-              <option value="PENDING">Pending ({admissionReport.kpis.pendingCount})</option>
-              <option value="REJECTED">Rejected ({admissionReport.kpis.rejectedCount})</option>
-            </select>
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.25 }}>
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel id="admission-status-label" sx={{ fontSize: "0.75rem" }}>Application Status</InputLabel>
+              <Select
+                labelId="admission-status-label"
+                label="Application Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+              >
+                <MenuItem value="ALL">All Application Statuses ({admissionReport.admissions.length})</MenuItem>
+                <MenuItem value="ENROLLED">Enrolled ({admissionReport.kpis.enrolledCount})</MenuItem>
+                <MenuItem value="APPROVED">Approved ({admissionReport.kpis.approvedCount})</MenuItem>
+                <MenuItem value="PENDING">Pending ({admissionReport.kpis.pendingCount})</MenuItem>
+                <MenuItem value="REJECTED">Rejected ({admissionReport.kpis.rejectedCount})</MenuItem>
+              </Select>
+            </FormControl>
 
-            <button
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Download size={14} />}
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-scholar-700 transition-colors"
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              <Download size={14} />
               Export CSV
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
-        <div className="mt-3 flex items-center justify-between border-t border-scholar-50 pt-2 text-xs text-scholar-400">
-          <span>Showing {filteredAdmissions.length} of {admissionReport.admissions.length} admissions</span>
+        <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #F1F5F9", pt: 1.25 }}>
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>
+            Showing {filteredAdmissions.length} of {admissionReport.admissions.length} admissions
+          </Typography>
           {(searchTerm || statusFilter !== "ALL") && (
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("ALL");
-              }}
-              className="text-scholar-600 hover:underline"
-            >
+            <Button size="small" onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); }} sx={{ fontSize: "0.70rem", fontWeight: 500, color: "#475569", textTransform: "none", p: 0, minWidth: 0 }}>
               Reset filters
-            </button>
+            </Button>
           )}
-        </div>
+        </Box>
       </Card>
 
       {/* Admissions Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Applicant</th>
-                <th className="px-4 py-3 font-semibold">Course & Batch</th>
-                <th className="px-4 py-3 font-semibold">Branch</th>
-                <th className="px-4 py-3 font-semibold text-right">Fee Plan</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Application Date</th>
-                <th className="px-4 py-3 font-semibold">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-scholar-50">
+      <Card sx={{ overflow: "hidden" }}>
+        <TableContainer>
+          <Table size="small" sx={{ minWidth: 900 }}>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                <TableCell>Applicant</TableCell>
+                <TableCell>Course &amp; Batch</TableCell>
+                <TableCell>Branch</TableCell>
+                <TableCell align="right">Fee Plan</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Application Date</TableCell>
+                <TableCell>Notes</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredAdmissions.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-scholar-400">
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                     No admission applications found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredAdmissions.map((a) => (
-                  <tr key={a.id} className="hover:bg-scholar-50/40 transition-colors">
-                    {/* Applicant Info */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-scholar-100 text-xs font-semibold text-scholar-700">
+                  <TableRow key={a.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Avatar sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 600 }} variant="rounded">
                           {initials(a.applicantName)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-ink">{a.applicantName}</p>
-                          <p className="text-[11px] text-scholar-400">{a.mobile}</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Course & Batch */}
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-ink">{a.courseName}</p>
-                      <p className="text-[11px] text-scholar-400">{a.batchName}</p>
-                    </td>
-
-                    {/* Branch */}
-                    <td className="px-4 py-3 text-scholar-600">
-                      {a.branchName}
-                    </td>
-
-                    {/* Fee Plan */}
-                    <td className="px-4 py-3 text-right font-medium text-ink tabular-nums">
-                      {formatCurrency(a.feePlan)}
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="px-4 py-3">
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{a.applicantName}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{a.mobile}</Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{a.courseName}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{a.batchName}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: "0.80rem", color: "#475569" }}>{a.branchName}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>{formatCurrency(a.feePlan)}</TableCell>
+                    <TableCell>
                       <Badge tone={admissionStatusTone(a.status)} dot>
                         {a.status}
                       </Badge>
-                    </td>
-
-                    {/* Date */}
-                    <td className="px-4 py-3 text-scholar-600 whitespace-nowrap">
-                      {formatDate(a.createdAt)}
-                    </td>
-
-                    {/* Notes */}
-                    <td className="px-4 py-3 text-scholar-500 max-w-xs truncate">
-                      {a.note || "—"}
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>{formatDate(a.createdAt)}</TableCell>
+                    <TableCell sx={{ fontSize: "0.75rem", color: "#64748b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.note || "—"}</TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
-    </div>
+    </Box>
   );
 }

@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Receipt,
-  Search,
-  Download,
-  IndianRupee,
-  Percent,
-  Wallet,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Receipt, Search, Download, Wallet } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
@@ -25,6 +16,23 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
 
 export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
   const { profitLossReport } = data;
@@ -119,92 +127,114 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
   const isNetProfitPositive = kpis.netProfit >= 0;
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
-      {/* Sub-navigation Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-scholar-200 pb-3 w-full max-w-full">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSubView("summary");
-              setCategoryFilter("ALL");
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
+      {/* Sub-navigation + Export — MUI Chip/Button */}
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              p: 0.75,
+              borderRadius: "12px",
+              bgcolor: "rgba(238,242,247,0.8)",
+              border: "1px solid #D6E0EB",
+              alignSelf: "flex-start",
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
-              subView === "summary"
-                ? "bg-scholar-700 text-white shadow-xs"
-                : "text-scholar-600 hover:bg-scholar-100"
-            }`}
           >
-            <TrendingUp size={14} />
-            <span>P&L Overview & Trends</span>
-          </button>
+            <Chip
+              icon={<TrendingUp size={14} />}
+              label="P&L Overview & Trends"
+              onClick={() => {
+                setSubView("summary");
+                setCategoryFilter("ALL");
+              }}
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "summary" ? "white" : "transparent",
+                color: subView === "summary" ? "#1E3A5F" : "#475569",
+                border: subView === "summary" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "summary" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "summary" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              icon={<Wallet size={14} />}
+              label={`Extra Income (${incomes.length})`}
+              onClick={() => {
+                setSubView("income");
+                setCategoryFilter("ALL");
+              }}
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "income" ? "white" : "transparent",
+                color: subView === "income" ? "#1E3A5F" : "#475569",
+                border: subView === "income" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "income" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "income" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              icon={<Receipt size={14} />}
+              label={`Expenses (${expenses.length})`}
+              onClick={() => {
+                setSubView("expenses");
+                setCategoryFilter("ALL");
+              }}
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "expenses" ? "white" : "transparent",
+                color: subView === "expenses" ? "#1E3A5F" : "#475569",
+                border: subView === "expenses" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "expenses" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "expenses" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+          </Box>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSubView("income");
-              setCategoryFilter("ALL");
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Download size={13} />}
+            onClick={subView === "income" ? handleExportIncome : subView === "expenses" ? handleExportExpenses : handleExportStatement}
+            sx={{
+              borderRadius: "12px",
+              bgcolor: "#1E3A5F",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              textTransform: "none",
+              py: 1,
+              px: 1.75,
+              boxShadow: "none",
+              whiteSpace: "nowrap",
+              "&:hover": { bgcolor: "#182F4C" },
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
-              subView === "income"
-                ? "bg-scholar-700 text-white shadow-xs"
-                : "text-scholar-600 hover:bg-scholar-100"
-            }`}
           >
-            <Wallet size={14} />
-            <span>Extra Income ({incomes.length})</span>
-          </button>
+            {subView === "income" ? "Export Income CSV" : subView === "expenses" ? "Export Expenses CSV" : "Export P&L Statement (CSV)"}
+          </Button>
+        </Box>
+      </Card>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSubView("expenses");
-              setCategoryFilter("ALL");
-            }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
-              subView === "expenses"
-                ? "bg-scholar-700 text-white shadow-xs"
-                : "text-scholar-600 hover:bg-scholar-100"
-            }`}
-          >
-            <Receipt size={14} />
-            <span>Expenses ({expenses.length})</span>
-          </button>
-        </div>
-
-        <div>
-          <button
-            type="button"
-            onClick={
-              subView === "income"
-                ? handleExportIncome
-                : subView === "expenses"
-                ? handleExportExpenses
-                : handleExportStatement
-            }
-            className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 transition-colors shadow-2xs"
-          >
-            <Download size={13} />
-            <span>
-              {subView === "income"
-                ? "Export Income CSV"
-                : subView === "expenses"
-                ? "Export Expenses CSV"
-                : "Export P&L Statement (CSV)"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards Banner — Box grid + KpiCard */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2 }}>
         <KpiCard
           label="Total Gross Revenue"
           value={formatCurrency(kpis.totalRevenue)}
           iconName="IndianRupee"
-          trend={`Fees (${formatCurrency(kpis.feeRevenue)}) + Extra (${formatCurrency(
-            kpis.extraIncome
-          )})`}
+          trend={`Fees (${formatCurrency(kpis.feeRevenue)}) + Extra (${formatCurrency(kpis.extraIncome)})`}
         />
         <KpiCard
           label="Total Operating Expenses"
@@ -216,11 +246,7 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
           label="Net Profit / (Loss)"
           value={formatCurrency(kpis.netProfit)}
           iconName={isNetProfitPositive ? "TrendingUp" : "TrendingDown"}
-          trend={
-            isNetProfitPositive
-              ? "Profitable operations (Revenue > Expenses)"
-              : "Net loss incurred during this timeframe"
-          }
+          trend={isNetProfitPositive ? "Profitable operations (Revenue > Expenses)" : "Net loss incurred during this timeframe"}
         />
         <KpiCard
           label="Operating Profit Margin"
@@ -228,23 +254,23 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
           iconName="Percent"
           trend="Net margin on total gross revenue"
         />
-      </div>
+      </Box>
 
       {/* Sub-view 1: P&L Overview & Charts */}
       {subView === "summary" && (
-        <div className="space-y-6">
-          {/* Monthly Revenue vs Expense Chart */}
-          <Card className="p-5 space-y-4">
-            <div>
-              <h3 className="font-display font-bold text-sm text-ink">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Monthly Revenue vs Expense Chart — keep recharts exactly */}
+          <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", fontFamily: "var(--font-sora)" }}>
                 Monthly P&L Comparison: Total Revenue vs. Total Expenses
-              </h3>
-              <p className="text-xs text-scholar-500">
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>
                 Tracking monthly trends across fee revenue, extra non-fee income, and campus expenses.
-              </p>
-            </div>
+              </Typography>
+            </Box>
 
-            <div className="h-72 w-full pt-2">
+            <Box sx={{ height: 288, width: "100%", pt: 1 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -265,270 +291,361 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                       fontSize: "12px",
                     }}
                   />
-                  <Legend
-                    wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }}
-                    iconType="circle"
-                  />
-                  <Bar dataKey="feeRevenue" name="Fee Revenue" fill="#2563EB" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="extraIncome" name="Extra Revenue" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expenses" name="Operating Expenses" fill="#F43F5E" radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} iconType="circle" />
+                  <Bar dataKey="feeRevenue" name="Fee Revenue" fill="#2563EB" radius={[4, 4, 0, 0] as any} />
+                  <Bar dataKey="extraIncome" name="Extra Revenue" fill="#10B981" radius={[4, 4, 0, 0] as any} />
+                  <Bar dataKey="expenses" name="Operating Expenses" fill="#F43F5E" radius={[4, 4, 0, 0] as any} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </Box>
           </Card>
 
-          {/* Breakdown Grids */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Breakdown Grids — Box grid + Paper/Box bars */}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2.5 }}>
             {/* Non-Fee Extra Revenue Drivers */}
-            <Card className="p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-display font-bold text-sm text-ink flex items-center gap-1.5">
-                    <TrendingUp size={15} className="text-emerald-600" />
-                    Non-Fee Extra Revenue Drivers
-                  </h4>
-                  <p className="text-xs text-scholar-500">Breakdown of non-fee income sources</p>
-                </div>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  {formatCurrency(kpis.extraIncome)} Total
-                </span>
-              </div>
+            <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <TrendingUp size={15} style={{ color: "#059669" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", fontFamily: "var(--font-sora)" }}>
+                      Non-Fee Extra Revenue Drivers
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>
+                    Breakdown of non-fee income sources
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${formatCurrency(kpis.extraIncome)} Total`}
+                  size="small"
+                  sx={{ bgcolor: "#ECFDF5", color: "#065f46", border: "1px solid #A7F3D0", fontWeight: 700, fontSize: "0.70rem", height: 22 }}
+                />
+              </Box>
 
               {incomeCategoryBreakdown.length === 0 ? (
-                <div className="p-8 text-center text-xs text-scholar-400">
-                  No extra revenue entries recorded for this period.
-                </div>
+                <Box sx={{ p: 4, textAlign: "center" }}>
+                  <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
+                    No extra revenue entries recorded for this period.
+                  </Typography>
+                </Box>
               ) : (
-                <div className="space-y-3">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   {incomeCategoryBreakdown.map((cat) => (
-                    <div key={cat.category} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-ink">{cat.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-scholar-400 text-[11px]">{cat.count} txns</span>
-                          <span className="font-bold text-emerald-700">{formatCurrency(cat.total)}</span>
-                        </div>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-scholar-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                          style={{ width: `${Math.min(100, Math.max(5, cat.percentage))}%` }}
+                    <Box key={cat.category} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>
+                          {cat.label}
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px" }}>
+                            {cat.count} txns
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "#065f46", fontSize: "0.75rem" }}>
+                            {formatCurrency(cat.total)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Paper
+                        elevation={0}
+                        sx={{ height: 8, width: "100%", borderRadius: "9999px", bgcolor: "#EEF2F7", overflow: "hidden" }}
+                      >
+                        <Box
+                          sx={{
+                            height: "100%",
+                            borderRadius: "9999px",
+                            bgcolor: "#10B981",
+                            width: `${Math.min(100, Math.max(5, cat.percentage))}%`,
+                            transition: "width 0.3s",
+                          }}
                         />
-                      </div>
-                    </div>
+                      </Paper>
+                    </Box>
                   ))}
-                </div>
+                </Box>
               )}
             </Card>
 
             {/* Operating Expense Drivers */}
-            <Card className="p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-display font-bold text-sm text-ink flex items-center gap-1.5">
-                    <TrendingDown size={15} className="text-rose-600" />
-                    Operating Expense Drivers
-                  </h4>
-                  <p className="text-xs text-scholar-500">Breakdown of major cost centers</p>
-                </div>
-                <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                  {formatCurrency(kpis.totalExpenses)} Total
-                </span>
-              </div>
+            <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <TrendingDown size={15} style={{ color: "#E11D48" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem", fontFamily: "var(--font-sora)" }}>
+                      Operating Expense Drivers
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>
+                    Breakdown of major cost centers
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${formatCurrency(kpis.totalExpenses)} Total`}
+                  size="small"
+                  sx={{ bgcolor: "#FEF2F2", color: "#9F1239", border: "1px solid #FECACA", fontWeight: 700, fontSize: "0.70rem", height: 22 }}
+                />
+              </Box>
 
               {expenseCategoryBreakdown.length === 0 ? (
-                <div className="p-8 text-center text-xs text-scholar-400">
-                  No operating expenses logged for this period.
-                </div>
+                <Box sx={{ p: 4, textAlign: "center" }}>
+                  <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
+                    No operating expenses logged for this period.
+                  </Typography>
+                </Box>
               ) : (
-                <div className="space-y-3">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   {expenseCategoryBreakdown.map((cat) => (
-                    <div key={cat.category} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-ink">{cat.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-scholar-400 text-[11px]">{cat.count} txns</span>
-                          <span className="font-bold text-rose-700">{formatCurrency(cat.total)}</span>
-                        </div>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-scholar-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-rose-500 transition-all duration-300"
-                          style={{ width: `${Math.min(100, Math.max(5, cat.percentage))}%` }}
+                    <Box key={cat.category} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>
+                          {cat.label}
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "11px" }}>
+                            {cat.count} txns
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "#9F1239", fontSize: "0.75rem" }}>
+                            {formatCurrency(cat.total)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Paper
+                        elevation={0}
+                        sx={{ height: 8, width: "100%", borderRadius: "9999px", bgcolor: "#EEF2F7", overflow: "hidden" }}
+                      >
+                        <Box
+                          sx={{
+                            height: "100%",
+                            borderRadius: "9999px",
+                            bgcolor: "#F43F5E",
+                            width: `${Math.min(100, Math.max(5, cat.percentage))}%`,
+                            transition: "width 0.3s",
+                          }}
                         />
-                      </div>
-                    </div>
+                      </Paper>
+                    </Box>
                   ))}
-                </div>
+                </Box>
               )}
             </Card>
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
 
-      {/* Sub-view 2: Extra Income Ledger */}
+      {/* Sub-view 2: Extra Income Ledger — TextField + Select + MUI Table */}
       {subView === "income" && (
-        <div className="space-y-4">
-          {/* Filter / Search Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-scholar-400" size={14} />
-              <input
-                type="text"
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Card sx={{ p: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+              <TextField
+                size="small"
                 placeholder="Search income by title, payer, notes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-scholar-200 bg-white pl-9 pr-3 py-2 text-xs text-ink placeholder:text-scholar-400 focus:outline-none focus:border-scholar-500"
+                sx={{ flex: 1, maxWidth: { sm: 360 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem" } }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={16} style={{ color: "#7E9BBC" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
-            </div>
+              <FormControl size="small" sx={{ minWidth: 200 }}>
+                <InputLabel id="income-category-filter-label" sx={{ fontSize: "0.75rem" }}>
+                  Income Category
+                </InputLabel>
+                <Select
+                  labelId="income-category-filter-label"
+                  label="Income Category"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+                >
+                  <MenuItem value="ALL">All Income Categories</MenuItem>
+                  {incomeCategoryBreakdown.map((c) => (
+                    <MenuItem key={c.category} value={c.category}>
+                      {c.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Card>
 
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-medium text-scholar-700 shadow-2xs outline-none"
-            >
-              <option value="ALL">All Income Categories</option>
-              {incomeCategoryBreakdown.map((c) => (
-                <option key={c.category} value={c.category}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-scholar-50 text-[11px] font-bold uppercase tracking-wider text-scholar-500 border-b border-scholar-100">
-                  <tr>
-                    <th className="p-3.5">Income Description</th>
-                    <th className="p-3.5">Category</th>
-                    <th className="p-3.5">Method</th>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Received From</th>
-                    <th className="p-3.5 text-right">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-scholar-100 font-medium">
+          <Card sx={{ overflow: "hidden" }}>
+            <TableContainer>
+              <Table size="small" sx={{ minWidth: 750 }}>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.75, borderBottom: "1px solid #D6E0EB", whiteSpace: "nowrap" } }}>
+                    <TableCell>Income Description</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Method</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Received From</TableCell>
+                    <TableCell align="right">Amount (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {filteredIncomes.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-scholar-400">
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                         No extra income records found matching your filters.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     filteredIncomes.map((i) => (
-                      <tr key={i.id} className="hover:bg-scholar-50/70 transition-colors">
-                        <td className="p-3.5">
-                          <span className="font-bold text-ink block">{i.title}</span>
-                          {i.notes && <span className="text-[11px] text-scholar-400">{i.notes}</span>}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="inline-block rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                            {i.categoryLabel}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-scholar-600">{i.paymentMethod}</td>
-                        <td className="p-3.5 text-scholar-600">
+                      <TableRow key={i.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75 } }}>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>
+                            {i.title}
+                          </Typography>
+                          {i.notes && (
+                            <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8", display: "block" }}>
+                              {i.notes}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={i.categoryLabel}
+                            size="small"
+                            sx={{ bgcolor: "#ECFDF5", color: "#065f46", border: "1px solid #A7F3D0", fontWeight: 700, fontSize: "0.65rem", height: 22 }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500, whiteSpace: "nowrap" }}>{i.paymentMethod}</TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>
                           {formatDate(new Date(i.incomeDate))}
-                        </td>
-                        <td className="p-3.5 text-scholar-600">
-                          {i.receivedFrom || <span className="text-scholar-300 italic">—</span>}
-                        </td>
-                        <td className="p-3.5 text-right font-bold text-emerald-700 text-sm">
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569" }}>
+                          {i.receivedFrom || (
+                            <Typography variant="caption" sx={{ color: "#CBD5E1", fontStyle: "italic", fontSize: "0.75rem" }}>
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, color: "#059669", fontSize: "0.80rem", fontFamily: "var(--font-sora)", whiteSpace: "nowrap" }}>
                           +{formatCurrency(i.amount)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Card>
-        </div>
+        </Box>
       )}
 
-      {/* Sub-view 3: Expenses Ledger */}
+      {/* Sub-view 3: Expenses Ledger — TextField + Select + MUI Table */}
       {subView === "expenses" && (
-        <div className="space-y-4">
-          {/* Filter / Search Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-scholar-400" size={14} />
-              <input
-                type="text"
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Card sx={{ p: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+              <TextField
+                size="small"
                 placeholder="Search expenses by title, recipient, notes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-scholar-200 bg-white pl-9 pr-3 py-2 text-xs text-ink placeholder:text-scholar-400 focus:outline-none focus:border-scholar-500"
+                sx={{ flex: 1, maxWidth: { sm: 360 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem" } }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={16} style={{ color: "#7E9BBC" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
-            </div>
+              <FormControl size="small" sx={{ minWidth: 200 }}>
+                <InputLabel id="expense-category-filter-label" sx={{ fontSize: "0.75rem" }}>
+                  Expense Category
+                </InputLabel>
+                <Select
+                  labelId="expense-category-filter-label"
+                  label="Expense Category"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+                >
+                  <MenuItem value="ALL">All Expense Categories</MenuItem>
+                  {expenseCategoryBreakdown.map((c) => (
+                    <MenuItem key={c.category} value={c.category}>
+                      {c.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Card>
 
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-medium text-scholar-700 shadow-2xs outline-none"
-            >
-              <option value="ALL">All Expense Categories</option>
-              {expenseCategoryBreakdown.map((c) => (
-                <option key={c.category} value={c.category}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-scholar-50 text-[11px] font-bold uppercase tracking-wider text-scholar-500 border-b border-scholar-100">
-                  <tr>
-                    <th className="p-3.5">Expense Description</th>
-                    <th className="p-3.5">Category</th>
-                    <th className="p-3.5">Method</th>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Paid To</th>
-                    <th className="p-3.5 text-right">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-scholar-100 font-medium">
+          <Card sx={{ overflow: "hidden" }}>
+            <TableContainer>
+              <Table size="small" sx={{ minWidth: 750 }}>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.75, borderBottom: "1px solid #D6E0EB", whiteSpace: "nowrap" } }}>
+                    <TableCell>Expense Description</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Method</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Paid To</TableCell>
+                    <TableCell align="right">Amount (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {filteredExpenses.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-scholar-400">
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                         No expense records found matching your filters.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     filteredExpenses.map((e) => (
-                      <tr key={e.id} className="hover:bg-scholar-50/70 transition-colors">
-                        <td className="p-3.5">
-                          <span className="font-bold text-ink block">{e.title}</span>
-                          {e.notes && <span className="text-[11px] text-scholar-400">{e.notes}</span>}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="inline-block rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-                            {e.categoryLabel}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-scholar-600">{e.paymentMethod}</td>
-                        <td className="p-3.5 text-scholar-600">
+                      <TableRow key={e.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75 } }}>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>
+                            {e.title}
+                          </Typography>
+                          {e.notes && (
+                            <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8", display: "block" }}>
+                              {e.notes}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={e.categoryLabel}
+                            size="small"
+                            sx={{ bgcolor: "#FEF2F2", color: "#9F1239", border: "1px solid #FECACA", fontWeight: 700, fontSize: "0.65rem", height: 22 }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500, whiteSpace: "nowrap" }}>{e.paymentMethod}</TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>
                           {formatDate(new Date(e.expenseDate))}
-                        </td>
-                        <td className="p-3.5 text-scholar-600">
-                          {e.paidTo || <span className="text-scholar-300 italic">—</span>}
-                        </td>
-                        <td className="p-3.5 text-right font-bold text-rose-700 text-sm">
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "0.75rem", color: "#475569" }}>
+                          {e.paidTo || (
+                            <Typography variant="caption" sx={{ color: "#CBD5E1", fontStyle: "italic", fontSize: "0.75rem" }}>
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, color: "#E11D48", fontSize: "0.80rem", fontFamily: "var(--font-sora)", whiteSpace: "nowrap" }}>
                           -{formatCurrency(e.amount)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Card>
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

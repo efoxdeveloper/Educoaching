@@ -3,8 +3,19 @@
 import { useEffect, useState } from "react";
 import { MapPin, Loader2, Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Field, inputClass } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 
 type BranchUser = {
   id: string;
@@ -149,46 +160,47 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
   };
 
   return (
-    <Card className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin size={18} className="text-scholar-400" />
-          <h2 className="font-display text-base font-semibold text-ink">Branches</h2>
-        </div>
+    <Card sx={{ p: 3 }}>
+      <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <MapPin size={18} style={{ color: "#7E9BBC" }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>Branches</Typography>
+        </Box>
         {canManage && editing === null && (
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Plus size={15} />}
             onClick={() => startEdit()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-100 bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-scholar-50 cursor-pointer"
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#171A21", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
           >
-            <Plus size={15} /> Add branch
-          </button>
+            Add branch
+          </Button>
         )}
-      </div>
+      </Box>
 
       {successMessage && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900">
-          <p className="font-semibold flex items-center gap-1.5">
-            ⏳ Sub-Branch Request in Processing
-          </p>
-          <p className="text-xs text-amber-800 mt-1">{successMessage}</p>
-        </div>
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: "12px", bgcolor: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400e", fontSize: "0.875rem" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "#92400e", fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 0.75 }}>⏳ Sub-Branch Request in Processing</Typography>
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#92400e", display: "block", mt: 0.5 }}>{successMessage}</Typography>
+        </Alert>
       )}
 
       {error && (
-        <div className="mb-4 rounded-xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-600">
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {loading ? (
-        <div className="flex items-center gap-2 py-6 text-sm text-scholar-400">
-          <Loader2 size={16} className="animate-spin" /> Loading branches...
-        </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 3, color: "#7E9BBC" }}>
+          <CircularProgress size={16} sx={{ color: "#4E6E93" }} />
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#7E9BBC" }}>Loading branches...</Typography>
+        </Box>
       ) : (
-        <div className="space-y-3">
+        <Stack spacing={1.5}>
           {branches.length === 0 && editing === null && (
-            <p className="py-4 text-sm text-scholar-400">No branches yet.</p>
+            <Typography variant="body2" sx={{ py: 2, fontSize: "0.875rem", color: "#7E9BBC" }}>No branches yet.</Typography>
           )}
 
           {branches.map((b) =>
@@ -203,13 +215,14 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
                 submitLabel="Save branch"
               />
             ) : (
-              <div
+              <Paper
                 key={b.id}
-                className="flex items-center justify-between rounded-xl border border-scholar-100 px-4 py-3"
+                variant="outlined"
+                sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-ink">{b.name}</span>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.875rem" }}>{b.name}</Typography>
                     <Badge
                       tone={
                         b.status === "ACTIVE"
@@ -221,49 +234,33 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
                     >
                       {b.status === "PENDING_APPROVAL" ? "PENDING APPROVAL" : b.status}
                     </Badge>
-                  </div>
-                  <p className="mt-0.5 text-xs text-scholar-400">
+                  </Box>
+                  <Typography variant="caption" sx={{ mt: 0.5, display: "block", fontSize: "0.75rem", color: "#7E9BBC" }}>
                     {b.inChargeName ? (
-                      <span className="inline-flex items-center text-xs font-semibold text-ink">
-                        👤 {b.inChargeName}
-                      </span>
+                      <Box component="span" sx={{ fontWeight: 600, color: "#171A21" }}>👤 {b.inChargeName}</Box>
                     ) : (
-                      <span className="text-[11px] italic">No owner set</span>
+                      <Box component="span" sx={{ fontSize: "11px", fontStyle: "italic" }}>No owner set</Box>
                     )}
-                    <span className="ml-2">{[b.city, b.state].filter(Boolean).join(", ") || "No location set"}</span>
+                    <Box component="span" sx={{ ml: 1 }}>{[b.city, b.state].filter(Boolean).join(", ") || "No location set"}</Box>
                     {b.guidePhone && (
-                      <span className="ml-2 inline-flex items-center text-[11px] font-medium text-scholar-600">
-                        • Guide Helpline: {b.guidePhone}
-                      </span>
+                      <Box component="span" sx={{ ml: 1, fontSize: "11px", fontWeight: 500, color: "#475569" }}>• Guide Helpline: {b.guidePhone}</Box>
                     )}
                     {b.users && b.users.length > 0 && (
-                      <span className="ml-2 inline-flex items-center text-[11px] font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                        🔑 Login: {b.users[0].email}
-                      </span>
+                      <Chip label={`🔑 Login: ${b.users[0].email}`} size="small" sx={{ ml: 1, height: 20, fontSize: "11px", fontWeight: 500, bgcolor: "#F5F3FF", color: "#6D28D9", border: "1px solid #DDD6FE" }} />
                     )}
-                  </p>
-                </div>
+                  </Typography>
+                </Box>
                 {canManage && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(b)}
-                      className="rounded-lg p-2 text-scholar-400 hover:bg-scholar-50 hover:text-ink"
-                      aria-label="Edit branch"
-                    >
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton size="small" onClick={() => startEdit(b)} aria-label="Edit branch" sx={{ color: "#7E9BBC", "&:hover": { bgcolor: "#EEF2F7", color: "#1E3A5F" } }}>
                       <Pencil size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(b.id)}
-                      className="rounded-lg p-2 text-scholar-400 hover:bg-danger-50 hover:text-danger-600"
-                      aria-label="Delete branch"
-                    >
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDelete(b.id)} aria-label="Delete branch" sx={{ color: "#7E9BBC", "&:hover": { bgcolor: "#FEF2F2", color: "#DC2626" } }}>
                       <Trash2 size={15} />
-                    </button>
-                  </div>
+                    </IconButton>
+                  </Stack>
                 )}
-              </div>
+              </Paper>
             )
           )}
 
@@ -277,7 +274,7 @@ export function BranchesSection({ canManage }: { canManage: boolean }) {
               submitLabel="Add branch"
             />
           )}
-        </div>
+        </Stack>
       )}
     </Card>
   );
@@ -300,124 +297,155 @@ function BranchForm({
 }) {
   const [showPassword, setShowPassword] = useState(false);
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-scholar-100 p-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Branch name *">
-          <input
-            required
-            className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="e.g. Meerut Branch"
-          />
-        </Field>
-        <Field label="Branch Owner Name *">
-          <input
-            required
-            className={inputClass}
-            value={form.inChargeName}
-            onChange={(e) => setForm((f) => ({ ...f, inChargeName: e.target.value }))}
-            placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
-          />
-        </Field>
-        <Field label="Helpdesk / Office Phone">
-          <input
-            className={inputClass}
-            value={form.contact}
-            onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
-            placeholder="Helpdesk phone or email"
-          />
-        </Field>
-        <Field label="Branch Guide / Counselor Phone">
-          <input
-            className={inputClass}
-            value={form.guidePhone}
-            onChange={(e) => setForm((f) => ({ ...f, guidePhone: e.target.value }))}
-            placeholder="+91 98765 00000 (Local Guide Helpline)"
-          />
-        </Field>
-        <Field label="City">
-          <input
-            className={inputClass}
-            value={form.city}
-            onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-            placeholder="e.g. Meerut"
-          />
-        </Field>
-        <Field label="State">
-          <input
-            className={inputClass}
-            value={form.state}
-            onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-            placeholder="e.g. Uttar Pradesh"
-          />
-        </Field>
-        <Field label="Address">
-          <input
-            className={inputClass}
+    <Paper
+      component="form"
+      onSubmit={onSubmit}
+      variant="outlined"
+      sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", display: "flex", flexDirection: "column", gap: 2 }}
+    >
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+        <TextField
+          label="Branch name *"
+          required
+          fullWidth
+          size="small"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          placeholder="e.g. Meerut Branch"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <TextField
+          label="Branch Owner Name *"
+          required
+          fullWidth
+          size="small"
+          value={form.inChargeName}
+          onChange={(e) => setForm((f) => ({ ...f, inChargeName: e.target.value }))}
+          placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <TextField
+          label="Helpdesk / Office Phone"
+          fullWidth
+          size="small"
+          value={form.contact}
+          onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
+          placeholder="Helpdesk phone or email"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <TextField
+          label="Branch Guide / Counselor Phone"
+          fullWidth
+          size="small"
+          value={form.guidePhone}
+          onChange={(e) => setForm((f) => ({ ...f, guidePhone: e.target.value }))}
+          placeholder="+91 98765 00000 (Local Guide Helpline)"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <TextField
+          label="City"
+          fullWidth
+          size="small"
+          value={form.city}
+          onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+          placeholder="e.g. Meerut"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <TextField
+          label="State"
+          fullWidth
+          size="small"
+          value={form.state}
+          onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+          placeholder="e.g. Uttar Pradesh"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+        <Box sx={{ gridColumn: "1 / -1" }}>
+          <TextField
+            label="Address"
+            fullWidth
+            size="small"
             value={form.address}
             onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             placeholder="Branch address"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
-        </Field>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3.5 space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-ink">🔑 Sub-Branch Login Credentials</span>
-          <span className="text-[11px] text-scholar-500">(Optional / Recommended)</span>
-        </div>
-        <p className="text-[11px] text-scholar-600 leading-relaxed">
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21" }}>🔑 Sub-Branch Login Credentials</Typography>
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>(Optional / Recommended)</Typography>
+        </Box>
+        <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", lineHeight: 1.5 }}>
           Create sign-in credentials for this branch manager. Once Platform Admin approves the branch request, the branch administrator can log in directly with these credentials.
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Branch Login Email">
-            <input
-              type="email"
-              className={inputClass}
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="e.g. meerut@vidyalaya.in"
-            />
-          </Field>
-          <Field label="Branch Login Password">
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                className={`${inputClass} pr-9`}
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder="Set sign-in password (min 6 characters)"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-scholar-400 hover:text-scholar-700 transition p-0.5 focus:outline-none"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </Field>
-        </div>
-      </div>
+        </Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+          <TextField
+            label="Branch Login Email"
+            fullWidth
+            size="small"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            placeholder="e.g. meerut@vidyalaya.in"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="Branch Login Password"
+            fullWidth
+            size="small"
+            type={showPassword ? "text" : "password"}
+            value={form.password}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+            placeholder="Set sign-in password (min 6 characters)"
+            slotProps={{
+              inputLabel: { shrink: true },
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      sx={{ color: "#7E9BBC", "&:hover": { color: "#1E3A5F" } }}
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
+      </Paper>
 
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-sm font-semibold text-scholar-600"
-        >
+      <Stack direction="row" spacing={1.5}>
+        <Button type="button" variant="outlined" fullWidth onClick={onCancel} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          variant="contained"
+          fullWidth
           disabled={saving}
-          className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60"
+          startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+          sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, textTransform: "none", py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
         >
           {saving ? "Saving..." : submitLabel}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </Stack>
+    </Paper>
   );
 }

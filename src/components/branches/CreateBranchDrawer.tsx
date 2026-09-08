@@ -2,8 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
 
 export type BranchItem = {
   id: string;
@@ -138,201 +152,233 @@ export function CreateBranchDrawer({
       onClose={onClose}
       title={branchToEdit ? `Edit Branch: ${branchToEdit.name}` : "Create New Institute Branch"}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
             {error}
-          </div>
+          </Alert>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Branch / Center Name *">
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. South Extension Campus, Kota Center"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Branch Owner Name *">
-            <input
-              type="text"
-              required
-              value={inChargeName}
-              onChange={(e) => setInChargeName(e.target.value)}
-              placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="City">
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="e.g. New Delhi, Kota, Pune"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="State">
-            <input
-              type="text"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              placeholder="e.g. Delhi, Rajasthan"
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <Field label="Physical Address / Street">
-          <textarea
-            rows={2}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Building, Street, Landmark, Pin code..."
-            className={inputClass}
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="Branch / Center Name *"
+            required
+            fullWidth
+            size="small"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. South Extension Campus, Kota Center"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
-        </Field>
+          <TextField
+            label="Branch Owner Name *"
+            required
+            fullWidth
+            size="small"
+            value={inChargeName}
+            onChange={(e) => setInChargeName(e.target.value)}
+            placeholder="e.g. Rajesh Kumar (Branch In-Charge)"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Helpdesk / Contact Phone">
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              value={contact}
-              onChange={(e) => setContact(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="9876543210"
-              className={inputClass}
-            />
-          </Field>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="City"
+            fullWidth
+            size="small"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="e.g. New Delhi, Kota, Pune"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="State"
+            fullWidth
+            size="small"
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            placeholder="e.g. Delhi, Rajasthan"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-          <Field label="Guide / Counselor Phone">
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              value={guidePhone}
-              onChange={(e) => setGuidePhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="9876500000"
-              className={inputClass}
-            />
-          </Field>
-        </div>
+        <TextField
+          label="Physical Address / Street"
+          fullWidth
+          size="small"
+          multiline
+          rows={2}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="Building, Street, Landmark, Pin code..."
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="Helpdesk / Contact Phone"
+            fullWidth
+            size="small"
+            type="tel"
+            value={contact}
+            onChange={(e) => setContact(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            placeholder="9876543210"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="Guide / Counselor Phone"
+            fullWidth
+            size="small"
+            type="tel"
+            value={guidePhone}
+            onChange={(e) => setGuidePhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            placeholder="9876500000"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
         {branchToEdit && (
-          <Field label="Operational Status">
-            <select
+          <FormControl fullWidth size="small">
+            <InputLabel id="branch-status-label">Operational Status</InputLabel>
+            <Select
+              labelId="branch-status-label"
+              label="Operational Status"
               value={status}
               onChange={(e) => setStatus(e.target.value as "ACTIVE" | "INACTIVE" | "PENDING_APPROVAL")}
-              className={inputClass}
+              sx={{ borderRadius: "12px", bgcolor: "white" }}
             >
-              <option value="ACTIVE">Active Operating Branch</option>
-              <option value="INACTIVE">Inactive / Temporarily Closed</option>
+              <MenuItem value="ACTIVE">Active Operating Branch</MenuItem>
+              <MenuItem value="INACTIVE">Inactive / Temporarily Closed</MenuItem>
               {branchToEdit.status === "PENDING_APPROVAL" && (
-                <option value="PENDING_APPROVAL">Pending Platform Admin Approval</option>
+                <MenuItem value="PENDING_APPROVAL">Pending Platform Admin Approval</MenuItem>
               )}
-            </select>
-          </Field>
+            </Select>
+          </FormControl>
         )}
 
         {!branchToEdit && !isMainBranch && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800 space-y-1">
-            <p className="font-semibold text-amber-900 flex items-center gap-1.5">
+          <Alert
+            severity="warning"
+            sx={{
+              borderRadius: "12px",
+              bgcolor: "#FFFBEB",
+              border: "1px solid #FDE68A",
+              color: "#92400e",
+              fontSize: "0.75rem",
+              "& .MuiAlert-message": { width: "100%" },
+            }}
+          >
+            <Typography variant="caption" sx={{ fontWeight: 700, color: "#92400e", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.75 }}>
               ⏳ Platform Admin Access Approval Workflow
-            </p>
-            <p className="text-[11px] leading-relaxed text-amber-700">
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e", lineHeight: 1.5, display: "block", mt: 0.5 }}>
               When this sub-branch is added, an access request is dispatched to the Platform Administrator. Confirmation emails will be sent to you and the Main Branch owner. Access unlocks immediately upon platform administrator approval.
-            </p>
-          </div>
+            </Typography>
+          </Alert>
         )}
 
         {!branchToEdit && (
-          <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3.5 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-ink">🔑 Sub-Branch Login Credentials</span>
-              <span className="text-[11px] text-scholar-500">(Optional / Recommended)</span>
-            </div>
-            <p className="text-[11px] text-scholar-600 leading-relaxed">
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21" }}>🔑 Sub-Branch Login Credentials</Typography>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>(Optional / Recommended)</Typography>
+            </Box>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", lineHeight: 1.5 }}>
               Create credentials for this branch manager. Once Platform Admin approves the request, the branch manager can sign in using these credentials.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Branch Login Email">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. branch@vidyalaya.in"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Branch Login Password">
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password (min 6 chars)"
-                    className={`${inputClass} pr-9`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-scholar-400 hover:text-scholar-700 transition p-0.5 focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </Field>
-            </div>
-          </div>
+            </Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+              <TextField
+                label="Branch Login Email"
+                fullWidth
+                size="small"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. branch@vidyalaya.in"
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+              />
+              <TextField
+                label="Branch Login Password"
+                fullWidth
+                size="small"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password (min 6 chars)"
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          sx={{ color: "#7E9BBC", "&:hover": { color: "#1E3A5F" } }}
+                        >
+                          {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+              />
+            </Box>
+          </Paper>
         )}
 
         {/* Main Branch / Head Office Designation */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/70 p-3.5 space-y-1">
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isMainBranch}
-              onChange={(e) => setIsMainBranch(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-scholar-300 text-scholar-600 focus:ring-scholar-500"
-            />
-            <div>
-              <span className="text-xs font-bold text-ink">
-                🏛️ Main Branch / Head Office (Master Administrative Access)
-              </span>
-              <p className="text-[11px] text-scholar-500 mt-0.5">
-                Staff and administrators at the Main Branch have full access to switch to other branches, monitor enrollments, and make changes to any branch.
-              </p>
-            </div>
-          </label>
-        </div>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.4)" }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isMainBranch}
+                onChange={(e) => setIsMainBranch(e.target.checked)}
+                size="small"
+                sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }}
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21" }}>
+                  🏛️ Main Branch / Head Office (Master Administrative Access)
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", display: "block", mt: 0.25 }}>
+                  Staff and administrators at the Main Branch have full access to switch to other branches, monitor enrollments, and make changes to any branch.
+                </Typography>
+              </Box>
+            }
+            sx={{ alignItems: "flex-start", m: 0 }}
+          />
+        </Paper>
 
-        <div className="mt-4 flex gap-2 border-t border-scholar-100 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-200 py-2.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
-          >
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1, borderTop: "1px solid #D6E0EB", mt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="contained"
+            fullWidth
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-scholar-600 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-50"
+            startIcon={loading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" } as any} /> : <CheckCircle2 size={14} />}
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
             {branchToEdit ? "Update Branch" : "Create Branch"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

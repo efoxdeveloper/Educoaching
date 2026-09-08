@@ -9,20 +9,30 @@ import {
   Users,
   MapPin,
   Phone,
-  Wallet,
-  TrendingUp,
-  Edit2,
-  Trash2,
   Building,
   Zap,
-  Loader2,
   LogOut,
 } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Card, KpiCard } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CreateBranchDrawer, type BranchItem } from "./CreateBranchDrawer";
 import { formatCurrency } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
 
 export function BranchesView({
   initialBranches,
@@ -151,170 +161,147 @@ export function BranchesView({
   const totalCollections = branches.reduce((sum, b) => sum + (b.totalCollected || 0), 0);
   const totalExpenses = branches.reduce((sum, b) => sum + (b.totalExpenses || 0), 0);
   const totalProfit = totalCollections - totalExpenses;
+  const activeCount = branches.filter((b) => b.status === "ACTIVE").length;
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-xl font-bold text-ink">Multi-Branch Center Management</h1>
-          <p className="mt-0.5 text-xs text-scholar-400">
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+        <Box>
+          <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>Multi-Branch Center Management</Typography>
+          <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem", display: "block", mt: 0.5 }}>
             Manage your physical campus centers, track branch-level student enrollment, collections, and profitability.
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <button
+        <Button
+          variant="contained"
+          startIcon={<Plus size={15} />}
           onClick={() => {
             setBranchToEdit(null);
             setDrawerOpen(true);
           }}
-          className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-scholar-700 transition-colors"
+          sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.75rem", px: 2, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
         >
-          <Plus size={15} /> Add Campus Branch
-        </button>
-      </div>
+          Add Campus Branch
+        </Button>
+      </Box>
 
       {notification && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-900 shadow-2xs flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <span className="text-base">⏳</span>
-            <div>
-              <p className="font-bold text-amber-950">Sub-Branch Request in Processing</p>
-              <p className="mt-0.5 text-amber-800">{notification}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNotification(null)}
-            className="text-amber-600 hover:text-amber-900 font-bold px-1"
-          >
-            ✕
-          </button>
-        </div>
+        <Alert
+          severity="warning"
+          onClose={() => setNotification(null)}
+          sx={{ borderRadius: "16px", border: "1px solid #FDE68A", bgcolor: "#FFFBEB", color: "#92400e", fontSize: "0.75rem", "& .MuiAlert-message": { width: "100%" } }}
+        >
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: "#78350f", fontSize: "0.75rem", display: "block" }}>Sub-Branch Request in Processing</Typography>
+            <Typography variant="caption" sx={{ color: "#92400e", fontSize: "0.75rem" }}>{notification}</Typography>
+          </Box>
+        </Alert>
       )}
 
       {/* Main Branch Master Control Banner */}
-      <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50/50 to-white p-4 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-700 text-white shrink-0 shadow-xs">
-              <Building2 size={20} />
-            </div>
-            <div>
-              <h3 className="font-display text-sm font-bold text-purple-950 flex items-center gap-2">
-                <span>Main Branch Master Control Active</span>
-                <span className="rounded-md bg-purple-200/90 px-2 py-0.5 text-[10px] font-bold text-purple-900 uppercase">
-                  Centralized Administration
-                </span>
-              </h3>
-              <p className="text-xs text-purple-900/80 mt-0.5">
-                The Main Branch (Head Office) has full access to view, switch between, and make changes to all {branches.length} campus branches, including student enrollments, batch schedules, and fee collections.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2,
+          borderRadius: "16px",
+          borderColor: "#DDD6FE",
+          background: "linear-gradient(90deg, #faf5ff 0%, #eef2ff 50%, #ffffff 100%)",
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+          <Avatar variant="rounded" sx={{ width: 40, height: 40, borderRadius: "12px", bgcolor: "#6D28D9", color: "white", flexShrink: 0 }}>
+            <Building2 size={20} />
+          </Avatar>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#3B0764", fontSize: "0.875rem" }}>Main Branch Master Control Active</Typography>
+              <Chip label="Centralized Administration" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#DDD6FE", color: "#4C1D95", border: "1px solid #C4B5FD", textTransform: "uppercase" }} />
+            </Box>
+            <Typography variant="caption" sx={{ color: "#6D28D9", fontSize: "0.75rem", display: "block", mt: 0.5 }}>
+              The Main Branch (Head Office) has full access to view, switch between, and make changes to all {branches.length} campus branches, including student enrollments, batch schedules, and fee collections.
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Active Campuses</span>
-            <Building2 size={16} className="text-scholar-600" />
-          </div>
-          <p className="font-display text-2xl font-bold text-ink mt-2">
-            {branches.filter((b) => b.status === "ACTIVE").length}{" "}
-            <span className="text-xs font-normal text-scholar-400">/ {branches.length}</span>
-          </p>
-          <p className="text-[10px] text-scholar-400 mt-1">Operational branch centers</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Total Enrolled Students</span>
-            <Users size={16} className="text-scholar-600" />
-          </div>
-          <p className="font-display text-2xl font-bold text-ink mt-2">
-            {totalStudents.toLocaleString("en-IN")}
-          </p>
-          <p className="text-[10px] text-scholar-400 mt-1">Across all branch campuses</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Total Fee Collections</span>
-            <Wallet size={16} className="text-emerald-600" />
-          </div>
-          <p className="font-display text-2xl font-bold text-emerald-600 mt-2">
-            {formatCurrency(totalCollections)}
-          </p>
-          <p className="text-[10px] text-scholar-400 mt-1">Total cash inflow collected</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-scholar-500">Net Campus Profit</span>
-            <TrendingUp size={16} className="text-scholar-600" />
-          </div>
-          <p className={`font-display text-2xl font-bold mt-2 ${totalProfit >= 0 ? "text-scholar-800" : "text-rose-600"}`}>
-            {formatCurrency(totalProfit)}
-          </p>
-          <p className="text-[10px] text-scholar-400 mt-1">After deducting campus expenses</p>
-        </Card>
-      </div>
+      {/* KPI Cards — reuse KpiCard with lazy iconName */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, gap: 2 }}>
+        <KpiCard label="Active Campuses" value={`${activeCount.toLocaleString("en-IN")} / ${branches.length.toLocaleString("en-IN")}`} iconName="Building2" accent="scholar" trend="Operational branch centers" trendTone="neutral" />
+        <KpiCard label="Total Enrolled Students" value={totalStudents.toLocaleString("en-IN")} iconName="Users" accent="scholar" trend="Across all branch campuses" trendTone="neutral" />
+        <KpiCard label="Total Fee Collections" value={formatCurrency(totalCollections)} iconName="Wallet" accent="marigold" trend="Total cash inflow collected" trendTone="neutral" />
+        <KpiCard label="Net Campus Profit" value={formatCurrency(totalProfit)} iconName={totalProfit >= 0 ? "TrendingUp" : "TrendingDown"} accent={totalProfit >= 0 ? "scholar" : "marigold"} trend="After deducting campus expenses" trendTone={totalProfit >= 0 ? "success" : "danger"} />
+      </Box>
 
       {/* Filter and Search */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-scholar-400" />
-            <input
-              type="text"
-              placeholder="Search by branch name or city..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-scholar-200 bg-white py-1.5 pl-8 pr-3 text-xs outline-none focus:border-scholar-500"
-            />
-          </div>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5, flex: 1 }}>
+          <TextField
+            size="small"
+            placeholder="Search by branch name or city..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={14} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ minWidth: 220, flex: 1, maxWidth: 320, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem" } }}
+          />
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-scholar-200 bg-white px-3 py-1.5 text-xs font-medium text-ink outline-none"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Centers Only</option>
-            <option value="INACTIVE">Inactive Centers</option>
-          </select>
-        </div>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="branch-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+            <Select
+              labelId="branch-status-label"
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+            >
+              <MenuItem value="ALL">All Statuses</MenuItem>
+              <MenuItem value="ACTIVE">Active Centers Only</MenuItem>
+              <MenuItem value="INACTIVE">Inactive Centers</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-        <span className="text-xs font-medium text-scholar-400">
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#7E9BBC", whiteSpace: "nowrap" }}>
           Showing {filtered.length} branches
-        </span>
-      </div>
+        </Typography>
+      </Box>
 
-      {/* Branches Grid */}
+      {/* Branches Grid — keep as Card grid, not Table */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-scholar-100 bg-white p-12 text-center shadow-card">
-          <Building2 size={28} className="mx-auto text-scholar-400" />
-          <h3 className="mt-3 font-display text-base font-semibold text-ink">No Branches Found</h3>
-          <p className="mt-1 text-xs text-scholar-400 max-w-sm mx-auto">
-            {search || statusFilter !== "ALL"
-              ? "No branches match your current filter."
-              : "Expand your coaching institute by creating multiple branch centers."}
-          </p>
-          <button
+        <Card sx={{ p: 6, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+          <Building2 size={28} style={{ color: "#94A3B8" }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21" }}>No Branches Found</Typography>
+          <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem", maxWidth: 320 }}>
+            {search || statusFilter !== "ALL" ? "No branches match your current filter." : "Expand your coaching institute by creating multiple branch centers."}
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={14} />}
             onClick={() => {
               setBranchToEdit(null);
               setDrawerOpen(true);
             }}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-scholar-600 px-4 py-2 text-xs font-semibold text-white hover:bg-scholar-700"
+            sx={{ mt: 1, borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.75rem", px: 2, py: 1, boxShadow: "none" }}
           >
-            <Plus size={14} /> Add First Branch
-          </button>
-        </div>
+            Add First Branch
+          </Button>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gap: 2 }}>
           {filtered.map((b) => {
             const margin =
               b.totalCollected && b.totalCollected > 0
@@ -324,27 +311,25 @@ export function BranchesView({
             return (
               <Card
                 key={b.id}
-                className="flex flex-col justify-between p-5 transition-all hover:shadow-popover"
+                sx={{ p: 2.5, display: "flex", flexDirection: "column", justifyContent: "space-between", transition: "box-shadow 0.15s", "&:hover": { boxShadow: "0 4px 12px rgba(13,26,42,0.08)" } }}
               >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-scholar-50 text-scholar-600">
+                <Box>
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                      <Avatar variant="rounded" sx={{ width: 36, height: 36, borderRadius: "12px", bgcolor: "#EEF2F7", color: "#4E6E93" }}>
                         <Building size={18} />
-                      </div>
-                      <div>
-                        <h3 className="font-display text-sm font-bold text-ink">{b.name}</h3>
-                        <p className="flex items-center gap-1 text-[11px] text-scholar-400">
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.875rem" }}>{b.name}</Typography>
+                        <Typography variant="caption" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: "11px", color: "#7E9BBC" }}>
                           <MapPin size={11} /> {b.city || "Primary City"}{b.state ? `, ${b.state}` : ""}
-                        </p>
-                      </div>
-                    </div>
+                        </Typography>
+                      </Box>
+                    </Box>
 
-                    <div className="flex items-center gap-1.5">
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
                       {b.isMainBranch && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-900 border border-purple-200 shadow-2xs">
-                          🏛️ Main Branch
-                        </span>
+                        <Chip icon={<Box component="span" sx={{ fontSize: "11px" }}>🏛️</Box>} label="Main Branch" size="small" sx={{ height: 20, fontSize: "10px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#4C1D95", border: "1px solid #DDD6FE" }} />
                       )}
                       <Badge
                         tone={
@@ -357,168 +342,160 @@ export function BranchesView({
                       >
                         {b.status === "PENDING_APPROVAL" ? "PENDING APPROVAL" : b.status}
                       </Badge>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
 
                   {b.address && (
-                    <p className="mt-3 text-xs text-scholar-500 bg-scholar-50/60 p-2 rounded-lg line-clamp-2">
-                      {b.address}
-                    </p>
+                    <Paper variant="outlined" sx={{ mt: 1.5, p: 1, borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB" }}>
+                      <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {b.address}
+                      </Typography>
+                    </Paper>
                   )}
 
                   {b.contact && (
-                    <p className="mt-2 flex items-center gap-1 text-xs text-scholar-600 font-medium">
-                      <Phone size={12} className="text-scholar-400" /> {b.contact}
-                    </p>
+                    <Typography variant="caption" sx={{ mt: 1, display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem", color: "#334155", fontWeight: 500 }}>
+                      <Phone size={12} style={{ color: "#94A3B8" }} /> {b.contact}
+                    </Typography>
                   )}
 
                   {b.guidePhone && (
-                    <p className="mt-1 flex items-center gap-1 text-xs text-purple-700 font-medium">
-                      <span className="text-[11px] font-semibold text-purple-800">🧭 Guide Helpline:</span> {b.guidePhone}
-                    </p>
+                    <Typography variant="caption" sx={{ mt: 0.5, display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem", color: "#6D28D9", fontWeight: 500 }}>
+                      <Box component="span" sx={{ fontSize: "11px", fontWeight: 700, color: "#6D28D9" }}>🧭 Guide Helpline:</Box> {b.guidePhone}
+                    </Typography>
                   )}
 
                   {b.inChargeName && (
-                    <p className="mt-1 flex items-center gap-1 text-xs text-ink">
-                      <span className="text-[11px] font-semibold text-scholar-600">👤 Owner:</span> <span className="font-semibold">{b.inChargeName}</span>
-                    </p>
+                    <Typography variant="caption" sx={{ mt: 0.5, display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem", color: "#171A21" }}>
+                      <Box component="span" sx={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>👤 Owner:</Box> <Box component="span" sx={{ fontWeight: 600 }}>{b.inChargeName}</Box>
+                    </Typography>
                   )}
 
                   {b.isMainBranch ? (
-                    <div className="mt-2.5 rounded-lg border border-purple-200 bg-purple-50/70 p-2 text-[11px] text-purple-900 font-semibold flex items-center gap-1.5">
-                      <Building2 size={13} className="text-purple-700 shrink-0" />
-                      <span>Head Office: Full administrative access to manage all {branches.length - 1} other branch locations.</span>
-                    </div>
+                    <Alert severity="info" icon={<Building2 size={13} />} sx={{ mt: 1.25, borderRadius: "8px", bgcolor: "#F5F3FF", border: "1px solid #DDD6FE", color: "#4C1D95", fontSize: "11px", py: 0.5, "& .MuiAlert-message": { fontWeight: 600 } }}>
+                      Head Office: Full administrative access to manage all {branches.length - 1} other branch locations.
+                    </Alert>
                   ) : b.status === "PENDING_APPROVAL" ? (
-                    <div className="mt-2.5 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] text-amber-900 flex items-start gap-1.5">
-                      <span className="shrink-0 mt-0.5">⏳</span>
-                      <div>
-                        <span className="font-bold">Request in Processing:</span> Platform admin approval is pending. Access will unlock once granted.
-                      </div>
-                    </div>
+                    <Alert severity="warning" sx={{ mt: 1.25, borderRadius: "8px", bgcolor: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400e", fontSize: "11px", py: 0.5 }}>
+                      <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "11px", color: "#92400e" }}>Request in Processing:</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e" }}>Platform admin approval is pending. Access will unlock once granted.</Typography>
+                      </Box>
+                    </Alert>
                   ) : (
-                    <div className="mt-2.5 rounded-lg border border-scholar-100 bg-scholar-50/60 p-2 text-[11px] text-scholar-600 flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={12} className="text-scholar-400" />
-                        <span>Governed by Main Branch</span>
-                      </span>
-                      <button
-                        type="button"
+                    <Paper variant="outlined" sx={{ mt: 1.25, p: 1, borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: "11px", color: "#64748b" }}>
+                        <Building2 size={12} style={{ color: "#94A3B8" }} />
+                        Governed by Main Branch
+                      </Typography>
+                      <Button
+                        size="small"
                         onClick={() => {
                           setBranchToEdit(b);
                           setDrawerOpen(true);
                         }}
-                        className="text-[10px] font-bold text-scholar-700 hover:underline"
+                        sx={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "none", p: 0, minWidth: 0, "&:hover": { textDecoration: "underline", bgcolor: "transparent" } }}
                       >
                         Configure from Main Branch →
-                      </button>
-                    </div>
+                      </Button>
+                    </Paper>
                   )}
 
                   {/* Operational stats */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 border-y border-scholar-50 py-2.5 text-center text-xs">
-                    <div>
-                      <span className="text-[10px] text-scholar-400 uppercase font-semibold">
-                        Students
-                      </span>
-                      <p className="font-bold text-ink mt-0.5">{b.studentCount || 0}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-scholar-400 uppercase font-semibold">
-                        Batches
-                      </span>
-                      <p className="font-bold text-ink mt-0.5">{b.batchCount || 0}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-scholar-400 uppercase font-semibold">
-                        CRM Leads
-                      </span>
-                      <p className="font-bold text-scholar-700 mt-0.5">{b.leadCount || 0}</p>
-                    </div>
-                  </div>
+                  <Box sx={{ mt: 2, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, borderTop: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9", py: 1.25, textAlign: "center" }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", color: "#94A3B8", display: "block" }}>Students</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", mt: 0.5, fontSize: "0.875rem" }}>{b.studentCount || 0}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", color: "#94A3B8", display: "block" }}>Batches</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", mt: 0.5, fontSize: "0.875rem" }}>{b.batchCount || 0}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", color: "#94A3B8", display: "block" }}>CRM Leads</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "#475569", mt: 0.5, fontSize: "0.875rem" }}>{b.leadCount || 0}</Typography>
+                    </Box>
+                  </Box>
 
                   {/* Financial Breakdown */}
-                  <div className="mt-3 rounded-xl bg-scholar-50/70 p-3 text-xs space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-scholar-500">Collections:</span>
-                      <span className="font-bold text-emerald-700">
-                        {formatCurrency(b.totalCollected || 0)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-scholar-500">Expenses:</span>
-                      <span className="font-semibold text-rose-600">
-                        -{formatCurrency(b.totalExpenses || 0)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between border-t border-scholar-200/50 pt-1">
-                      <span className="font-semibold text-ink">Net Margin:</span>
-                      <span className={`font-bold ${(b.netProfit || 0) >= 0 ? "text-scholar-800" : "text-rose-600"}`}>
+                  <Paper variant="outlined" sx={{ mt: 1.5, p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                      <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>Collections:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "#059669", fontSize: "0.75rem" }}>{formatCurrency(b.totalCollected || 0)}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                      <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>Expenses:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "#DC2626", fontSize: "0.75rem" }}>-{formatCurrency(b.totalExpenses || 0)}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(214,224,235,0.5)", pt: 0.75 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.75rem" }}>Net Margin:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: (b.netProfit || 0) >= 0 ? "#1E3A5F" : "#DC2626" }}>
                         {formatCurrency(b.netProfit || 0)} ({margin}%)
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Box>
 
-                <div className="mt-4 flex flex-col gap-2 border-t border-scholar-100 pt-3">
+                <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1, borderTop: "1px solid #D6E0EB", pt: 1.5 }}>
                   {!b.isMainBranch && (
                     b.status === "PENDING_APPROVAL" ? (
-                      <div className="w-full text-center rounded-xl border border-amber-200 bg-amber-50/60 py-1.5 px-2 text-[11px] font-semibold text-amber-800">
+                      <Paper variant="outlined" sx={{ p: 1, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#92400e" }}>
                         🔒 Sub-Branch Locked • Awaiting Admin Access Grant
-                      </div>
+                      </Paper>
                     ) : activeImpersonationBranchId === b.id ? (
-                      <button
-                        type="button"
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        startIcon={<LogOut size={12} />}
                         onClick={handleExitImpersonation}
-                        className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer"
+                        sx={{ borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB", color: "#92400e", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1, "&:hover": { bgcolor: "#FEF3C7", borderColor: "#FCD34D" } }}
                       >
-                        <LogOut size={12} className="text-amber-700" /> Active Impersonation • Exit to Main Branch
-                      </button>
+                        Active Impersonation • Exit to Main Branch
+                      </Button>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        startIcon={impersonatingId === b.id ? undefined : <Zap size={13} />}
                         onClick={() => handleStartImpersonation(b)}
                         disabled={impersonatingId === b.id}
-                        className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50/90 py-1.5 text-xs font-bold text-purple-900 hover:bg-purple-100 transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                        sx={{ borderRadius: "12px", borderColor: "#DDD6FE", bgcolor: "#F5F3FF", color: "#4C1D95", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", py: 1, "&:hover": { bgcolor: "#EDE9FE", borderColor: "#C4B5FD" } }}
                       >
-                        {impersonatingId === b.id ? (
-                          <Loader2 size={13} className="animate-spin text-purple-700" />
-                        ) : (
-                          <Zap size={13} className="text-purple-700" />
-                        )}
-                        <span>⚡ Impersonate & Manage Branch View</span>
-                      </button>
+                        {impersonatingId === b.id ? "Impersonating..." : "⚡ Impersonate & Manage Branch View"}
+                      </Button>
                     )
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<Building size={12} />}
                       onClick={() => {
                         setBranchToEdit(b);
                         setDrawerOpen(true);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-scholar-200 bg-white py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 cursor-pointer"
+                      sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, "&:hover": { bgcolor: "#F8FAFC" } }}
                     >
-                      <Edit2 size={12} /> Edit Details
-                    </button>
+                      Edit Details
+                    </Button>
 
                     {!b.isMainBranch && (
-                      <button
-                        type="button"
+                      <IconButton
+                        size="small"
                         onClick={() => onDeleteClick(b)}
-                        className="p-1.5 rounded-xl border border-scholar-200 text-scholar-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 cursor-pointer transition"
                         title="Delete Branch"
+                        sx={{ border: "1px solid #D6E0EB", borderRadius: "12px", color: "#94A3B8", width: 36, height: 36, "&:hover": { bgcolor: "#FFF1F2", color: "#DC2626", borderColor: "#FECACA" } }}
                       >
-                        <Trash2 size={14} />
-                      </button>
+                        <Box component="span" sx={{ fontSize: "14px" }}>🗑️</Box>
+                      </IconButton>
                     )}
-                  </div>
-                </div>
+                  </Stack>
+                </Box>
               </Card>
             );
           })}
-        </div>
+        </Box>
       )}
 
       {/* Create / Edit Drawer */}
@@ -570,6 +547,6 @@ export function BranchesView({
         tone="danger"
         loading={deleteLoading}
       />
-    </div>
+    </Box>
   );
 }

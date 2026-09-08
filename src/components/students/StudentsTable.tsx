@@ -17,6 +17,26 @@ import { EditStudentDrawer, type EditableStudent } from "./EditStudentDrawer";
 import { DocumentsDrawer } from "@/components/files/DocumentsDrawer";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { computeFeeStatus, feeStatusLabel } from "@/lib/fee";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
+import Avatar from "@mui/material/Avatar";
 
 type Student = {
   id: string;
@@ -136,14 +156,15 @@ export function StudentsTable({
   return (
     <>
       {/* S1: Student distribution visuals — stat cards + donut/bar; table below stays exactly as before with all badges/numbers */}
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-4 flex flex-col">
-          <div className="mb-2 flex items-center gap-1.5">
-            <Users size={14} className="text-scholar-600" />
-            <h4 className="font-display text-sm font-semibold text-ink">Students by Status</h4>
-          </div>
-          <p className="mb-3 text-xs text-scholar-400">Active vs On Hold vs Inactive — distribution, not just count</p>
-          <div className="h-[180px] w-full">
+      {/* Do NOT convert recharts to MUI X Charts — kept as recharts */}
+      <Box sx={{ mb: 2, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 2 }}>
+        <Card sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 0.75 }}>
+            <Users size={14} style={{ color: "#1E3A5F" }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>Students by Status</Typography>
+          </Box>
+          <Typography variant="caption" sx={{ mb: 1.5, color: "#7E9BBC", fontSize: "0.75rem" }}>Active vs On Hold vs Inactive — distribution, not just count</Typography>
+          <Box sx={{ height: 180, width: "100%" }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -161,286 +182,204 @@ export function StudentsTable({
                     <Cell key={`cell-${idx}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any} />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="mt-2 flex flex-wrap justify-center gap-3 text-[11px]">
+          </Box>
+          <Box sx={{ mt: 1, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 1.5 }}>
             {statusDonutData.map((d) => (
-              <span key={d.name} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: d.color }} /> {d.name} ({d.value})
-              </span>
+              <Box key={d.name} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ height: 8, width: 8, borderRadius: "50%", bgcolor: d.color }} />
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569" }}>{d.name} ({d.value})</Typography>
+              </Box>
             ))}
-          </div>
-          <p className="mt-2 text-center text-[11px] text-scholar-500">Total: {students.length} students</p>
+          </Box>
+          <Typography variant="caption" sx={{ mt: 1, textAlign: "center", fontSize: "11px", color: "#7E9BBC" }}>Total: {students.length} students</Typography>
         </Card>
 
-        <Card className="p-4 lg:col-span-2">
-          <div className="mb-2 flex items-center justify-between">
-            <h4 className="font-display text-sm font-semibold text-ink">Students per Course</h4>
-            <span className="text-[11px] text-scholar-400">Top 6 courses</span>
-          </div>
-          <p className="mb-3 text-xs text-scholar-400">Enrollment concentration by program — bar length = headcount</p>
-          <div className="h-[180px] w-full">
+        <Card sx={{ p: 2 }}>
+          <Box sx={{ mb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>Students per Course</Typography>
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Top 6 courses</Typography>
+          </Box>
+          <Typography variant="caption" sx={{ mb: 1.5, display: "block", color: "#7E9BBC", fontSize: "0.75rem" }}>Enrollment concentration by program — bar length = headcount</Typography>
+          <Box sx={{ height: 180, width: "100%" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={courseCounts} margin={{ left: -10, right: 16, top: 4, bottom: 4 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#4E6E93" }} interval={0} angle={-14} textAnchor="end" height={50} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }} />
-                <Bar dataKey="count" fill="#1E3A5F" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#4E6E93" } as any} interval={0} angle={-14} textAnchor="end" height={50} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#4E6E93" } as any} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any} />
+                <Bar dataKey="count" fill="#1E3A5F" radius={[6, 6, 0, 0] as any} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </Box>
         </Card>
-      </div>
+      </Box>
 
-      <Card className="p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 sm:max-w-xs sm:flex-1">
-              <Search
-                size={16}
-                className="text-scholar-300"
-              />
+      <Card sx={{ p: 2.5 }}>
+        <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
+            <TextField
+              size="small"
+              placeholder="Search by name or mobile"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} style={{ color: "#7E9BBC" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ flex: 1, maxWidth: { sm: 260 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" } }}
+            />
 
-              <input
-                placeholder="Search by name or mobile"
-                value={query}
-                onChange={(e) =>
-                  setQuery(e.target.value)
-                }
-                className="w-full bg-transparent text-sm outline-none placeholder:text-scholar-300"
-              />
-            </div>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="students-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
+              <Select
+                labelId="students-course-label"
+                label="Course"
+                value={courseFilter}
+                onChange={(e) => setCourseFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All courses</MenuItem>
+                {courses.map((c) => (
+                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            <select
-              value={courseFilter}
-              onChange={(e) =>
-                setCourseFilter(e.target.value)
-              }
-              className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-sm text-scholar-600 outline-none"
-            >
-              <option value="">
-                All courses
-              </option>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="students-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+              <Select
+                labelId="students-status-label"
+                label="Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="ACTIVE">Active</MenuItem>
+                <MenuItem value="ON_HOLD">On hold</MenuItem>
+                <MenuItem value="INACTIVE">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-              {courses.map((c) => (
-                <option
-                  key={c.id}
-                  value={c.id}
-                >
-                  {c.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value)
-              }
-              className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-sm text-scholar-600 outline-none"
-            >
-              <option value="">
-                All statuses
-              </option>
-
-              <option value="ACTIVE">
-                Active
-              </option>
-
-              <option value="ON_HOLD">
-                On hold
-              </option>
-
-              <option value="INACTIVE">
-                Inactive
-              </option>
-            </select>
-          </div>
-
-          <button
-            onClick={() =>
-              setDrawerOpen(true)
-            }
-            className="flex items-center justify-center gap-2 rounded-xl bg-scholar-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700"
+          <Button
+            variant="contained"
+            startIcon={<Plus size={16} />}
+            onClick={() => setDrawerOpen(true)}
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.875rem", px: 2, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" }, whiteSpace: "nowrap" }}
           >
-            <Plus size={16} />
             Add Student
-          </button>
-        </div>
+          </Button>
+        </Box>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-scholar-100 text-left text-xs font-medium uppercase tracking-wide text-scholar-400">
-                <th className="py-3 pr-4">
-                  Student
-                </th>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+          <Table sx={{ minWidth: 880 }} size="small">
+            <TableHead>
+              <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
+                <TableCell>Student</TableCell>
+                <TableCell>Mobile</TableCell>
+                <TableCell>Course</TableCell>
+                <TableCell>Batch</TableCell>
+                <TableCell>Fee status</TableCell>
+                <TableCell>Admission date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
 
-                <th className="py-3 pr-4">
-                  Mobile
-                </th>
-
-                <th className="py-3 pr-4">
-                  Course
-                </th>
-
-                <th className="py-3 pr-4">
-                  Batch
-                </th>
-
-                <th className="py-3 pr-4">
-                  Fee status
-                </th>
-
-                <th className="py-3 pr-4">
-                  Admission date
-                </th>
-
-                <th className="py-3 pr-4">
-                  Status
-                </th>
-
-                <th className="py-3 pr-2 text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
+            <TableBody>
               {filtered.map((s) => {
-                // Convert the string received from the server
-                // into a Date before passing it to computeFeeStatus.
-                const dueDate = s.dueDate
-                  ? new Date(s.dueDate)
-                  : null;
-
-                const fee = computeFeeStatus(
-                  Number(s.totalFee),
-                  Number(s.paidFee),
-                  dueDate
-                );
-
+                const dueDate = s.dueDate ? new Date(s.dueDate) : null;
+                const fee = computeFeeStatus(Number(s.totalFee), Number(s.paidFee), dueDate);
                 return (
-                  <tr
-                    key={s.id}
-                    className="border-b border-scholar-50 last:border-0 hover:bg-paper/60"
-                  >
-                    <td className="py-3 pr-4">
-                      <div
-                        className="flex items-center gap-3 cursor-pointer group"
+                  <TableRow key={s.id} hover sx={{ "&:last-child td": { borderBottom: 0 }, "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75, pr: 2 } }}>
+                    <TableCell>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer", "&:hover .student-name": { color: "#1E3A5F", textDecoration: "underline" } }}
                         onClick={() => setProfileStudentId(s.id)}
                       >
                         {s.photoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={s.photoUrl}
-                            alt={s.name}
-                            className="h-9 w-9 shrink-0 rounded-lg object-cover border border-scholar-200 shadow-2xs"
-                          />
+                          <Avatar src={s.photoUrl} alt={s.name} sx={{ width: 36, height: 36, borderRadius: "8px", border: "1px solid #D6E0EB", bgcolor: "white" }} variant="rounded" />
                         ) : (
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-scholar-50 text-xs font-semibold text-scholar-600 group-hover:bg-scholar-600 group-hover:text-white transition-colors">
+                          <Avatar sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#475569", fontSize: "0.70rem", fontWeight: 700 }} variant="rounded">
                             {initials(s.name)}
-                          </div>
+                          </Avatar>
                         )}
 
-                        <div>
-                          <span className="font-semibold text-ink group-hover:text-scholar-600 group-hover:underline block">
+                        <Box>
+                          <Typography variant="body2" className="student-name" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>
                             {s.name}
-                          </span>
+                          </Typography>
                           {s.plan === "DEMO" ? (
-                            <span className="text-[10px] text-marigold-600 font-semibold block">
-                              7-Day Demo
-                            </span>
+                            <Chip label="7-Day Demo" size="small" sx={{ height: 16, fontSize: "10px", fontWeight: 700, bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A" }} />
                           ) : s.plan === "INSTALLMENTS" ? (
-                            <span className="text-[10px] text-scholar-600 font-semibold block">
-                              Installments
-                            </span>
+                            <Chip label="Installments" size="small" sx={{ height: 16, fontSize: "10px", fontWeight: 700, bgcolor: "#EEF2F7", color: "#475569", border: "1px solid #D6E0EB" }} />
                           ) : s.plan === "QUARTERLY" ? (
-                            <span className="text-[10px] text-cyan-700 font-semibold block">
-                              Quarterly
-                            </span>
+                            <Chip label="Quarterly" size="small" sx={{ height: 16, fontSize: "10px", fontWeight: 700, bgcolor: "#ECFEFF", color: "#0e7490", border: "1px solid #a5f3fc" }} />
                           ) : null}
 
                           {s.isSeatBooked && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5 w-fit">
-                              🎫 Seat Booked {s.registrationFee ? `(₹${formatCurrency(s.registrationFee)})` : ""}
-                            </span>
+                            <Chip label={`🎫 Seat Booked ${s.registrationFee ? `(₹${formatCurrency(s.registrationFee)})` : ""}`} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 600, bgcolor: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", mt: 0.5, display: "flex", width: "fit-content" }} />
                           )}
 
                           {s.discountApprovalStatus === "PENDING_OWNER_APPROVAL" && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 w-fit">
-                              ⏳ Discount Pending Approval ({s.discountPercent}%)
-                            </span>
+                            <Chip label={`⏳ Discount Pending Approval (${s.discountPercent}%)`} size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 600, bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A", mt: 0.5, display: "flex", width: "fit-content" }} />
                           )}
-                        </div>
-                      </div>
-                    </td>
+                        </Box>
+                      </Box>
+                    </TableCell>
 
-                    <td className="py-3 pr-4 text-scholar-600">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Phone size={13} className="text-scholar-300" />
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#475569", fontSize: "0.80rem" }}>
+                        <Phone size={13} style={{ color: "#94A3B8" }} />
                         {s.mobile}
-                      </span>
-                    </td>
+                      </Box>
+                    </TableCell>
 
-                    <td className="py-3 pr-4 text-scholar-500">
-                      <div className="flex flex-col">
-                        <span className="text-ink font-medium">{s.course.name}</span>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{s.course.name}</Typography>
                         {s.courseDuration && (
-                          <span className="text-[10px] text-scholar-400">
-                            ⏱️ {s.courseDuration}
-                          </span>
+                          <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>⏱️ {s.courseDuration}</Typography>
                         )}
-                      </div>
-                    </td>
+                      </Box>
+                    </TableCell>
 
-                    <td className="py-3 pr-4 text-scholar-500">
-                      <div className="flex flex-col">
-                        <span className="text-ink font-medium">{s.batch?.name ?? "—"}</span>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{s.batch?.name ?? "—"}</Typography>
                         {s.branch && (
-                          <span className="text-[10px] text-scholar-400">
-                            📍 {s.branch.name}
-                          </span>
+                          <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>📍 {s.branch.name}</Typography>
                         )}
-                      </div>
-                    </td>
+                      </Box>
+                    </TableCell>
 
-                    <td className="py-3 pr-4">
-                      <Badge
-                        tone={feeStatusTone(fee)}
-                        dot
-                      >
+                    <TableCell>
+                      <Badge tone={feeStatusTone(fee)} dot>
                         {feeStatusLabel(fee)}
                       </Badge>
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 pr-4 text-scholar-500">
-                      {formatDate(s.admissionDate)}
-                    </td>
+                    <TableCell sx={{ fontSize: "0.80rem", color: "#64748b" }}>{formatDate(s.admissionDate)}</TableCell>
 
-                    <td className="py-3 pr-4">
-                      <Badge
-                        tone={studentStatusTone(
-                          s.status
-                        )}
-                      >
-                        {s.status.replace("_", " ")}
-                      </Badge>
-                    </td>
+                    <TableCell>
+                      <Badge tone={studentStatusTone(s.status)}>{s.status.replace("_", " ")}</Badge>
+                    </TableCell>
 
-                    <td className="py-3 pr-2 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setProfileStudentId(s.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-scholar-400 hover:bg-scholar-50 hover:text-scholar-700 transition-colors"
-                          aria-label="View 360 Profile"
-                          title="View Student 360° Profile"
-                        >
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
+                        <IconButton size="small" onClick={() => setProfileStudentId(s.id)} aria-label="View 360 Profile" title="View Student 360° Profile" sx={{ color: "#94A3B8", "&:hover": { bgcolor: "#EEF2F7", color: "#1E3A5F" } }}>
                           <Eye size={15} />
-                        </button>
-                        <button
+                        </IconButton>
+                        <IconButton
+                          size="small"
                           onClick={() =>
                             setEditStudent({
                               id: s.id,
@@ -456,43 +395,34 @@ export function StudentsTable({
                               plan: s.plan,
                             })
                           }
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-scholar-400 hover:bg-scholar-50 hover:text-scholar-700 transition-colors"
                           aria-label="Edit Student"
                           title="Edit Student"
+                          sx={{ color: "#94A3B8", "&:hover": { bgcolor: "#EEF2F7", color: "#1E3A5F" } }}
                         >
                           <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => setDocsStudent(s)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-scholar-400 hover:bg-scholar-50 hover:text-scholar-700 transition-colors"
-                          aria-label="Documents"
-                          title="Documents"
-                        >
+                        </IconButton>
+                        <IconButton size="small" onClick={() => setDocsStudent(s)} aria-label="Documents" title="Documents" sx={{ color: "#94A3B8", "&:hover": { bgcolor: "#EEF2F7", color: "#1E3A5F" } }}>
                           <FileText size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
 
               {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="py-10 text-center text-sm text-scholar-400"
-                  >
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 5, color: "#94A3B8", fontSize: "0.875rem" }}>
                     No students match your search or filters.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-        <p className="mt-3 text-xs text-scholar-400 tabular-nums">
-          Showing {filtered.length} of {students.length} students.
-          Total fee outstanding:{" "}
+        <Typography variant="caption" sx={{ mt: 1.5, display: "block", fontSize: "0.75rem", color: "#94A3B8" }} className="tabular-nums">
+          Showing {filtered.length} of {students.length} students. Total fee outstanding:{" "}
           {formatCurrency(
             students.reduce(
               (sum, s) =>
@@ -505,14 +435,12 @@ export function StudentsTable({
               0
             )
           )}
-        </p>
+        </Typography>
       </Card>
 
       <AddStudentDrawer
         open={drawerOpen}
-        onClose={() =>
-          setDrawerOpen(false)
-        }
+        onClose={() => setDrawerOpen(false)}
         courses={courses}
         batches={batches}
         branches={branches}

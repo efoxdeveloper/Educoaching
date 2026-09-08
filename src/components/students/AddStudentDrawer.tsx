@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { DurationPicker } from "@/components/courses/DurationPicker";
 import { calculateCourseEndDate, getDurationInMonths } from "@/lib/course-duration";
@@ -12,6 +11,25 @@ import {
   type FeeInstallment,
 } from "@/lib/installments";
 import { Calendar, Building2, Split, CheckCircle, AlertTriangle, Ticket, Percent, CreditCard, Camera, Upload } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
+import Slider from "@mui/material/Slider";
 
 type Course = {
   id: string;
@@ -361,204 +379,187 @@ export function AddStudentDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Enroll New Student">
-      <form onSubmit={handleSubmit} className="space-y-4 pb-4">
-        {error && <p className="rounded-xl bg-danger-50 px-3 py-2.5 text-xs text-danger-600 font-medium">{error}</p>}
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
+        {error && (
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem" }}>
+            {error}
+          </Alert>
+        )}
 
         {/* Student Photograph Upload (Optional at admission) */}
-        <div className="rounded-2xl border border-scholar-200 bg-scholar-50/60 p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-              <Camera size={14} className="text-scholar-600" />
-              <span>Student Photograph</span>
-              <span className="rounded bg-scholar-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-scholar-700">Optional</span>
-            </span>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Camera size={14} style={{ color: "#4E6E93" }} />
+              Student Photograph
+              <Chip label="Optional" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 600, bgcolor: "#EEF2F7", border: "1px solid #D6E0EB" }} />
+            </Typography>
             {photoUrl && (
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                className="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer"
-              >
+              <Button size="small" onClick={handleRemovePhoto} sx={{ fontSize: "11px", fontWeight: 600, color: "#DC2626", textTransform: "none", p: 0, minWidth: 0 }}>
                 Remove Photo
-              </button>
+              </Button>
             )}
-          </div>
+          </Box>
 
-          <div className="flex items-center gap-3.5">
-            {/* Passport preview / avatar */}
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-scholar-300 bg-white shadow-2xs">
-              {photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="Passport photo" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center p-1 text-scholar-400">
-                  <Camera size={20} className="text-scholar-400" />
-                  <span className="text-[8px] font-bold uppercase mt-0.5">Photo</span>
-                </div>
-              )}
-            </div>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              src={photoUrl || undefined}
+              variant="rounded"
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "12px",
+                border: "2px dashed #AFC3D9",
+                bgcolor: "white",
+                color: "#7E9BBC",
+                fontSize: "10px",
+                flexShrink: 0,
+              }}
+            >
+              {!photoUrl && <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}><Camera size={20} /><Typography variant="caption" sx={{ fontSize: "8px", fontWeight: 700, mt: 0.5 }}>Photo</Typography></Box>}
+            </Avatar>
 
-            <div className="flex-1 space-y-1">
-              <p className="text-[11px] text-scholar-600 leading-snug">
-                Ask for a passport-size photo. <em>If not available right now, that&apos;s okay—the student can upload it directly from their <strong>Student Portal</strong>.</em>
-              </p>
-              <div>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handlePhotoSelect}
-                />
-                <button
-                  type="button"
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.75 }}>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", lineHeight: 1.4 }}>
+                Ask for a passport-size photo. <em>If not available right now, that&apos;s okay—the student can upload it directly from their <Box component="span" sx={{ fontWeight: 700 }}>Student Portal</Box>.</em>
+              </Typography>
+              <Box>
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handlePhotoSelect} />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Upload size={12} />}
                   onClick={() => photoInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 shadow-2xs transition-colors cursor-pointer"
+                  sx={{ borderRadius: "8px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
                 >
-                  <Upload size={12} />
-                  <span>{photoUrl ? "Change Photo" : "Upload Passport Photo"}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+                  {photoUrl ? "Change Photo" : "Upload Passport Photo"}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
 
-        <Field label="Student Full Name *">
-          <input
+        <TextField
+          label="Student Full Name *"
+          required
+          fullWidth
+          size="small"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="e.g. Student Name"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="Mobile Number *"
             required
-            className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Student Name"
+            fullWidth
+            size="small"
+            type="tel"
+            value={form.mobile}
+            onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+            placeholder="10-digit mobile"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
-        </Field>
+          <TextField
+            label="Parent's Mobile / WhatsApp"
+            fullWidth
+            size="small"
+            type="tel"
+            value={form.parentMobile}
+            onChange={(e) => setForm({ ...form, parentMobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+            placeholder="10-digit mobile"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Mobile Number *">
-            <input
-              required
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              className={inputClass}
-              value={form.mobile}
-              onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-              placeholder="10-digit mobile"
-            />
-          </Field>
-
-          <Field label="Parent's Mobile / WhatsApp">
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              className={inputClass}
-              value={form.parentMobile}
-              onChange={(e) => setForm({ ...form, parentMobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-              placeholder="10-digit mobile"
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Student Email Address *">
-            <input
-              type="email"
-              required
-              className={inputClass}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="student@example.com"
-            />
-          </Field>
-
-          <Field label="Parent Email (For Portal Access)">
-            <input
-              type="email"
-              className={inputClass}
-              value={form.parentEmail}
-              onChange={(e) => setForm({ ...form, parentEmail: e.target.value })}
-              placeholder="parent@example.com"
-            />
-          </Field>
-        </div>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+          <TextField
+            label="Student Email Address *"
+            required
+            fullWidth
+            size="small"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="student@example.com"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="Parent Email (For Portal Access)"
+            fullWidth
+            size="small"
+            type="email"
+            value={form.parentEmail}
+            onChange={(e) => setForm({ ...form, parentEmail: e.target.value })}
+            placeholder="parent@example.com"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
         {/* Branch & Batch Allocation */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/40 p-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-              <Building2 size={14} className="text-scholar-600" />
-              <span>Campus & Batch Allocation</span>
-            </label>
-            <span className="text-[10px] text-scholar-500">Batches & timings vary by branch</span>
-          </div>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Building2 size={14} style={{ color: "#4E6E93" }} />
+              Campus & Batch Allocation
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Batches & timings vary by branch</Typography>
+          </Box>
 
           {branches.length === 0 ? (
-            <div className="space-y-3">
-              <Field label="Course Program *">
-                <select
-                  required
-                  className={inputClass}
-                  value={form.courseId}
-                  onChange={(e) => {
-                    setForm({ ...form, courseId: e.target.value, batchId: "" });
-                  }}
-                >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <FormControl fullWidth size="small" required>
+                <InputLabel id="add-student-course-label-single">Course Program *</InputLabel>
+                <Select labelId="add-student-course-label-single" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
                       {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </Field>
-              <p className="text-xs text-scholar-500 bg-scholar-50 p-2.5 rounded-lg border border-scholar-100">
+                </Select>
+              </FormControl>
+              <Alert severity="info" variant="outlined" sx={{ borderRadius: "12px", fontSize: "0.75rem", bgcolor: "#EEF2F7", borderColor: "#D6E0EB" }}>
                 This institute has only one branch (Main Branch) — no branch selection needed.
-              </p>
-            </div>
+              </Alert>
+            </Box>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Course Program *">
-                <select
-                  required
-                  className={inputClass}
-                  value={form.courseId}
-                  onChange={(e) => {
-                    setForm({ ...form, courseId: e.target.value, batchId: "" });
-                  }}
-                >
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+              <FormControl fullWidth size="small" required>
+                <InputLabel id="add-student-course-label">Course Program *</InputLabel>
+                <Select labelId="add-student-course-label" label="Course Program *" value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
                       {c.name} — {formatCurrency(c.fee)} {c.duration ? `(${c.duration})` : ""}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </Field>
+                </Select>
+              </FormControl>
 
-              <Field label="Branch / Campus Location">
-                <select
-                  className={inputClass}
-                  value={form.branchId}
-                  onChange={(e) => {
-                    setForm({ ...form, branchId: e.target.value, batchId: "" });
-                  }}
-                >
-                  <option value="">All Branches / Main Branch</option>
+              <FormControl fullWidth size="small">
+                <InputLabel id="add-student-branch-label">Branch / Campus Location</InputLabel>
+                <Select labelId="add-student-branch-label" label="Branch / Campus Location" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                  <MenuItem value="">All Branches / Main Branch</MenuItem>
                   {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
+                    <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
                       {b.name} {b.city ? `(${b.city})` : ""}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </Field>
-            </div>
+                </Select>
+              </FormControl>
+            </Box>
           )}
 
-          <Field label="Assigned Batch & Timing">
-            <select
-              className={inputClass}
-              value={form.batchId}
-              onChange={(e) => setForm({ ...form, batchId: e.target.value })}
-            >
-              <option value="">Unassigned Batch</option>
+          <FormControl fullWidth size="small">
+            <InputLabel id="add-student-batch-label">Assigned Batch & Timing</InputLabel>
+            <Select labelId="add-student-batch-label" label="Assigned Batch & Timing" value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+              <MenuItem value="">Unassigned Batch</MenuItem>
               {filteredBatches.map((b) => {
                 const branchLabel = b.isAllBranches
                   ? "All Campuses"
@@ -568,394 +569,328 @@ export function AddStudentDrawer({
                   ? b.branch.name
                   : "";
                 return (
-                  <option key={b.id} value={b.id}>
+                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
                     {b.name} {b.timing ? `(${b.timing})` : ""} {branchLabel ? `• ${branchLabel}` : ""}
-                  </option>
+                  </MenuItem>
                 );
               })}
-            </select>
-            {filteredBatches.length === 0 && (
-              <p className="mt-1 text-[11px] text-amber-600">
-                No active batches found for this course at the selected campus. You can create a batch under Batches.
-              </p>
-            )}
-          </Field>
-        </div>
+            </Select>
+          </FormControl>
+          {filteredBatches.length === 0 && (
+            <Typography variant="caption" sx={{ fontSize: "11px", color: "#D97706" }}>
+              No active batches found for this course at the selected campus. You can create a batch under Batches.
+            </Typography>
+          )}
+        </Paper>
 
         {/* Course Duration for Student (Days, Months, Years) */}
-        <div className="space-y-1.5">
-          <DurationPicker
-            value={studentDuration}
-            onChange={(val) => setStudentDuration(val)}
-            label="Student's Course Duration (Days / Months / Years)"
-          />
-          <p className="text-[11px] text-scholar-500 flex items-center gap-1 pl-1">
-            <Calendar size={12} className="text-scholar-400" />
-            <span>
-              Enrolling today means student completes on <strong>{formatDate(estimatedEndDate)}</strong> (~{studentDuration})
-            </span>
-          </p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          <DurationPicker value={studentDuration} onChange={(val) => setStudentDuration(val)} label="Student's Course Duration (Days / Months / Years)" />
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b", display: "flex", alignItems: "center", gap: 0.5, pl: 0.5 }}>
+            <Calendar size={12} style={{ color: "#94A3B8" }} />
+            Enrolling today means student completes on <Box component="span" sx={{ fontWeight: 700 }}>{formatDate(estimatedEndDate)}</Box> (~{studentDuration})
+          </Typography>
+        </Box>
 
         {/* Registration Fees Option to Book Student Seat */}
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableSeatBooking}
-                onChange={(e) => setEnableSeatBooking(e.target.checked)}
-                className="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500"
-              />
-              <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-                <Ticket size={14} className="text-emerald-700" />
-                Book Student Seat with Registration Fee
-              </span>
-            </label>
-            <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-              Seat Reservation
-            </span>
-          </div>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#A7F3D0", bgcolor: "#ECFDF5", display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <FormControlLabel
+              control={<Checkbox checked={enableSeatBooking} onChange={(e) => setEnableSeatBooking(e.target.checked)} size="small" sx={{ color: "#059669", "&.Mui-checked": { color: "#059669" } }} />}
+              label={
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#065f46", display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Ticket size={14} style={{ color: "#059669" }} />
+                  Book Student Seat with Registration Fee
+                </Typography>
+              }
+            />
+            <Chip label="Seat Reservation" size="small" sx={{ height: 20, fontSize: "10px", fontWeight: 600, bgcolor: "#D1FAE5", color: "#065f46", border: "1px solid #A7F3D0" }} />
+          </Box>
 
           {enableSeatBooking && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <Field label="Registration / Booking Fee (₹)">
-                <input
-                  type="number"
-                  min={0}
-                  className={`${inputClass} border-emerald-300 font-bold text-emerald-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                  value={registrationFee}
-                  onChange={(e) => setRegistrationFee(e.target.value)}
-                  placeholder="2000"
-                />
-              </Field>
-
-              <div className="rounded-lg bg-white p-2 text-[11px] text-scholar-600 border border-emerald-100 flex items-center">
-                <span>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5, pt: 0.5 }}>
+              <TextField
+                label="Registration / Booking Fee (₹)"
+                fullWidth
+                size="small"
+                type="number"
+                value={registrationFee}
+                onChange={(e) => setRegistrationFee(e.target.value)}
+                placeholder="2000"
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0 } as any }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", "& input": { fontWeight: 700, color: "#065f46" } } }}
+              />
+              <Paper variant="outlined" sx={{ p: 1.25, borderRadius: "12px", bgcolor: "white", borderColor: "#A7F3D0", display: "flex", alignItems: "center" }}>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569" }}>
                   Reserves the student&apos;s seat in the batch. Counted as an advance booking deposit towards tuition fees.
-                </span>
-              </div>
-            </div>
+                </Typography>
+              </Paper>
+            </Box>
           )}
-        </div>
+        </Paper>
 
         {/* Discount Option Bar: Faculty up to 30%, Owner Approval > 30% */}
-        <div className="rounded-xl border border-scholar-200 bg-white p-3.5 space-y-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-              <Percent size={14} className="text-scholar-600" />
-              <span>Discount & Concession Option Bar</span>
-            </label>
-            <span className="text-xs font-bold text-scholar-700">
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Percent size={14} style={{ color: "#4E6E93" }} />
+              Discount & Concession Option Bar
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b" }}>
               {discountPercent}% Off {discountSavings > 0 && `(Save ₹${discountSavings.toLocaleString("en-IN")})`}
-            </span>
-          </div>
+            </Typography>
+          </Box>
 
-          {/* Quick Option Bar Buttons */}
-          <div className="flex flex-wrap gap-1.5">
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
             {DISCOUNT_PRESETS.map((pct) => (
-              <button
-                type="button"
+              <Chip
                 key={pct}
-                onClick={() => {
-                  setDiscountPercent(pct);
+                label={pct === 0 ? "No Discount" : `${pct}%${pct > 30 ? " (Owner)" : ""}`}
+                clickable
+                onClick={() => setDiscountPercent(pct)}
+                size="small"
+                sx={{
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "0.70rem",
+                  height: 26,
+                  bgcolor: discountPercent === pct ? (pct > 30 ? "#D97706" : "#1E3A5F") : pct > 30 ? "#FFFBEB" : "#F8FAFC",
+                  color: discountPercent === pct ? "white" : pct > 30 ? "#92400e" : "#334155",
+                  border: discountPercent === pct ? "1px solid transparent" : pct > 30 ? "1px solid #FDE68A" : "1px solid #D6E0EB",
+                  "&:hover": { bgcolor: discountPercent === pct ? (pct > 30 ? "#B45309" : "#182F4C") : pct > 30 ? "#FEF3C7" : "#EEF2F7" },
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                  discountPercent === pct
-                    ? pct > 30
-                      ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                      : "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                    : pct > 30
-                    ? "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-                    : "bg-scholar-50 text-scholar-700 border-scholar-200 hover:bg-scholar-100"
-                }`}
-              >
-                {pct === 0 ? "No Discount" : `${pct}%`}
-                {pct > 30 && <span className="ml-1 text-[9px] opacity-80">(Owner)</span>}
-              </button>
+              />
             ))}
-          </div>
+          </Box>
 
-          {/* Interactive Range Slider */}
-          <div className="pt-1">
-            <input
-              type="range"
-              min="0"
-              max="60"
-              step="1"
+          <Box sx={{ px: 0.5 }}>
+            <Slider
               value={discountPercent}
-              onChange={(e) => {
-                setDiscountPercent(Number(e.target.value));
-              }}
-              className="w-full h-1.5 bg-scholar-100 rounded-lg appearance-none cursor-pointer accent-scholar-600"
+              onChange={(_, v) => setDiscountPercent(v as number)}
+              min={0}
+              max={60}
+              step={1}
+              valueLabelDisplay="auto"
+              sx={{ color: "#1E3A5F", height: 6, "& .MuiSlider-thumb": { width: 16, height: 16 }, "& .MuiSlider-track": { height: 6, borderRadius: 999 }, "& .MuiSlider-rail": { height: 6, borderRadius: 999, bgcolor: "#E2E8F0" } }}
             />
-            <div className="flex justify-between text-[10px] text-scholar-400 mt-1">
-              <span>0% (Standard)</span>
-              <span className="font-semibold text-emerald-600">30% (Faculty Max Limit)</span>
-              <span className="font-semibold text-amber-600">50%+ (Owner Approval)</span>
-            </div>
-          </div>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+              <Typography variant="caption" sx={{ fontSize: "10px", color: "#64748b" }}>0% (Standard)</Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#059669" }}>30% (Faculty Max Limit)</Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#D97706" }}>50%+ (Owner Approval)</Typography>
+            </Box>
+          </Box>
 
-          {/* Dynamic Status / Owner Approval Notice */}
           {!requiresOwnerApproval && discountPercent > 0 && (
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2.5 text-xs text-emerald-800 border border-emerald-200">
-              <CheckCircle size={15} className="text-emerald-600 shrink-0" />
-              <span>
-                <strong>Faculty Pre-approved Discount:</strong> {discountPercent}% discount is within the standard faculty limit (≤ 30%) and applied immediately.
-              </span>
-            </div>
+            <Alert severity="success" icon={<CheckCircle size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
+              <strong>Faculty Pre-approved Discount:</strong> {discountPercent}% discount is within the standard faculty limit (≤ 30%) and applied immediately.
+            </Alert>
           )}
 
           {requiresOwnerApproval && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-amber-900 font-bold">
-                <AlertTriangle size={16} className="text-amber-600 shrink-0" />
-                <span>Special Discount ({discountPercent}%): Exceeds Faculty 30% Cap</span>
-              </div>
-              <p className="text-amber-800 text-[11px]">
-                Parents requested <strong>{discountPercent}% discount</strong>. A formal approval request and notification will be dispatched to the <strong>Institute Owner&apos;s Dashboard</strong> for allowance.
-              </p>
-
-              <Field label="Justification / Reason for Owner *">
-                <textarea
-                  required
-                  rows={2}
-                  value={discountReason}
-                  onChange={(e) => setDiscountReason(e.target.value)}
-                  placeholder="e.g. Sibling studying in Class 12, top ranker merit concession, or parent financial relaxation requested."
-                  className="w-full rounded-lg border border-amber-300 bg-white p-2 text-xs text-ink outline-none focus:border-amber-500"
-                />
-              </Field>
-            </div>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB", display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#92400e", fontWeight: 700, fontSize: "0.75rem" }}>
+                <AlertTriangle size={16} style={{ color: "#D97706" }} />
+                Special Discount ({discountPercent}%): Exceeds Faculty 30% Cap
+              </Box>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e" }}>
+                Parents requested <Box component="span" sx={{ fontWeight: 700 }}>{discountPercent}% discount</Box>. A formal approval request and notification will be dispatched to the <Box component="span" sx={{ fontWeight: 700 }}>Institute Owner&apos;s Dashboard</Box> for allowance.
+              </Typography>
+              <TextField
+                label="Justification / Reason for Owner *"
+                required
+                fullWidth
+                size="small"
+                multiline
+                rows={2}
+                value={discountReason}
+                onChange={(e) => setDiscountReason(e.target.value)}
+                placeholder="e.g. Sibling studying in Class 12, top ranker merit concession, or parent financial relaxation requested."
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+              />
+            </Paper>
           )}
-        </div>
+        </Paper>
 
         {/* Fee Billing Mode / Process */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5 space-y-3">
-          <label className="block text-xs font-bold uppercase tracking-wider text-scholar-800 flex items-center justify-between">
-            <span>Fee Structure & Payment Schedule</span>
-            <span className="text-[10px] text-scholar-500 font-normal">Choose parent payment preference</span>
-          </label>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", textTransform: "uppercase", letterSpacing: 0.5 }}>Fee Structure & Payment Schedule</Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Choose parent payment preference</Typography>
+          </Box>
 
-          {/* Mode Selector Tabs */}
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setFeeMode("ONE_TIME");
-              }}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                feeMode === "ONE_TIME"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              One-Time (100%)
-              <span className="block text-[10px] opacity-80">Full Upfront</span>
-            </button>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
+            {[
+              { id: "ONE_TIME", label: "One-Time (100%)", sub: "Full Upfront" },
+              { id: "INSTALLMENTS", label: "Installments", sub: "2 or more split" },
+              { id: "MONTHLY", label: "Monthly", sub: "Per Month" },
+            ].map((opt) => (
+              <Paper
+                key={opt.id}
+                variant="outlined"
+                onClick={() => setFeeMode(opt.id as any)}
+                sx={{
+                  py: 1.25,
+                  px: 1,
+                  borderRadius: "12px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  borderColor: feeMode === opt.id ? "#1E3A5F" : "#D6E0EB",
+                  bgcolor: feeMode === opt.id ? "#1E3A5F" : "white",
+                  color: feeMode === opt.id ? "white" : "#334155",
+                  transition: "all 0.15s",
+                  "&:hover": { bgcolor: feeMode === opt.id ? "#182F4C" : "#F8FAFC" },
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: feeMode === opt.id ? "white" : "#1E293b", display: "block" }}>{opt.label}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", color: feeMode === opt.id ? "rgba(255,255,255,0.7)" : "#7E9BBC" }}>{opt.sub}</Typography>
+              </Paper>
+            ))}
+          </Box>
 
-            <button
-              type="button"
-              onClick={() => {
-                setFeeMode("INSTALLMENTS");
-              }}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                feeMode === "INSTALLMENTS"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Installments
-              <span className="block text-[10px] opacity-80">2 or more split</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setFeeMode("MONTHLY");
-              }}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold transition-all text-center border ${
-                feeMode === "MONTHLY"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Monthly
-              <span className="block text-[10px] opacity-80">Per Month</span>
-            </button>
-          </div>
-
-          {/* Sub-section: Installments Configuration */}
           {feeMode === "INSTALLMENTS" && (
-            <div className="rounded-xl border border-scholar-200 bg-white p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-                  <Split size={14} className="text-scholar-600" />
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Split size={14} style={{ color: "#4E6E93" }} />
                   Installment Relaxation for Parent:
-                </span>
-
-                {/* Installment count buttons */}
-                <div className="flex gap-2">
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
                   {[2, 3, 4].map((cnt) => (
-                    <button
-                      type="button"
+                    <Chip
                       key={cnt}
+                      label={`${cnt} Installments ${cnt === 2 ? "(50/50)" : ""}`}
+                      clickable
                       onClick={() => setInstallmentCount(cnt)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        installmentCount === cnt
-                          ? "bg-scholar-600 text-white border-scholar-600"
-                          : "bg-scholar-50 text-scholar-700 border-scholar-200 hover:bg-scholar-100"
-                      }`}
-                    >
-                      {cnt} Installments {cnt === 2 ? "(50/50)" : ""}
-                    </button>
+                      size="small"
+                      sx={{
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        fontSize: "0.70rem",
+                        height: 24,
+                        bgcolor: installmentCount === cnt ? "#1E3A5F" : "#F8FAFC",
+                        color: installmentCount === cnt ? "white" : "#334155",
+                        border: installmentCount === cnt ? "1px solid #1E3A5F" : "1px solid #D6E0EB",
+                      }}
+                    />
                   ))}
-                </div>
-              </div>
+                </Box>
+              </Box>
 
-              {/* Installments Table / Breakdown */}
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 192, overflowY: "auto", pr: 0.5 }}>
                 {installments.map((inst, idx) => (
-                  <div
-                    key={inst.id || idx}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg border border-scholar-100 bg-scholar-50/50 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-scholar-200 font-bold text-[10px] text-scholar-800">
-                        {idx + 1}
-                      </span>
-                      <span className="font-semibold text-scholar-800">{inst.title}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-scholar-500">₹</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={inst.amount}
-                          onChange={(e) => handleInstallmentAmountChange(idx, Number(e.target.value))}
-                          className="w-24 rounded-md border border-scholar-200 bg-white px-2 py-1 text-xs font-bold text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-scholar-500">Due:</span>
-                        <input
-                          type="date"
-                          value={inst.dueDate}
-                          onChange={(e) => handleInstallmentDateChange(idx, e.target.value)}
-                          className="rounded-md border border-scholar-200 bg-white px-2 py-1 text-xs text-ink"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <Paper key={inst.id || idx} variant="outlined" sx={{ p: 1.25, borderRadius: "12px", borderColor: "#EEF2F7", bgcolor: "#F8FAFC", display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Avatar sx={{ width: 20, height: 20, fontSize: "10px", fontWeight: 700, bgcolor: "#D6E0EB", color: "#1E3A5F" }}>{idx + 1}</Avatar>
+                      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#1E293b" }}>{inst.title}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={inst.amount}
+                        onChange={(e) => handleInstallmentAmountChange(idx, Number(e.target.value))}
+                        slotProps={{ htmlInput: { min: 0 } as any, input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } as any }}
+                        sx={{ width: 110, "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 700 } }}
+                      />
+                      <TextField
+                        size="small"
+                        type="date"
+                        value={inst.dueDate}
+                        onChange={(e) => handleInstallmentDateChange(idx, e.target.value)}
+                        sx={{ width: 150, "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "white", fontSize: "0.75rem" } }}
+                      />
+                    </Box>
+                  </Paper>
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Paper>
           )}
 
-          {/* Monthly specifics */}
           {feeMode === "MONTHLY" && (
-            <div className="rounded-xl border border-scholar-200 bg-white p-3.5 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-                  <Calendar size={14} className="text-scholar-600" />
-                  <span>Monthly Fee Calculation ({durationMonths} {durationMonths === 1 ? "Month" : "Months"} Course)</span>
-                </label>
-                <span className="text-[11px] font-bold text-scholar-700 bg-scholar-100 border border-scholar-200 px-2 py-0.5 rounded-full">
-                  ₹{Number(monthlyAmount || 0).toLocaleString("en-IN")}/mo &times; {durationMonths} mo = ₹{(Number(monthlyAmount || 0) * durationMonths).toLocaleString("en-IN")}
-                </span>
-              </div>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Calendar size={14} style={{ color: "#4E6E93" }} />
+                  Monthly Fee Calculation ({durationMonths} {durationMonths === 1 ? "Month" : "Months"} Course)
+                </Typography>
+                <Chip label={`₹${Number(monthlyAmount || 0).toLocaleString("en-IN")}/mo × ${durationMonths} mo = ₹${(Number(monthlyAmount || 0) * durationMonths).toLocaleString("en-IN")}`} size="small" sx={{ fontSize: "11px", fontWeight: 700, bgcolor: "#EEF2F7", border: "1px solid #D6E0EB" }} />
+              </Box>
 
-              <Field label="Monthly Fee Amount (₹) — Billed every Month *">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-scholar-400">₹</span>
-                  <input
-                    type="number"
-                    min={0}
-                    className={`${inputClass} pl-7 font-bold text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                    value={monthlyAmount}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setMonthlyAmount(val);
-                      const num = Number(val) || 0;
-                      setTotalFee(String(num * durationMonths));
-                    }}
-                    placeholder="e.g. 5000"
-                  />
-                </div>
-              </Field>
+              <TextField
+                label="Monthly Fee Amount (₹) — Billed every Month *"
+                fullWidth
+                size="small"
+                type="number"
+                value={monthlyAmount}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMonthlyAmount(val);
+                  const num = Number(val) || 0;
+                  setTotalFee(String(num * durationMonths));
+                }}
+                placeholder="e.g. 5000"
+                slotProps={{ inputLabel: { shrink: true }, input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } as any }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 700 } }}
+              />
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-scholar-600 bg-scholar-50 rounded-lg p-2.5 border border-scholar-100">
-                <span>
-                  Auto-calculated: <strong>₹{Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))).toLocaleString("en-IN")}</strong> total &divide; <strong>{durationMonths} months</strong> = <strong>₹{Math.max(1, Math.round(Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))) / durationMonths)).toLocaleString("en-IN")}/month</strong>
-                </span>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "8px", bgcolor: "#F8FAFC", borderColor: "#EEF2F7", display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569" }}>
+                  Auto-calculated: <Box component="span" sx={{ fontWeight: 700 }}>₹{Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))).toLocaleString("en-IN")}</Box> total ÷ <Box component="span" sx={{ fontWeight: 700 }}>{durationMonths} months</Box> = <Box component="span" sx={{ fontWeight: 700 }}>₹{Math.max(1, Math.round(Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))) / durationMonths)).toLocaleString("en-IN")}/month</Box>
+                </Typography>
                 {Number(monthlyAmount) !== Math.max(1, Math.round(Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))) / durationMonths)) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const standardMonthly = Math.max(1, Math.round(Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))) / durationMonths));
-                      setMonthlyAmount(String(standardMonthly));
-                      setTotalFee(String(standardMonthly * durationMonths));
-                    }}
-                    className="text-[11px] font-bold text-scholar-600 hover:text-scholar-800 underline self-end sm:self-auto cursor-pointer"
-                  >
+                  <Button size="small" onClick={() => {
+                    const standardMonthly = Math.max(1, Math.round(Math.max(0, Math.round(baseFee * (1 - discountPercent / 100))) / durationMonths));
+                    setMonthlyAmount(String(standardMonthly));
+                    setTotalFee(String(standardMonthly * durationMonths));
+                  }} sx={{ fontSize: "11px", fontWeight: 700, textTransform: "none", whiteSpace: "nowrap" }}>
                     Reset to Default Rate
-                  </button>
+                  </Button>
                 )}
-              </div>
-            </div>
+              </Paper>
+            </Paper>
           )}
 
-          {/* Net Course Fee */}
-          <div className="space-y-1.5">
-            <Field label="Net Agreed Course Fee (₹) *">
-              <input
-                required
-                readOnly
-                type="text"
-                className={`${inputClass} font-bold text-ink bg-scholar-50/70 border-scholar-200 cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                value={
-                  feeMode === "MONTHLY"
-                    ? `₹${Number(monthlyAmount || 0).toLocaleString("en-IN")} / month  (Total ₹${(Number(monthlyAmount || 0) * durationMonths).toLocaleString("en-IN")} for ${durationMonths} Months)`
-                    : totalFee
-                    ? `₹${Number(totalFee).toLocaleString("en-IN")}`
-                    : "₹0"
-                }
-              />
-            </Field>
-            <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-scholar-500 px-1">
-              <span>
-                Base Fee: <strong>₹{baseFee.toLocaleString("en-IN")}</strong>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <TextField
+              label="Net Agreed Course Fee (₹) *"
+              required
+              fullWidth
+              size="small"
+              value={
+                feeMode === "MONTHLY"
+                  ? `₹${Number(monthlyAmount || 0).toLocaleString("en-IN")} / month  (Total ₹${(Number(monthlyAmount || 0) * durationMonths).toLocaleString("en-IN")} for ${durationMonths} Months)`
+                  : totalFee
+                  ? `₹${Number(totalFee).toLocaleString("en-IN")}`
+                  : "₹0"
+              }
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { readOnly: true } as any }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F8FAFC", fontWeight: 700 } }}
+            />
+            <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", px: 0.5, gap: 1 }}>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b" }}>
+                Base Fee: <Box component="span" sx={{ fontWeight: 700 }}>₹{baseFee.toLocaleString("en-IN")}</Box>
                 {discountPercent > 0 && (
-                  <span className="text-emerald-700 font-semibold">
-                    {" "}&middot; {discountPercent}% discount applied (-₹{discountSavings.toLocaleString("en-IN")})
-                  </span>
+                  <Box component="span" sx={{ color: "#059669", fontWeight: 600 }}> · {discountPercent}% discount applied (-₹{discountSavings.toLocaleString("en-IN")})</Box>
                 )}
-              </span>
-              <span className="text-[10px] text-scholar-400">
-                {feeMode === "MONTHLY"
-                  ? `(Billed ₹${Number(monthlyAmount || 0).toLocaleString("en-IN")}/month across ${durationMonths} months)`
-                  : "(Configured via Discount & Installments)"}
-              </span>
-            </div>
-          </div>
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>
+                {feeMode === "MONTHLY" ? `(Billed ₹${Number(monthlyAmount || 0).toLocaleString("en-IN")}/month across ${durationMonths} months)` : "(Configured via Discount & Installments)"}
+              </Typography>
+            </Box>
+          </Box>
 
           {/* Payment Collection on Enrollment */}
-          <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                <CreditCard size={14} className="text-scholar-600" />
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.3)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21", display: "flex", alignItems: "center", gap: 0.75 }}>
+                <CreditCard size={14} style={{ color: "#4E6E93" }} />
                 Initial Fee Collection & Payment Options:
-              </span>
-              <span className="text-[11px] text-emerald-700 font-semibold">
-                Official Receipt will be generated
-              </span>
-            </div>
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#059669", fontWeight: 600 }}>Official Receipt will be generated</Typography>
+            </Box>
 
-            {/* Quick Payment Type Shortcuts */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" }, gap: 1 }}>
               {[
                 { id: "FIRST_INSTALLMENT", label: feeMode === "MONTHLY" ? "1st Month Fee" : "1st Installment" },
                 { id: "SEAT_BOOKING", label: "Seat Booking Deposit" },
@@ -963,99 +898,80 @@ export function AddStudentDrawer({
                 { id: "CUSTOM", label: "Custom Amount" },
                 { id: "PAY_LATER", label: "Pay Later / Demo" },
               ].map((pt) => (
-                <button
+                <Chip
                   key={pt.id}
-                  type="button"
+                  label={pt.label}
+                  clickable
                   onClick={() => handleSelectPaymentType(pt.id as any)}
-                  className={`rounded-lg py-1.5 px-2 text-xs font-semibold border transition-all text-center ${
-                    paymentType === pt.id
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-900 font-bold shadow-2xs"
-                      : "border-scholar-200 bg-white text-scholar-700 hover:bg-scholar-50"
-                  }`}
-                >
-                  {pt.label}
-                </button>
+                  sx={{
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "0.70rem",
+                    height: 28,
+                    justifyContent: "center",
+                    bgcolor: paymentType === pt.id ? "#ECFDF5" : "white",
+                    color: paymentType === pt.id ? "#065f46" : "#334155",
+                    border: paymentType === pt.id ? "1px solid #059669" : "1px solid #D6E0EB",
+                    "&:hover": { bgcolor: paymentType === pt.id ? "#D1FAE5" : "#F8FAFC" },
+                  }}
+                />
               ))}
-            </div>
+            </Box>
 
-            {/* Amount input & Payment Mode */}
             {paymentType !== "PAY_LATER" ? (
-              <div className="space-y-3 pt-1 border-t border-scholar-200/60">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Amount Paid Today (₹) *">
-                    {paymentType === "CUSTOM" ? (
-                      <input
-                        type="number"
-                        min={0}
-                        className={`${inputClass} font-bold text-emerald-700 border-emerald-400`}
-                        value={initialPayment}
-                        onChange={(e) => setInitialPayment(e.target.value)}
-                        placeholder="Enter custom amount"
-                      />
-                    ) : (
-                      <input
-                        readOnly
-                        type="text"
-                        className={`${inputClass} font-bold text-emerald-700 bg-scholar-50/70 border-scholar-200 cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                        value={initialPayment ? `₹${Number(initialPayment).toLocaleString("en-IN")}` : "₹0"}
-                      />
-                    )}
-                  </Field>
-
-                  <Field label="Payment Mode *">
-                    <select
-                      value={paymentMode}
-                      onChange={(e) => setPaymentMode(e.target.value as any)}
-                      className={inputClass}
-                    >
-                      <option value="UPI">UPI (Google Pay / PhonePe / QR)</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Net Banking">Net Banking / NEFT</option>
-                      <option value="Debit / Credit Card">Debit / Credit Card</option>
-                      <option value="Cheque">Cheque / Demand Draft</option>
-                    </select>
-                  </Field>
-                </div>
-
-                <Field label="Receipt / UTR Reference Number (Optional)">
-                  <input
-                    type="text"
-                    value={paymentReference}
-                    onChange={(e) => setPaymentReference(e.target.value)}
-                    placeholder="e.g. UPI Ref #123456789 or Cash Receipt #104"
-                    className={inputClass}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pt: 1, borderTop: "1px solid rgba(214,224,235,0.5)" }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+                  <TextField
+                    label="Amount Paid Today (₹) *"
+                    fullWidth
+                    size="small"
+                    type={paymentType === "CUSTOM" ? "number" : "text"}
+                    value={paymentType === "CUSTOM" ? initialPayment : initialPayment ? `₹${Number(initialPayment).toLocaleString("en-IN")}` : "₹0"}
+                    onChange={(e) => setInitialPayment(e.target.value)}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { readOnly: paymentType !== "CUSTOM" } as any }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: paymentType === "CUSTOM" ? "white" : "#F8FAFC", fontWeight: 700, color: "#065f46" } }}
                   />
-                </Field>
-              </div>
-            ) : (
-              <p className="text-xs text-scholar-500 italic pt-1">
-                Student enrolled with ₹0 initial deposit. Fees will remain pending according to the schedule.
-              </p>
-            )}
-          </div>
-        </div>
 
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-sm font-semibold text-scholar-600 hover:bg-scholar-50"
-          >
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="add-student-payment-mode-label">Payment Mode *</InputLabel>
+                    <Select labelId="add-student-payment-mode-label" label="Payment Mode *" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value as any)} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                      <MenuItem value="UPI">UPI (Google Pay / PhonePe / QR)</MenuItem>
+                      <MenuItem value="Cash">Cash</MenuItem>
+                      <MenuItem value="Net Banking">Net Banking / NEFT</MenuItem>
+                      <MenuItem value="Debit / Credit Card">Debit / Credit Card</MenuItem>
+                      <MenuItem value="Cheque">Cheque / Demand Draft</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <TextField
+                  label="Receipt / UTR Reference Number (Optional)"
+                  fullWidth
+                  size="small"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="e.g. UPI Ref #123456789 or Cash Receipt #104"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+                />
+              </Box>
+            ) : (
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b", fontStyle: "italic" }}>
+                Student enrolled with ₹0 initial deposit. Fees will remain pending according to the schedule.
+              </Typography>
+            )}
+          </Paper>
+        </Paper>
+
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 shadow-xs"
-          >
-            {loading
-              ? "Enrolling Student..."
-              : requiresOwnerApproval
-              ? "Enroll & Request Owner Approval"
-              : "Confirm Enrollment"}
-          </button>
-        </div>
-      </form>
+          </Button>
+          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
+            {loading ? "Enrolling Student..." : requiresOwnerApproval ? "Enroll & Request Owner Approval" : "Confirm Enrollment"}
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

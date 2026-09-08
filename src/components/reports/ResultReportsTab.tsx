@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Award,
-  Search,
-  Download,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  TrendingUp,
-  GraduationCap,
-} from "lucide-react";
+import { Search, Download, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatDate, initials } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
@@ -25,6 +16,23 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Avatar from "@mui/material/Avatar";
 
 export function ResultReportsTab({ data }: { data: ReportsData }) {
   const { resultReport } = data;
@@ -140,9 +148,9 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
       {/* Result KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-full min-w-0">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
         <KpiCard
           label="Tests Conducted"
           value={resultReport.kpis.totalTests.toString()}
@@ -171,20 +179,26 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
           trend={`${resultReport.kpis.totalAbsent} absent across tests`}
           trendTone="neutral"
         />
-      </div>
+      </Box>
 
-      {/* Chart: Pass Rate per Test */}
+      {/* Chart: Pass Rate per Test — keep recharts exactly wrapped in MUI Card */}
       {resultReport.tests.length > 0 && (
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Test Pass Rate & Average Scores</h3>
-              <p className="text-xs text-scholar-400">Comparing pass rates and average scores across exams</p>
-            </div>
-            <span className="text-xs font-semibold text-scholar-600">
-              Avg Pass: {resultReport.kpis.overallPassRate}%
-            </span>
-          </div>
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem", fontFamily: "var(--font-sora)" }}>
+                Test Pass Rate &amp; Average Scores
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
+                Comparing pass rates and average scores across exams
+              </Typography>
+            </Box>
+            <Chip
+              label={`Avg Pass: ${resultReport.kpis.overallPassRate}%`}
+              size="small"
+              sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", height: 22, border: "1px solid #D6E0EB" }}
+            />
+          </Box>
 
           <ResponsiveContainer width="100%" height={240}>
             <BarChart
@@ -206,89 +220,124 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
                 tickFormatter={(v) => `${v}%`}
               />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                 formatter={(val, name) => [
                   `${val}%`,
                   name === "passRate" ? "Pass Rate" : "Average Score %",
                 ]}
               />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-              <Bar dataKey="passRate" name="Pass Rate %" fill="#2E7D52" radius={[4, 4, 0, 0]} maxBarSize={28} />
-              <Bar dataKey="avgScorePct" name="Avg Score %" fill="#E8A33D" radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="passRate" name="Pass Rate %" fill="#2E7D52" radius={[4, 4, 0, 0] as any} maxBarSize={28} />
+              <Bar dataKey="avgScorePct" name="Avg Score %" fill="#E8A33D" radius={[4, 4, 0, 0] as any} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       )}
 
-      {/* Sub-view Selector & Toolbar */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex rounded-xl bg-scholar-50 p-1 border border-scholar-100 self-start">
-            <button
+      {/* Sub-view Selector & Toolbar — MUI Chip/TextField/Select/Button */}
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              p: 0.75,
+              borderRadius: "12px",
+              bgcolor: "rgba(238,242,247,0.8)",
+              border: "1px solid #D6E0EB",
+              alignSelf: "flex-start",
+            }}
+          >
+            <Chip
+              label={`Tests Overview (${resultReport.tests.length})`}
               onClick={() => setSubView("overview")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "overview"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Tests Overview ({resultReport.tests.length})
-            </button>
-            <button
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "overview" ? "white" : "transparent",
+                color: subView === "overview" ? "#1E3A5F" : "#475569",
+                border: subView === "overview" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "overview" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "overview" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              label={`Student Score Ledger (${resultReport.resultsLedger.length})`}
               onClick={() => setSubView("ledger")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "ledger"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Student Score Ledger ({resultReport.resultsLedger.length})
-            </button>
-          </div>
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "ledger" ? "white" : "transparent",
+                color: subView === "ledger" ? "#1E3A5F" : "#475569",
+                border: subView === "ledger" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "ledger" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "ledger" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+          </Box>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.25 }}>
             {subView === "ledger" && (
               <>
-                <select
-                  value={testFilter}
-                  onChange={(e) => setTestFilter(e.target.value)}
-                  className="rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none"
-                >
-                  <option value="ALL">All Tests</option>
-                  {resultReport.tests.map((t) => (
-                    <option key={t.testId} value={t.title}>
-                      {t.title} ({t.batchName})
-                    </option>
-                  ))}
-                </select>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <InputLabel id="result-test-filter-label" sx={{ fontSize: "0.75rem" }}>Test</InputLabel>
+                  <Select
+                    labelId="result-test-filter-label"
+                    label="Test"
+                    value={testFilter}
+                    onChange={(e) => setTestFilter(e.target.value)}
+                    sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+                  >
+                    <MenuItem value="ALL">All Tests</MenuItem>
+                    {resultReport.tests.map((t) => (
+                      <MenuItem key={t.testId} value={t.title}>
+                        {t.title} ({t.batchName})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none"
-                >
-                  <option value="ALL">All Results</option>
-                  <option value="PASSED">Passed</option>
-                  <option value="FAILED">Failed</option>
-                  <option value="ABSENT">Absent</option>
-                </select>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <InputLabel id="result-status-filter-label" sx={{ fontSize: "0.75rem" }}>Result Status</InputLabel>
+                  <Select
+                    labelId="result-status-filter-label"
+                    label="Result Status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+                  >
+                    <MenuItem value="ALL">All Results</MenuItem>
+                    <MenuItem value="PASSED">Passed</MenuItem>
+                    <MenuItem value="FAILED">Failed</MenuItem>
+                    <MenuItem value="ABSENT">Absent</MenuItem>
+                  </Select>
+                </FormControl>
               </>
             )}
 
-            <button
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Download size={14} />}
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-scholar-700 transition-colors"
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              <Download size={14} />
               Export CSV
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
-        <div className="mt-3 relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-scholar-400" />
-          <input
-            type="text"
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            size="small"
+            fullWidth
             placeholder={
               subView === "overview"
                 ? "Search tests by title, subject, or batch..."
@@ -296,183 +345,163 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
             }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-scholar-100 bg-white py-2 pl-9 pr-4 text-sm text-ink placeholder:text-scholar-300 focus:border-scholar-500 focus:outline-none"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" } }}
           />
-        </div>
+        </Box>
       </Card>
 
-      {/* Subview 1: Tests Overview Table */}
+      {/* Subview 1: Tests Overview Table — MUI Table */}
       {subView === "overview" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Test Title & Subject</th>
-                  <th className="px-4 py-3 font-semibold">Batch</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold text-center">Marks (Total/Pass)</th>
-                  <th className="px-4 py-3 font-semibold text-center">Evaluated</th>
-                  <th className="px-4 py-3 font-semibold text-center">Avg Score</th>
-                  <th className="px-4 py-3 font-semibold text-center">High Score</th>
-                  <th className="px-4 py-3 font-semibold text-right">Pass Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Test Title &amp; Subject</TableCell>
+                  <TableCell>Batch</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell align="center">Marks (Total/Pass)</TableCell>
+                  <TableCell align="center">Evaluated</TableCell>
+                  <TableCell align="center">Avg Score</TableCell>
+                  <TableCell align="center">High Score</TableCell>
+                  <TableCell align="right">Pass Rate</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {filteredTests.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No tests found matching search criteria.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredTests.map((t) => (
-                    <tr key={t.testId} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-ink">{t.title}</p>
-                        <p className="text-[11px] text-scholar-400">{t.subject}</p>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{t.batchName}</p>
-                        <p className="text-[11px] text-scholar-400">{t.courseName}</p>
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-600 whitespace-nowrap">
-                        {formatDate(t.testDate)}
-                      </td>
-
-                      <td className="px-4 py-3 text-center tabular-nums text-ink">
-                        <span className="font-semibold">{t.totalMarks}</span>
-                        <span className="text-[10px] text-scholar-400"> / {t.passingMarks} pass</span>
-                      </td>
-
-                      <td className="px-4 py-3 text-center tabular-nums">
-                        <span className="font-semibold text-ink">{t.evaluatedCount}</span>
-                        <span className="text-[10px] text-scholar-400 block">
-                          {t.presentCount} pres / {t.absentCount} abs
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-semibold text-scholar-700 tabular-nums">
-                        {t.averageScore}
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-bold text-marigold-700 tabular-nums">
-                        {t.highestScore}
-                      </td>
-
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        <span
-                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                            t.passRate >= 70
-                              ? "bg-success-50 text-success-700"
-                              : "bg-warn-50 text-warn-700"
-                          }`}
-                        >
-                          {t.passRate}% ({t.passedCount}/{t.presentCount})
-                        </span>
-                      </td>
-                    </tr>
+                    <TableRow key={t.testId} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{t.title}</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{t.subject}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{t.batchName}</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{t.courseName}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>{formatDate(t.testDate)}</TableCell>
+                      <TableCell align="center" sx={{ fontSize: "0.80rem", color: "#171A21" }}>
+                        <Typography component="span" sx={{ fontWeight: 600, fontSize: "0.80rem" }}>{t.totalMarks}</Typography>
+                        <Typography component="span" sx={{ fontSize: "10px", color: "#7E9BBC" }}> / {t.passingMarks} pass</Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{t.evaluatedCount}</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", display: "block" }}>{t.presentCount} pres / {t.absentCount} abs</Typography>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.80rem" }}>{t.averageScore}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, color: "#92400E", fontSize: "0.80rem" }}>{t.highestScore}</TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={`${t.passRate}% (${t.passedCount}/${t.presentCount})`}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "0.70rem",
+                            height: 22,
+                            borderRadius: "9999px",
+                            bgcolor: t.passRate >= 70 ? "#ECFDF5" : "#FFFBEB",
+                            color: t.passRate >= 70 ? "#065F46" : "#92400E",
+                            border: `1px solid ${t.passRate >= 70 ? "#A7F3D0" : "#FDE68A"}`,
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
 
-      {/* Subview 2: Student Score Ledger Table */}
+      {/* Subview 2: Student Score Ledger Table — MUI Table with Chip badges for PASSED/FAILED/ABSENT */}
       {subView === "ledger" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Student</th>
-                  <th className="px-4 py-3 font-semibold">Test Title & Subject</th>
-                  <th className="px-4 py-3 font-semibold">Batch</th>
-                  <th className="px-4 py-3 font-semibold text-center">Marks Obtained</th>
-                  <th className="px-4 py-3 font-semibold text-center">Percentage</th>
-                  <th className="px-4 py-3 font-semibold">Result Status</th>
-                  <th className="px-4 py-3 font-semibold">Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Test Title &amp; Subject</TableCell>
+                  <TableCell>Batch</TableCell>
+                  <TableCell align="center">Marks Obtained</TableCell>
+                  <TableCell align="center">Percentage</TableCell>
+                  <TableCell>Result Status</TableCell>
+                  <TableCell>Remarks</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {filteredLedger.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No score records match the selected filters.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredLedger.map((r) => (
-                    <tr key={r.resultId} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-scholar-100 text-xs font-semibold text-scholar-700">
+                    <TableRow key={r.resultId} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 600 }} variant="rounded">
                             {initials(r.studentName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-ink">{r.studentName}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{r.testTitle}</p>
-                        <p className="text-[11px] text-scholar-400">{r.subject}</p>
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-600">
-                        {r.batchName}
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-display font-semibold text-ink tabular-nums">
+                          </Avatar>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{r.studentName}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{r.testTitle}</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{r.subject}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.80rem", color: "#475569" }}>{r.batchName}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>
                         {r.marksObtained !== null ? (
-                          <span>
-                            {r.marksObtained} <span className="text-scholar-400 font-normal">/ {r.totalMarks}</span>
-                          </span>
+                          <Box component="span">
+                            {r.marksObtained} <Typography component="span" sx={{ color: "#7E9BBC", fontWeight: 400, fontSize: "0.75rem" }}>/ {r.totalMarks}</Typography>
+                          </Box>
                         ) : (
-                          <span className="text-scholar-400 font-normal">ABSENT</span>
+                          <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 400 }}>ABSENT</Typography>
                         )}
-                      </td>
-
-                      <td className="px-4 py-3 text-center tabular-nums">
+                      </TableCell>
+                      <TableCell align="center">
                         {r.percentage !== null ? (
-                          <span className="font-bold text-ink">{r.percentage}%</span>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>{r.percentage}%</Typography>
                         ) : (
-                          <span className="text-scholar-400">—</span>
+                          <Typography variant="caption" sx={{ color: "#94A3B8" }}>—</Typography>
                         )}
-                      </td>
-
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         {r.status === "PASSED" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-bold text-success-700">
-                            <CheckCircle2 size={11} /> PASSED
-                          </span>
+                          <Chip icon={<CheckCircle2 size={12} />} label="PASSED" size="small" sx={{ bgcolor: "#ECFDF5", color: "#065F46", border: "1px solid #A7F3D0", fontWeight: 700, fontSize: "0.70rem", height: 22 }} />
                         ) : r.status === "FAILED" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-[11px] font-bold text-danger-700">
-                            <XCircle size={11} /> FAILED
-                          </span>
+                          <Chip icon={<XCircle size={12} />} label="FAILED" size="small" sx={{ bgcolor: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", fontWeight: 700, fontSize: "0.70rem", height: 22 }} />
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-scholar-100 px-2 py-0.5 text-[11px] font-semibold text-scholar-600">
-                            <AlertCircle size={11} /> ABSENT
-                          </span>
+                          <Chip icon={<AlertCircle size={12} />} label="ABSENT" size="small" sx={{ bgcolor: "#F8FAFC", color: "#475569", border: "1px solid #E2E8F0", fontWeight: 600, fontSize: "0.70rem", height: 22 }} />
                         )}
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-500 max-w-xs truncate">
-                        {r.remarks || "—"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.75rem", color: "#64748b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.remarks || "—"}</TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }

@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  CalendarCheck,
-  Search,
-  Download,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { Search, Download, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { exportToCsv } from "@/lib/export-csv";
 import { initials } from "@/lib/utils";
@@ -23,6 +16,21 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Avatar from "@mui/material/Avatar";
 
 export function AttendanceReportsTab({ data }: { data: ReportsData }) {
   const { attendanceReport } = data;
@@ -107,9 +115,9 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
       : 0;
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
       {/* Attendance KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-full min-w-0">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
         <KpiCard
           label="Overall Attendance"
           value={`${attendanceReport.kpis.overallAttendanceRate}%`}
@@ -146,20 +154,26 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
           }
           trendTone={attendanceReport.kpis.lowAttendanceCount > 0 ? "danger" : "success"}
         />
-      </div>
+      </Box>
 
-      {/* Daily Attendance Trend Bar Chart */}
+      {/* Daily Attendance Trend Bar Chart — keep recharts exactly wrapped in MUI Card */}
       {attendanceReport.dailyTrend.filter((d) => d.total > 0).length > 0 && (
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Daily Attendance Breakdown</h3>
-              <p className="text-xs text-scholar-400">Present vs Absent attendance counts across marked dates</p>
-            </div>
-            <span className="text-xs font-semibold text-scholar-600">
-              Avg: {attendanceReport.kpis.overallAttendanceRate}%
-            </span>
-          </div>
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem", fontFamily: "var(--font-sora)" }}>
+                Daily Attendance Breakdown
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
+                Present vs Absent attendance counts across marked dates
+              </Typography>
+            </Box>
+            <Chip
+              label={`Avg: ${attendanceReport.kpis.overallAttendanceRate}%`}
+              size="small"
+              sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", height: 22, border: "1px solid #D6E0EB" }}
+            />
+          </Box>
 
           <ResponsiveContainer width="100%" height={230}>
             <BarChart
@@ -170,244 +184,255 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                 formatter={(val, name) => [
-                  val,
+                  val as any,
                   name === "present" ? "Present" : name === "absent" ? "Absent" : "Late",
                 ]}
               />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-              <Bar dataKey="present" name="Present" fill="#2E7D52" radius={[4, 4, 0, 0]} stackId="a" maxBarSize={28} />
-              <Bar dataKey="late" name="Late" fill="#E8A33D" radius={[4, 4, 0, 0]} stackId="a" maxBarSize={28} />
-              <Bar dataKey="absent" name="Absent" fill="#C93B2B" radius={[4, 4, 0, 0]} stackId="a" maxBarSize={28} />
+              <Bar dataKey="present" name="Present" fill="#2E7D52" radius={[4, 4, 0, 0] as any} stackId="a" maxBarSize={28} />
+              <Bar dataKey="late" name="Late" fill="#E8A33D" radius={[4, 4, 0, 0] as any} stackId="a" maxBarSize={28} />
+              <Bar dataKey="absent" name="Absent" fill="#C93B2B" radius={[4, 4, 0, 0] as any} stackId="a" maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       )}
 
-      {/* Sub-view Switcher & Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex rounded-xl bg-scholar-50 p-1 border border-scholar-100 self-start">
-            <button
+      {/* Sub-view Switcher & Filters — MUI Chip / Checkbox / Button */}
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              p: 0.75,
+              borderRadius: "12px",
+              bgcolor: "rgba(238,242,247,0.8)",
+              border: "1px solid #D6E0EB",
+              alignSelf: "flex-start",
+            }}
+          >
+            <Chip
+              label={`Student Attendance Summary (${attendanceReport.studentSummary.length})`}
               onClick={() => setSubView("students")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "students"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Student Attendance Summary ({attendanceReport.studentSummary.length})
-            </button>
-            <button
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "students" ? "white" : "transparent",
+                color: subView === "students" ? "#1E3A5F" : "#475569",
+                border: subView === "students" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "students" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "students" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              label={`Daily Attendance Trend (${attendanceReport.dailyTrend.filter((d) => d.total > 0).length})`}
               onClick={() => setSubView("daily")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "daily"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Daily Attendance Trend ({attendanceReport.dailyTrend.filter((d) => d.total > 0).length})
-            </button>
-          </div>
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "daily" ? "white" : "transparent",
+                color: subView === "daily" ? "#1E3A5F" : "#475569",
+                border: subView === "daily" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "daily" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "daily" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+          </Box>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.25 }}>
             {subView === "students" && (
-              <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 select-none">
-                <input
-                  type="checkbox"
-                  checked={lowAttendanceOnly}
-                  onChange={(e) => setLowAttendanceOnly(e.target.checked)}
-                  className="rounded border-scholar-300 text-danger-600 focus:ring-0"
-                />
-                <span className="text-danger-700 font-semibold">Low Attendance Only (&lt;75%)</span>
-              </label>
+              <FormControlLabel
+                control={<Checkbox checked={lowAttendanceOnly} onChange={(e) => setLowAttendanceOnly(e.target.checked)} size="small" sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#DC2626" } }} />}
+                label={<Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#DC2626" }}>Low Attendance Only (&lt;75%)</Typography>}
+                sx={{ m: 0, border: "1px solid #D6E0EB", borderRadius: "12px", px: 1.25, py: 0.25, bgcolor: "white" }}
+              />
             )}
 
-            <button
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Download size={14} />}
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-scholar-700 transition-colors"
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              <Download size={14} />
               Export CSV
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
         {subView === "students" && (
-          <div className="mt-3 relative">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-scholar-400" />
-            <input
-              type="text"
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              size="small"
+              fullWidth
               placeholder="Search student attendance by student name, course, or batch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-scholar-100 bg-white py-2 pl-9 pr-4 text-sm text-ink placeholder:text-scholar-300 focus:border-scholar-500 focus:outline-none"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} style={{ color: "#7E9BBC" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" } }}
             />
-          </div>
+          </Box>
         )}
       </Card>
 
-      {/* Subview 1: Student-wise Attendance Table */}
+      {/* Subview 1: Student-wise Attendance Table — MUI Table with Chip badges */}
       {subView === "students" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Student</th>
-                  <th className="px-4 py-3 font-semibold">Course & Batch</th>
-                  <th className="px-4 py-3 font-semibold text-center">Total Sessions</th>
-                  <th className="px-4 py-3 font-semibold text-center">Present</th>
-                  <th className="px-4 py-3 font-semibold text-center">Absent</th>
-                  <th className="px-4 py-3 font-semibold text-center">Late</th>
-                  <th className="px-4 py-3 font-semibold">Attendance Rate</th>
-                  <th className="px-4 py-3 font-semibold">Risk Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Course &amp; Batch</TableCell>
+                  <TableCell align="center">Total Sessions</TableCell>
+                  <TableCell align="center">Present</TableCell>
+                  <TableCell align="center">Absent</TableCell>
+                  <TableCell align="center">Late</TableCell>
+                  <TableCell>Attendance Rate</TableCell>
+                  <TableCell>Risk Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No attendance records match the selected filters.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredStudents.map((s) => (
-                    <tr key={s.studentId} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${
-                              s.isLowAttendance
-                                ? "bg-danger-50 text-danger-700"
-                                : "bg-scholar-100 text-scholar-700"
-                            }`}
+                    <TableRow key={s.studentId} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar
+                            variant="rounded"
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: "8px",
+                              bgcolor: s.isLowAttendance ? "#FEF2F2" : "#EEF2F7",
+                              color: s.isLowAttendance ? "#DC2626" : "#4E6E93",
+                              fontSize: "0.70rem",
+                              fontWeight: 600,
+                            }}
                           >
                             {initials(s.studentName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-ink">{s.studentName}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{s.courseName}</p>
-                        <p className="text-[11px] text-scholar-400">{s.batchName}</p>
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-medium text-ink tabular-nums">
-                        {s.totalMarked}
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-semibold text-success-700 tabular-nums">
-                        {s.presentCount}
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-semibold text-danger-600 tabular-nums">
-                        {s.absentCount}
-                      </td>
-
-                      <td className="px-4 py-3 text-center font-medium text-marigold-600 tabular-nums">
-                        {s.lateCount}
-                      </td>
-
-                      <td className="px-4 py-3 min-w-[140px]">
-                        <div className="flex items-center justify-between text-[11px] mb-1">
-                          <span className="font-bold tabular-nums text-ink">{s.attendanceRate}%</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-scholar-100 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              s.isLowAttendance ? "bg-danger-500" : "bg-success-600"
-                            }`}
-                            style={{ width: `${Math.min(100, s.attendanceRate)}%` }}
-                          />
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3">
+                          </Avatar>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{s.studentName}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{s.courseName}</Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{s.batchName}</Typography>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{s.totalMarked}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600, color: "#059669", fontSize: "0.80rem" }}>{s.presentCount}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600, color: "#DC2626", fontSize: "0.80rem" }}>{s.absentCount}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500, color: "#D68F26", fontSize: "0.80rem" }}>{s.lateCount}</TableCell>
+                      <TableCell sx={{ minWidth: 140 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#171A21", fontSize: "11px", display: "block", mb: 0.5 }}>{s.attendanceRate}%</Typography>
+                        <Box sx={{ height: 8, width: "100%", borderRadius: "9999px", bgcolor: "#EEF2F7", overflow: "hidden" }}>
+                          <Box sx={{ height: "100%", borderRadius: "9999px", width: `${Math.min(100, s.attendanceRate)}%`, bgcolor: s.isLowAttendance ? "#EF4444" : "#059669" }} />
+                        </Box>
+                      </TableCell>
+                      <TableCell>
                         {s.isLowAttendance ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 border border-danger-200 px-2 py-0.5 text-[11px] font-bold text-danger-700">
-                            <AlertTriangle size={11} /> Low Attendance
-                          </span>
+                          <Chip
+                            icon={<AlertTriangle size={12} />}
+                            label="Low Attendance"
+                            size="small"
+                            sx={{ bgcolor: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", fontWeight: 700, fontSize: "0.70rem", height: 22 }}
+                          />
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-medium text-success-700">
-                            <CheckCircle2 size={11} /> Regular
-                          </span>
+                          <Chip
+                            icon={<CheckCircle2 size={12} />}
+                            label="Regular"
+                            size="small"
+                            sx={{ bgcolor: "#ECFDF5", color: "#065F46", border: "1px solid #A7F3D0", fontWeight: 600, fontSize: "0.70rem", height: 22 }}
+                          />
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
 
-      {/* Subview 2: Daily Attendance Trend Table */}
+      {/* Subview 2: Daily Attendance Trend Table — MUI Table */}
       {subView === "daily" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold text-center">Sessions Marked</th>
-                  <th className="px-4 py-3 font-semibold text-center">Present</th>
-                  <th className="px-4 py-3 font-semibold text-center">Absent</th>
-                  <th className="px-4 py-3 font-semibold text-center">Late</th>
-                  <th className="px-4 py-3 font-semibold text-right">Daily Attendance Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 700 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Date</TableCell>
+                  <TableCell align="center">Sessions Marked</TableCell>
+                  <TableCell align="center">Present</TableCell>
+                  <TableCell align="center">Absent</TableCell>
+                  <TableCell align="center">Late</TableCell>
+                  <TableCell align="right">Daily Attendance Rate</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {attendanceReport.dailyTrend.filter((d) => d.total > 0).length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No daily records found.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   attendanceReport.dailyTrend
                     .filter((d) => d.total > 0)
                     .map((d) => (
-                      <tr key={d.date} className="hover:bg-scholar-50/40 transition-colors">
-                        <td className="px-4 py-3 font-semibold text-ink">
-                          {d.date}
-                        </td>
-                        <td className="px-4 py-3 text-center font-medium text-ink tabular-nums">
-                          {d.total}
-                        </td>
-                        <td className="px-4 py-3 text-center font-semibold text-success-700 tabular-nums">
-                          {d.present}
-                        </td>
-                        <td className="px-4 py-3 text-center font-semibold text-danger-600 tabular-nums">
-                          {d.absent}
-                        </td>
-                        <td className="px-4 py-3 text-center font-medium text-marigold-600 tabular-nums">
-                          {d.late}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          <span
-                            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                              d.rate >= 75
-                                ? "bg-success-50 text-success-700"
-                                : "bg-danger-50 text-danger-700"
-                            }`}
-                          >
-                            {d.rate}%
-                          </span>
-                        </td>
-                      </tr>
+                      <TableRow key={d.date} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                        <TableCell sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{d.date}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>{d.total}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 600, color: "#059669", fontSize: "0.80rem" }}>{d.present}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 600, color: "#DC2626", fontSize: "0.80rem" }}>{d.absent}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 500, color: "#D68F26", fontSize: "0.80rem" }}>{d.late}</TableCell>
+                        <TableCell align="right">
+                          <Chip
+                            label={`${d.rate}%`}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "0.70rem",
+                              height: 22,
+                              borderRadius: "9999px",
+                              bgcolor: d.rate >= 75 ? "#ECFDF5" : "#FEF2F2",
+                              color: d.rate >= 75 ? "#065F46" : "#DC2626",
+                              border: `1px solid ${d.rate >= 75 ? "#A7F3D0" : "#FECACA"}`,
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
                     ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }

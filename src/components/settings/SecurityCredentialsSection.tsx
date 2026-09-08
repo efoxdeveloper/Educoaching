@@ -11,7 +11,15 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Field, inputClass } from "@/components/ui/Field";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type SecurityCredentialsSectionProps = {
   currentEmail: string;
@@ -93,157 +101,161 @@ export function SecurityCredentialsSection({
   };
 
   return (
-    <Card className="p-6">
-      <div className="mb-5 flex items-center justify-between border-b border-scholar-100 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-scholar-50 text-scholar-700">
+    <Card sx={{ p: 3 }}>
+      <Box sx={{ mb: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Avatar variant="rounded" sx={{ width: 36, height: 36, borderRadius: "12px", bgcolor: "#EEF2F7", color: "#1E3A5F" }}>
             <ShieldCheck size={19} />
-          </div>
-          <div>
-            <h2 className="font-display text-base font-semibold text-ink">
+          </Avatar>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem" }}>
               Security & Credentials
-            </h2>
-            <p className="text-xs text-scholar-500">
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
               Manage institute owner login email and password with secure email verification.
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Global verification notice */}
-      <div className="mb-5 rounded-xl border border-scholar-100 bg-scholar-50/50 p-3.5 text-xs text-scholar-600">
-        <p className="flex items-center gap-1.5 font-medium text-scholar-800">
-          <ShieldCheck size={14} className="text-scholar-600" />
+      <Alert
+        severity="info"
+        icon={<ShieldCheck size={14} />}
+        sx={{ mb: 2.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", border: "1px solid #D6E0EB", color: "#475569", fontSize: "0.75rem" }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "#1E3A5F", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.75 }}>
+          <ShieldCheck size={14} style={{ color: "#4E6E93" }} />
           Two-step Owner Verification Protection
-        </p>
-        <p className="mt-1 leading-relaxed">
-          For your institute&apos;s security, password and email updates require confirmation via a verification link sent to your registered email address (<strong>{currentEmail}</strong>).
-        </p>
-      </div>
+        </Typography>
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", display: "block", mt: 0.5, lineHeight: 1.5 }}>
+          For your institute&apos;s security, password and email updates require confirmation via a verification link sent to your registered email address (<Box component="span" sx={{ fontWeight: 700 }}>{currentEmail}</Box>).
+        </Typography>
+      </Alert>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2.5 }}>
         {/* Password Change Box */}
-        <div className="rounded-2xl border border-scholar-100 bg-white p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-scholar-50 text-scholar-700">
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar variant="rounded" sx={{ width: 28, height: 28, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#1E3A5F" }}>
               <KeyRound size={15} />
-            </div>
-            <div>
-              <h3 className="font-display text-sm font-semibold text-ink">Change Password</h3>
-              <p className="text-[11px] text-scholar-400">Account login password for {ownerName}</p>
-            </div>
-          </div>
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>Change Password</Typography>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Account login password for {ownerName}</Typography>
+            </Box>
+          </Box>
 
-          <p className="text-xs text-scholar-500 mb-4 leading-relaxed">
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", lineHeight: 1.5 }}>
             Clicking below will send a verification email with a 1-hour secure link to confirm that it is you changing your password.
-          </p>
+          </Typography>
 
           {passwordSuccess && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-              <span>{passwordSuccess}</span>
-            </div>
+            <Alert severity="success" icon={<CheckCircle2 size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
+              {passwordSuccess}
+            </Alert>
           )}
 
           {passwordError && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-              <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-600" />
-              <span>{passwordError}</span>
-            </div>
+            <Alert severity="error" icon={<AlertCircle size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
+              {passwordError}
+            </Alert>
           )}
 
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            size="small"
             disabled={requestingPassword || !canManage}
             onClick={handleRequestPasswordChange}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:bg-scholar-50 disabled:opacity-50"
+            startIcon={requestingPassword ? <CircularProgress size={13} color="inherit" /> : <KeyRound size={13} />}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#171A21", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" }, alignSelf: "flex-start" }}
           >
-            {requestingPassword && <Loader2 size={13} className="animate-spin" />}
-            <KeyRound size={13} />
             Request Password Change
-          </button>
-        </div>
+          </Button>
+        </Paper>
 
         {/* Email Change Box */}
-        <div className="rounded-2xl border border-scholar-100 bg-white p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-scholar-50 text-scholar-700">
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "white", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar variant="rounded" sx={{ width: 28, height: 28, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#1E3A5F" }}>
               <Mail size={15} />
-            </div>
-            <div>
-              <h3 className="font-display text-sm font-semibold text-ink">Change Owner Email</h3>
-              <p className="text-[11px] text-scholar-400">Current: {currentEmail}</p>
-            </div>
-          </div>
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>Change Owner Email</Typography>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>Current: {currentEmail}</Typography>
+            </Box>
+          </Box>
 
-          <p className="text-xs text-scholar-500 mb-4 leading-relaxed">
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569", lineHeight: 1.5 }}>
             Request an email update. A verification link will be sent to your current email to confirm the change.
-          </p>
+          </Typography>
 
           {emailSuccess && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-              <span>{emailSuccess}</span>
-            </div>
+            <Alert severity="success" icon={<CheckCircle2 size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
+              {emailSuccess}
+            </Alert>
           )}
 
           {emailError && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-              <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-600" />
-              <span>{emailError}</span>
-            </div>
+            <Alert severity="error" icon={<AlertCircle size={15} />} sx={{ borderRadius: "12px", fontSize: "0.75rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
+              {emailError}
+            </Alert>
           )}
 
           {!showEmailDialog ? (
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              size="small"
               disabled={!canManage}
+              startIcon={<Mail size={13} />}
               onClick={() => {
                 setShowEmailDialog(true);
                 setEmailError("");
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:bg-scholar-50 disabled:opacity-50"
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#171A21", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 1.75, bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" }, alignSelf: "flex-start" }}
             >
-              <Mail size={13} />
               Change Login Email
-            </button>
+            </Button>
           ) : (
-            <form onSubmit={handleRequestEmailChange} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-medium text-ink mb-1">
-                  New Owner Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. newowner@institute.com"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs outline-none focus:border-scholar-500 focus:ring-1 focus:ring-scholar-500"
-                />
-              </div>
+            <Box component="form" onSubmit={handleRequestEmailChange} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <TextField
+                label="New Owner Email Address"
+                required
+                fullWidth
+                size="small"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="e.g. newowner@institute.com"
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+              />
 
-              <div className="flex items-center gap-2">
-                <button
+              <Stack direction="row" spacing={1}>
+                <Button
                   type="submit"
+                  variant="contained"
+                  size="small"
                   disabled={requestingEmail}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-scholar-800 disabled:opacity-50"
+                  startIcon={requestingEmail ? <CircularProgress size={13} color="inherit" /> : undefined}
+                  sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 1, px: 2, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
                 >
-                  {requestingEmail && <Loader2 size={13} className="animate-spin" />}
                   Send Confirmation Mail
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outlined"
+                  size="small"
                   onClick={() => setShowEmailDialog(false)}
-                  className="rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-medium text-scholar-600 hover:bg-scholar-50"
+                  sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#475569", fontWeight: 500, fontSize: "0.75rem", textTransform: "none", py: 1, px: 2, bgcolor: "white" }}
                 >
                   Cancel
-                </button>
-              </div>
-            </form>
+                </Button>
+              </Stack>
+            </Box>
           )}
-        </div>
-      </div>
+        </Paper>
+      </Box>
     </Card>
   );
 }

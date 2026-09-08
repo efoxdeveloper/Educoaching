@@ -3,10 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { DurationPicker } from "@/components/courses/DurationPicker";
 import { FeeInstallment } from "@/lib/installments";
 import { Camera, Upload } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
 
 export interface EditableStudent {
   id: string;
@@ -158,132 +169,126 @@ export function EditStudentDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Edit Student Profile">
-      <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
         {error && (
-          <div className="rounded-xl bg-danger-50 p-3 text-xs font-medium text-danger-700">
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem" }}>
             {error}
-          </div>
+          </Alert>
         )}
 
         {/* Student Photograph */}
-        <div className="rounded-2xl border border-scholar-200 bg-scholar-50/60 p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-              <Camera size={14} className="text-scholar-600" />
-              <span>Student Photograph</span>
-              <span className="rounded bg-scholar-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-scholar-700">Optional</span>
-            </span>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", bgcolor: "rgba(238,242,247,0.5)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#171A21", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Camera size={14} style={{ color: "#4E6E93" }} />
+              Student Photograph
+              <Box component="span" sx={{ ml: 0.5, px: 0.75, py: 0.25, borderRadius: "6px", bgcolor: "#EEF2F7", border: "1px solid #D6E0EB", fontSize: "10px", fontWeight: 600 }}>Optional</Box>
+            </Typography>
             {photoUrl && (
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                className="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer"
-              >
+              <Button size="small" onClick={handleRemovePhoto} sx={{ fontSize: "11px", fontWeight: 600, color: "#DC2626", textTransform: "none", p: 0, minWidth: 0 }}>
                 Remove Photo
-              </button>
+              </Button>
             )}
-          </div>
+          </Box>
 
-          <div className="flex items-center gap-3.5">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-scholar-300 bg-white shadow-2xs">
-              {photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="Passport photo" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center p-1 text-scholar-400">
-                  <Camera size={20} className="text-scholar-400" />
-                  <span className="text-[8px] font-bold uppercase mt-0.5">Photo</span>
-                </div>
-              )}
-            </div>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              src={photoUrl || undefined}
+              variant="rounded"
+              sx={{ width: 64, height: 64, borderRadius: "12px", border: "2px dashed #AFC3D9", bgcolor: "white", color: "#7E9BBC" }}
+            >
+              {!photoUrl && <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}><Camera size={20} /><Typography variant="caption" sx={{ fontSize: "8px", fontWeight: 700, mt: 0.5 }}>Photo</Typography></Box>}
+            </Avatar>
 
-            <div className="flex-1 space-y-1">
-              <p className="text-[11px] text-scholar-600 leading-snug">
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.75 }}>
+              <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", lineHeight: 1.4 }}>
                 Student passport-size photo. Can also be uploaded directly by the student in the Student Portal.
-              </p>
-              <div>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handlePhotoSelect}
-                />
-                <button
-                  type="button"
+              </Typography>
+              <Box>
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handlePhotoSelect} />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Upload size={12} />}
                   onClick={() => photoInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 shadow-2xs transition-colors cursor-pointer"
+                  sx={{ borderRadius: "8px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
                 >
-                  <Upload size={12} />
-                  <span>{photoUrl ? "Change Photo" : "Upload Passport Photo"}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+                  {photoUrl ? "Change Photo" : "Upload Passport Photo"}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
 
-        <Field label="Full Name *">
-          <input
-            className={inputClass}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Student Name"
+        <TextField
+          label="Full Name *"
+          required
+          fullWidth
+          size="small"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Student Name"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="Mobile *"
             required
+            fullWidth
+            size="small"
+            type="tel"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            placeholder="10-digit mobile"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />
-        </Field>
+          <TextField
+            label="Parent Mobile"
+            fullWidth
+            size="small"
+            type="tel"
+            value={parentMobile}
+            onChange={(e) => setParentMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            placeholder="10-digit mobile"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 10, inputMode: "numeric" } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Mobile *">
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              className={inputClass}
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="10-digit mobile"
-              required
-            />
-          </Field>
-          <Field label="Parent Mobile">
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              className={inputClass}
-              value={parentMobile}
-              onChange={(e) => setParentMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="10-digit mobile"
-            />
-          </Field>
-        </div>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+          <TextField
+            label="Student Email Address"
+            fullWidth
+            size="small"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="student@example.com"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="Parent Email (For Portal Access)"
+            fullWidth
+            size="small"
+            type="email"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+            placeholder="parent@example.com"
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Student Email Address">
-            <input
-              type="email"
-              className={inputClass}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="student@example.com"
-            />
-          </Field>
-
-          <Field label="Parent Email (For Portal Access)">
-            <input
-              type="email"
-              className={inputClass}
-              value={parentEmail}
-              onChange={(e) => setParentEmail(e.target.value)}
-              placeholder="parent@example.com"
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Course *">
-            <select
-              className={inputClass}
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <FormControl fullWidth size="small" required>
+            <InputLabel id="edit-student-course-label">Course *</InputLabel>
+            <Select
+              labelId="edit-student-course-label"
+              label="Course *"
               value={courseId}
               onChange={(e) => {
                 const cid = e.target.value;
@@ -292,124 +297,111 @@ export function EditStudentDrawer({
                 const c = courses.find((x) => x.id === cid);
                 if (c?.duration) setCourseDuration(c.duration);
               }}
-              required
+              sx={{ borderRadius: "12px", bgcolor: "white" }}
             >
-              <option value="">Select Course</option>
+              <MenuItem value="">Select Course</MenuItem>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
+                <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.875rem" }}>
                   {c.name} {c.duration ? `(${c.duration})` : ""}
-                </option>
+                </MenuItem>
               ))}
-            </select>
-          </Field>
+            </Select>
+          </FormControl>
 
-          <Field label="Batch">
-            <select
-              className={inputClass}
+          <FormControl fullWidth size="small">
+            <InputLabel id="edit-student-batch-label">Batch</InputLabel>
+            <Select
+              labelId="edit-student-batch-label"
+              label="Batch"
               value={batchId}
               onChange={(e) => setBatchId(e.target.value)}
               disabled={!courseId}
+              sx={{ borderRadius: "12px", bgcolor: "white" }}
             >
-              <option value="">Unassigned</option>
+              <MenuItem value="">Unassigned</MenuItem>
               {courseBatches.map((b) => (
-                <option key={b.id} value={b.id}>
+                <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem" }}>
                   {b.name}
-                </option>
+                </MenuItem>
               ))}
-            </select>
-          </Field>
-        </div>
+            </Select>
+          </FormControl>
+        </Box>
 
-        {/* Student Course Duration (Days, Months, Years) */}
-        <DurationPicker
-          value={courseDuration}
-          onChange={(val) => setCourseDuration(val)}
-          label="Course Duration (Days / Months / Years)"
-        />
+        <DurationPicker value={courseDuration} onChange={(val) => setCourseDuration(val)} label="Course Duration (Days / Months / Years)" />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Enrollment Status *">
-            <select
-              className={inputClass}
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="INACTIVE">Inactive / Archived</option>
-            </select>
-          </Field>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <FormControl fullWidth size="small" required>
+            <InputLabel id="edit-student-status-label">Enrollment Status *</InputLabel>
+            <Select labelId="edit-student-status-label" label="Enrollment Status *" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+              <MenuItem value="ACTIVE">Active</MenuItem>
+              <MenuItem value="ON_HOLD">On Hold</MenuItem>
+              <MenuItem value="INACTIVE">Inactive / Archived</MenuItem>
+            </Select>
+          </FormControl>
 
-          <Field label="Fee Billing Plan">
-            <select
-              className={inputClass}
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-            >
-              <option value="ONE_TIME">Full Fee (One-Time)</option>
-              <option value="INSTALLMENTS">Installment Plan</option>
-              <option value="MONTHLY">Monthly Recurring</option>
-              <option value="DEMO">Demo / 7-Day Trial</option>
-            </select>
-          </Field>
-        </div>
+          <FormControl fullWidth size="small">
+            <InputLabel id="edit-student-plan-label">Fee Billing Plan</InputLabel>
+            <Select labelId="edit-student-plan-label" label="Fee Billing Plan" value={plan} onChange={(e) => setPlan(e.target.value)} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+              <MenuItem value="ONE_TIME">Full Fee (One-Time)</MenuItem>
+              <MenuItem value="INSTALLMENTS">Installment Plan</MenuItem>
+              <MenuItem value="MONTHLY">Monthly Recurring</MenuItem>
+              <MenuItem value="DEMO">Demo / 7-Day Trial</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         {plan === "MONTHLY" && (
-          <Field label="Monthly Fee (₹) — Every Month">
-            <input
-              type="number"
-              min="0"
-              className={`${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-              value={monthlyAmount}
-              onChange={(e) => {
-                setMonthlyAmount(e.target.value);
-                setTotalFee(e.target.value);
-              }}
-              placeholder="e.g. 4500"
-            />
-          </Field>
+          <TextField
+            label="Monthly Fee (₹) — Every Month"
+            fullWidth
+            size="small"
+            type="number"
+            value={monthlyAmount}
+            onChange={(e) => {
+              setMonthlyAmount(e.target.value);
+              setTotalFee(e.target.value);
+            }}
+            placeholder="e.g. 4500"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0 } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Total Agreed Fee (₹) *">
-            <input
-              type="number"
-              min="0"
-              className={inputClass}
-              value={totalFee}
-              onChange={(e) => setTotalFee(e.target.value)}
-              placeholder="Total Course Fee"
-              required
-            />
-          </Field>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <TextField
+            label="Total Agreed Fee (₹) *"
+            required
+            fullWidth
+            size="small"
+            type="number"
+            value={totalFee}
+            onChange={(e) => setTotalFee(e.target.value)}
+            placeholder="Total Course Fee"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0 } as any }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+          <TextField
+            label="Next Fee Due Date"
+            fullWidth
+            size="small"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+          />
+        </Box>
 
-          <Field label="Next Fee Due Date">
-            <input
-              type="date"
-              className={inputClass}
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </Field>
-        </div>
-
-        <div className="flex gap-2.5 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-paper"
-          >
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-50 shadow-xs"
-          >
+          </Button>
+          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
             {loading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Wallet,
-  Search,
-  Download,
-  IndianRupee,
-  AlertTriangle,
-  CreditCard,
-} from "lucide-react";
+import { Search, Download, CreditCard, AlertTriangle } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
@@ -24,6 +17,23 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Avatar from "@mui/material/Avatar";
 
 export function FeeReportsTab({ data }: { data: ReportsData }) {
   const { feeReport } = data;
@@ -131,9 +141,9 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", maxWidth: "100%", minWidth: 0 }}>
       {/* Fee KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-full min-w-0">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
         <KpiCard
           label="Total Assessed Fees"
           value={formatCurrency(feeReport.kpis.totalBilled)}
@@ -164,20 +174,26 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
           trend={`${feeReport.kpis.overdueCount} students past deadline`}
           trendTone={feeReport.kpis.overdueCount > 0 ? "danger" : "success"}
         />
-      </div>
+      </Box>
 
-      {/* Visual Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Monthly Collection Trend</h3>
-              <p className="text-xs text-scholar-400">Total fees received per month (INR)</p>
-            </div>
-            <span className="text-xs font-semibold text-scholar-600">
-              {feeReport.kpis.transactionsCount} Transactions
-            </span>
-          </div>
+      {/* Visual Charts — keep recharts exactly, wrapped in MUI Card */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem", fontFamily: "var(--font-sora)" }}>
+                Monthly Collection Trend
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
+                Total fees received per month (INR)
+              </Typography>
+            </Box>
+            <Chip
+              label={`${feeReport.kpis.transactionsCount} Transactions`}
+              size="small"
+              sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", height: 22, border: "1px solid #D6E0EB" }}
+            />
+          </Box>
 
           <ResponsiveContainer width="100%" height={230}>
             <AreaChart data={feeReport.monthlyTrend} margin={{ left: -10, right: 10, top: 10 }}>
@@ -196,7 +212,7 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
                 tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
                 formatter={(val) => [`₹${Number(val ?? 0).toLocaleString("en-IN")}`, "Collected"]}
               />
               <Area type="monotone" dataKey="amount" stroke="#2E7D52" strokeWidth={2.5} fill="url(#feeTrendFill)" />
@@ -204,27 +220,32 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-base font-semibold text-ink">Payment Methods Breakdown</h3>
-              <p className="text-xs text-scholar-400">Collection volume by channel</p>
-            </div>
-            <span className="text-xs font-semibold text-scholar-600">
-              {feeReport.paymentMethodsBreakdown.length} Methods
-            </span>
-          </div>
+        <Card sx={{ p: 2.5 }}>
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "1rem", fontFamily: "var(--font-sora)" }}>
+                Payment Methods Breakdown
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
+                Collection volume by channel
+              </Typography>
+            </Box>
+            <Chip
+              label={`${feeReport.paymentMethodsBreakdown.length} Methods`}
+              size="small"
+              sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", height: 22, border: "1px solid #D6E0EB" }}
+            />
+          </Box>
 
           {feeReport.paymentMethodsBreakdown.length === 0 ? (
-            <div className="flex h-56 items-center justify-center text-xs text-scholar-400">
-              No payments recorded yet.
-            </div>
+            <Box sx={{ height: 230, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem" }}>
+                No payments recorded yet.
+              </Typography>
+            </Box>
           ) : (
             <ResponsiveContainer width="100%" height={230}>
-              <BarChart
-                data={feeReport.paymentMethodsBreakdown}
-                margin={{ left: -10, right: 10, top: 10 }}
-              >
+              <BarChart data={feeReport.paymentMethodsBreakdown} margin={{ left: -10, right: 10, top: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" vertical={false} />
                 <XAxis dataKey="method" tick={{ fontSize: 11, fill: "#4E6E93" }} axisLine={false} tickLine={false} />
                 <YAxis
@@ -234,87 +255,135 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 }}
-                  formatter={(val, name, item) => [
-                    `₹${Number(val ?? 0).toLocaleString("en-IN")} (${item?.payload?.percentage}%)`,
+                  contentStyle={{ borderRadius: 12, border: "1px solid #D6E0EB", fontSize: 12 } as any}
+                  formatter={(val, _name, item) => [
+                    `₹${Number(val ?? 0).toLocaleString("en-IN")} (${(item as any)?.payload?.percentage}%)`,
                     "Total Collected",
                   ]}
                 />
-                <Bar dataKey="total" fill="#1E3A5F" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="total" fill="#1E3A5F" radius={[6, 6, 0, 0] as any} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
-      </div>
+      </Box>
 
-      {/* Sub-view Selector & Toolbar */}
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          {/* Subview Pills */}
-          <div className="flex rounded-xl bg-scholar-50 p-1 border border-scholar-100 self-start">
-            <button
+      {/* Sub-view Selector & Toolbar — MUI Chip/TextField/Select/Button */}
+      <Card sx={{ p: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          {/* Subview Chips */}
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              p: 0.75,
+              borderRadius: "12px",
+              bgcolor: "rgba(238,242,247,0.8)",
+              border: "1px solid #D6E0EB",
+              alignSelf: "flex-start",
+            }}
+          >
+            <Chip
+              label={`Payment Transactions (${feeReport.payments.length})`}
               onClick={() => setSubView("transactions")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "transactions"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Payment Transactions ({feeReport.payments.length})
-            </button>
-            <button
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "transactions" ? "white" : "transparent",
+                color: subView === "transactions" ? "#1E3A5F" : "#475569",
+                border: subView === "transactions" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "transactions" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "transactions" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              label={`Outstanding Dues & Aging (${feeReport.duesAging.length})`}
               onClick={() => setSubView("dues")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "dues"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Outstanding Dues & Aging ({feeReport.duesAging.length})
-            </button>
-            <button
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "dues" ? "white" : "transparent",
+                color: subView === "dues" ? "#1E3A5F" : "#475569",
+                border: subView === "dues" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "dues" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "dues" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+            <Chip
+              label={`Methods Summary (${feeReport.paymentMethodsBreakdown.length})`}
               onClick={() => setSubView("methods")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                subView === "methods"
-                  ? "bg-white text-scholar-900 shadow-sm"
-                  : "text-scholar-600 hover:text-scholar-900"
-              }`}
-            >
-              Methods Summary ({feeReport.paymentMethodsBreakdown.length})
-            </button>
-          </div>
+              size="small"
+              sx={{
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                px: 0.5,
+                bgcolor: subView === "methods" ? "white" : "transparent",
+                color: subView === "methods" ? "#1E3A5F" : "#475569",
+                border: subView === "methods" ? "1px solid #D6E0EB" : "1px solid transparent",
+                boxShadow: subView === "methods" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                "&:hover": { bgcolor: subView === "methods" ? "white" : "rgba(255,255,255,0.6)" },
+              }}
+            />
+          </Box>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.25 }}>
             {subView === "transactions" && (
-              <select
-                value={methodFilter}
-                onChange={(e) => setMethodFilter(e.target.value)}
-                className="rounded-xl border border-scholar-100 bg-white px-3 py-2 text-xs font-medium text-scholar-700 focus:border-scholar-500 focus:outline-none"
-              >
-                <option value="ALL">All Methods</option>
-                {feeReport.paymentMethodsBreakdown.map((m) => (
-                  <option key={m.method} value={m.method}>
-                    {m.method}
-                  </option>
-                ))}
-              </select>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel id="fee-method-filter-label" sx={{ fontSize: "0.75rem" }}>
+                  Payment Method
+                </InputLabel>
+                <Select
+                  labelId="fee-method-filter-label"
+                  label="Payment Method"
+                  value={methodFilter}
+                  onChange={(e) => setMethodFilter(e.target.value)}
+                  sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
+                >
+                  <MenuItem value="ALL">All Methods</MenuItem>
+                  {feeReport.paymentMethodsBreakdown.map((m) => (
+                    <MenuItem key={m.method} value={m.method}>
+                      {m.method}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
 
-            <button
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Download size={14} />}
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 rounded-xl bg-scholar-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-scholar-700 transition-colors"
+              sx={{
+                borderRadius: "12px",
+                bgcolor: "#1E3A5F",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                textTransform: "none",
+                py: 1,
+                px: 1.75,
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#182F4C" },
+              }}
             >
-              <Download size={14} />
               Export CSV
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
         {subView !== "methods" && (
-          <div className="mt-3 relative">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-scholar-400" />
-            <input
-              type="text"
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              size="small"
+              fullWidth
               placeholder={
                 subView === "transactions"
                   ? "Search payments by student name, mobile, course, or method..."
@@ -322,205 +391,227 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-scholar-100 bg-white py-2 pl-9 pr-4 text-sm text-ink placeholder:text-scholar-300 focus:border-scholar-500 focus:outline-none"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} style={{ color: "#7E9BBC" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" } }}
             />
-          </div>
+          </Box>
         )}
       </Card>
 
-      {/* Subview 1: Payment Transactions Table */}
+      {/* Subview 1: Payment Transactions Table — MUI Table */}
       {subView === "transactions" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Student</th>
-                  <th className="px-4 py-3 font-semibold">Course & Batch</th>
-                  <th className="px-4 py-3 font-semibold text-right">Amount Paid</th>
-                  <th className="px-4 py-3 font-semibold">Method</th>
-                  <th className="px-4 py-3 font-semibold">Payment Date</th>
-                  <th className="px-4 py-3 font-semibold">Notes / Receipt</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 800 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Course &amp; Batch</TableCell>
+                  <TableCell align="right">Amount Paid</TableCell>
+                  <TableCell>Method</TableCell>
+                  <TableCell>Payment Date</TableCell>
+                  <TableCell>Notes / Receipt</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {filteredPayments.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No payment transactions found.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredPayments.map((p) => (
-                    <tr key={p.id} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-scholar-100 text-xs font-semibold text-scholar-700">
+                    <TableRow key={p.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 600 }} variant="rounded">
                             {initials(p.studentName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-ink">{p.studentName}</p>
-                            <p className="text-[11px] text-scholar-400">{p.studentMobile}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{p.courseName}</p>
-                        <p className="text-[11px] text-scholar-400">{p.batchName}</p>
-                      </td>
-
-                      <td className="px-4 py-3 text-right font-display font-semibold text-success-700 tabular-nums">
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>
+                              {p.studentName}
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
+                              {p.studentMobile}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>
+                          {p.courseName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
+                          {p.batchName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600, color: "#059669", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>
                         +{formatCurrency(p.amount)}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-scholar-100 px-2.5 py-0.5 text-[11px] font-medium text-scholar-700">
-                          <CreditCard size={10} />
-                          {p.method}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-600 whitespace-nowrap">
-                        {formatDate(p.paidAt)}
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-500 max-w-xs truncate">
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<CreditCard size={12} />}
+                          label={p.method}
+                          size="small"
+                          sx={{ bgcolor: "#EEF2F7", color: "#334155", fontWeight: 500, fontSize: "0.70rem", height: 22, borderRadius: "9999px" }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>{formatDate(p.paidAt)}</TableCell>
+                      <TableCell sx={{ fontSize: "0.75rem", color: "#64748b", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {p.note || "—"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
 
-      {/* Subview 2: Outstanding Dues Aging Table */}
+      {/* Subview 2: Outstanding Dues Aging Table — MUI Table */}
       {subView === "dues" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Student</th>
-                  <th className="px-4 py-3 font-semibold">Course & Batch</th>
-                  <th className="px-4 py-3 font-semibold text-right">Total Fee</th>
-                  <th className="px-4 py-3 font-semibold text-right">Paid</th>
-                  <th className="px-4 py-3 font-semibold text-right">Outstanding Dues</th>
-                  <th className="px-4 py-3 font-semibold">Due Date</th>
-                  <th className="px-4 py-3 font-semibold">Aging Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Course &amp; Batch</TableCell>
+                  <TableCell align="right">Total Fee</TableCell>
+                  <TableCell align="right">Paid</TableCell>
+                  <TableCell align="right">Outstanding Dues</TableCell>
+                  <TableCell>Due Date</TableCell>
+                  <TableCell>Aging Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {filteredDues.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No outstanding dues! All students are paid up.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredDues.map((d) => (
-                    <tr key={d.studentId} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger-50 text-xs font-semibold text-danger-700">
+                    <TableRow key={d.studentId} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "#FEF2F2", color: "#DC2626", fontSize: "0.70rem", fontWeight: 600 }} variant="rounded">
                             {initials(d.studentName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-ink">{d.studentName}</p>
-                            <p className="text-[11px] text-scholar-400">{d.mobile}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{d.courseName}</p>
-                        <p className="text-[11px] text-scholar-400">{d.batchName}</p>
-                      </td>
-
-                      <td className="px-4 py-3 text-right font-medium text-ink tabular-nums">
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>
+                              {d.studentName}
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
+                              {d.mobile}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>
+                          {d.courseName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
+                          {d.batchName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>
                         {formatCurrency(d.totalFee)}
-                      </td>
-
-                      <td className="px-4 py-3 text-right font-medium text-success-700 tabular-nums">
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500, color: "#059669", fontSize: "0.80rem" }}>
                         {formatCurrency(d.paidFee)}
-                      </td>
-
-                      <td className="px-4 py-3 text-right font-display font-semibold text-danger-600 tabular-nums">
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600, color: "#DC2626", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>
                         {formatCurrency(d.pendingFee)}
-                      </td>
-
-                      <td className="px-4 py-3 text-scholar-600 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.75rem", color: "#475569", whiteSpace: "nowrap" }}>
                         {d.dueDate ? formatDate(d.dueDate) : "—"}
-                      </td>
-
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         {d.isOverdue ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 border border-danger-200 px-2 py-0.5 text-[11px] font-bold text-danger-700">
-                            <AlertTriangle size={11} />
-                            {d.daysOverdue} days overdue
-                          </span>
+                          <Chip
+                            icon={<AlertTriangle size={12} />}
+                            label={`${d.daysOverdue} days overdue`}
+                            size="small"
+                            sx={{ bgcolor: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", fontWeight: 700, fontSize: "0.70rem", height: 22 }}
+                          />
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-scholar-50 px-2 py-0.5 text-[11px] font-medium text-scholar-600">
-                            Current Period
-                          </span>
+                          <Chip
+                            label="Current Period"
+                            size="small"
+                            sx={{ bgcolor: "#F8FAFC", color: "#475569", fontWeight: 500, fontSize: "0.70rem", height: 22, border: "1px solid #E2E8F0" }}
+                          />
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
 
-      {/* Subview 3: Payment Methods Summary Table */}
+      {/* Subview 3: Payment Methods Summary Table — MUI Table */}
       {subView === "methods" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-scholar-100 bg-scholar-50/70 text-scholar-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Payment Channel / Mode</th>
-                  <th className="px-4 py-3 font-semibold text-center">Transactions Count</th>
-                  <th className="px-4 py-3 font-semibold text-right">Total Collected (INR)</th>
-                  <th className="px-4 py-3 font-semibold text-right">Share of Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+        <Card sx={{ overflow: "hidden" }}>
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 600 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "rgba(238,242,247,0.7)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", py: 1.5, borderBottom: "1px solid #D6E0EB" } }}>
+                  <TableCell>Payment Channel / Mode</TableCell>
+                  <TableCell align="center">Transactions Count</TableCell>
+                  <TableCell align="right">Total Collected (INR)</TableCell>
+                  <TableCell align="right">Share of Total</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {feeReport.paymentMethodsBreakdown.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-12 text-center text-scholar-400">
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No payment methods data.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   feeReport.paymentMethodsBreakdown.map((m) => (
-                    <tr key={m.method} className="hover:bg-scholar-50/40 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-ink flex items-center gap-2">
-                        <CreditCard size={14} className="text-scholar-500" />
-                        {m.method}
-                      </td>
-                      <td className="px-4 py-3 text-center font-medium text-ink tabular-nums">
+                    <TableRow key={m.method} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.5 } }}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CreditCard size={14} style={{ color: "#64748b" }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>
+                            {m.method}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500, color: "#171A21", fontSize: "0.80rem" }}>
                         {m.count}
-                      </td>
-                      <td className="px-4 py-3 text-right font-display font-semibold text-success-700 tabular-nums">
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600, color: "#059669", fontSize: "0.80rem", fontFamily: "var(--font-sora)" }}>
                         {formatCurrency(m.total)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-scholar-600 tabular-nums">
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500, color: "#475569", fontSize: "0.80rem" }}>
                         {m.percentage}%
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }
