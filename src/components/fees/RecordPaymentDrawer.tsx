@@ -4,10 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Split } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { formatCurrency } from "@/lib/utils";
 import { useRazorpayCheckout } from "@/lib/useRazorpayCheckout";
 import type { FeeInstallment } from "@/lib/installments";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Divider from "@mui/material/Divider";
 
 type Student = {
   id: string;
@@ -145,129 +156,153 @@ export function RecordPaymentDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Record Student Payment">
-      <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
         {(error || payError) && (
-          <p className="rounded-xl bg-danger-50 px-3 py-2.5 text-xs text-danger-600 font-medium">{error || payError}</p>
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem" }}>
+            {error || payError}
+          </Alert>
         )}
 
-        <Field label="Student">
-          <select
-            required
-            className={inputClass}
+        <FormControl fullWidth size="small" required>
+          <InputLabel id="record-student-label">Student</InputLabel>
+          <Select
+            labelId="record-student-label"
+            label="Student"
             value={studentId}
             onChange={(e) => {
               setStudentId(e.target.value);
               setAmount("");
             }}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
             {students.map((s) => (
-              <option key={s.id} value={s.id}>
+              <MenuItem key={s.id} value={s.id} sx={{ fontSize: "0.875rem" }}>
                 {s.name} (Outstanding: {formatCurrency(Math.max(0, Number(s.totalFee) - Number(s.paidFee)))})
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </Field>
+          </Select>
+        </FormControl>
 
         {selected && (
-          <div className="rounded-xl border border-marigold-200 bg-marigold-50/60 p-3 text-xs text-marigold-800 space-y-1">
-            <div className="flex justify-between font-semibold">
-              <span>Total Course Fee:</span>
-              <span>{formatCurrency(selected.totalFee)}</span>
-            </div>
-            <div className="flex justify-between text-success-700 font-semibold">
-              <span>Paid So Far:</span>
-              <span>{formatCurrency(selected.paidFee)}</span>
-            </div>
-            <div className="flex justify-between font-bold border-t border-marigold-200/60 pt-1 text-ink">
-              <span>Outstanding Due:</span>
-              <span className="text-danger-700">{formatCurrency(outstanding)}</span>
-            </div>
-          </div>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "#FFF8E1", borderColor: "#FFE082", display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#795548" }}>Total Course Fee:</Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#1E3A5F" }}>{formatCurrency(selected.totalFee)}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontWeight: 600, color: "#1F9D66" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#1F9D66" }}>Paid So Far:</Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#1F9D66" }}>{formatCurrency(selected.paidFee)}</Typography>
+            </Box>
+            <Divider sx={{ borderColor: "rgba(121,85,72,0.15)" }} />
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#171A21" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#171A21" }}>Outstanding Due:</Typography>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 800, color: "#D64545" }}>{formatCurrency(outstanding)}</Typography>
+            </Box>
+          </Paper>
         )}
 
-        {/* Installment Allocation Selector if student has installment plan */}
         {installmentsList.length > 0 && (
-          <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 space-y-2">
-            <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
-              <Split size={14} className="text-scholar-600" />
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", display: "flex", flexDirection: "column", gap: 1.25 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Split size={14} style={{ color: "#64748b" }} />
               Apply Payment to Installment:
-            </label>
-            <select
-              className={inputClass}
-              value={targetInstallment}
-              onChange={(e) => handleInstallmentSelect(e.target.value)}
-            >
-              <option value="">Auto-allocate (Earliest Unpaid)</option>
-              {installmentsList.map((inst) => {
-                const balance = Math.max(0, inst.amount - inst.paidAmount);
-                return (
-                  <option key={inst.id} value={inst.installmentNumber}>
-                    {inst.title} — Due: {formatCurrency(balance)} [{inst.status}]
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel id="installment-label">Installment</InputLabel>
+              <Select
+                labelId="installment-label"
+                label="Installment"
+                value={targetInstallment}
+                onChange={(e) => handleInstallmentSelect(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem" }}
+              >
+                <MenuItem value="">Auto-allocate (Earliest Unpaid)</MenuItem>
+                {installmentsList.map((inst) => {
+                  const balance = Math.max(0, inst.amount - inst.paidAmount);
+                  return (
+                    <MenuItem key={inst.id} value={String(inst.installmentNumber)} sx={{ fontSize: "0.75rem" }}>
+                      {inst.title} — Due: {formatCurrency(balance)} [{inst.status}]
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          </Paper>
         )}
 
-        <Field label="Amount Received (₹)">
-          <input
-            required
-            type="number"
-            min={1}
-            className={`${inputClass} font-bold text-ink`}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-          />
-        </Field>
+        <TextField
+          label="Amount Received (₹)"
+          required
+          fullWidth
+          size="small"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          slotProps={{
+            inputLabel: { shrink: true },
+            htmlInput: { min: 1, step: 1 },
+          }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 600 } }}
+        />
 
-        <button
+        <Button
           type="button"
+          variant="outlined"
+          fullWidth
           onClick={handlePayOnline}
           disabled={processing}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-scholar-600 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-scholar-50 disabled:opacity-60 transition-colors shadow-xs"
+          startIcon={<CreditCard size={15} />}
+          sx={{ borderRadius: "12px", borderWidth: 2, borderColor: "#1E3A5F", color: "#1E3A5F", fontWeight: 600, textTransform: "none", py: 1.25, "&:hover": { bgcolor: "#EEF2F7", borderColor: "#1E3A5F" } }}
         >
-          <CreditCard size={15} /> {processing ? "Opening Razorpay..." : "Pay Online via Razorpay / UPI"}
-        </button>
+          {processing ? "Opening Razorpay..." : "Pay Online via Razorpay / UPI"}
+        </Button>
 
-        <div className="flex items-center gap-3 text-[11px] text-scholar-400">
-          <div className="h-px flex-1 bg-scholar-200" /> or record offline / manual payment <div className="h-px flex-1 bg-scholar-200" />
-        </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
+          <Divider sx={{ flex: 1, borderColor: "#D6E0EB" }} />
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", whiteSpace: "nowrap" }}>or record offline / manual payment</Typography>
+          <Divider sx={{ flex: 1, borderColor: "#D6E0EB" }} />
+        </Box>
 
-        <Field label="Payment Method">
-          <select className={inputClass} value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI / QR Code</option>
-            <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
-            <option value="Cheque">Cheque / DD</option>
-            <option value="Card">Credit / Debit Card</option>
-          </select>
-        </Field>
-
-        <Field label="Note / Remarks (Optional)">
-          <textarea
-            className={inputClass}
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Installment 1 receipt #4829"
-          />
-        </Field>
-
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-scholar-50">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 shadow-xs"
+        <FormControl fullWidth size="small">
+          <InputLabel id="pay-method-label">Payment Method</InputLabel>
+          <Select
+            labelId="pay-method-label"
+            label="Payment Method"
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
+            <MenuItem value="Cash">Cash</MenuItem>
+            <MenuItem value="UPI">UPI / QR Code</MenuItem>
+            <MenuItem value="Bank Transfer">Bank Transfer (NEFT/IMPS)</MenuItem>
+            <MenuItem value="Cheque">Cheque / DD</MenuItem>
+            <MenuItem value="Card">Credit / Debit Card</MenuItem>
+          </Select>
+        </FormControl>
+
+        <TextField
+          label="Note / Remarks (Optional)"
+          fullWidth
+          size="small"
+          multiline
+          rows={2}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Installment 1 receipt #4829"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
             {loading ? "Recording..." : "Record Payment"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

@@ -12,7 +12,25 @@ import { ProcessRefundDrawer } from "./ProcessRefundDrawer";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { computeFeeStatus, feeStatusLabel } from "@/lib/fee";
 import { computePlanStatus, planStatusLabel, daysLeft, type ComputedPlanStatus } from "@/lib/subscription";
-import { Wallet, IndianRupee, AlertTriangle } from "lucide-react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
 
 type Student = {
   id: string;
@@ -92,204 +110,232 @@ export function FeesView({ students }: { students: Student[] }) {
 
   return (
     <>
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Box sx={{ mb: 2, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", xl: "repeat(4, 1fr)" }, gap: 2 }}>
         <KpiCard label="Total Collected" value={formatCurrency(totalCollected)} iconName="IndianRupee" accent="marigold" />
         <KpiCard label="Total Pending" value={formatCurrency(totalPending)} iconName="Wallet" accent="scholar" />
         <KpiCard label="Overdue Students" value={overdueCount.toString()} iconName="AlertTriangle" accent="scholar" trendTone="danger" trend={overdueCount > 0 ? "Needs follow-up" : undefined} />
         <KpiCard label="Renewals Due" value={renewalsDue.toString()} iconName="RefreshCw" accent="marigold" trendTone={renewalsDue > 0 ? "danger" : "success"} trend={renewalsDue > 0 ? "Demo ended or subscription lapsed" : "All caught up"} />
-      </div>
+      </Box>
 
-      <Card className="p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2 rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 sm:max-w-xs sm:flex-1">
-              <Search size={16} className="text-scholar-300" />
-              <input
-                placeholder="Search by student name"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-scholar-300"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-sm text-scholar-600 outline-none"
-            >
-              <option value="">All statuses</option>
-              <option value="PAID">Paid</option>
-              <option value="PARTIAL">Partial</option>
-              <option value="PENDING">Pending</option>
-              <option value="OVERDUE">Overdue</option>
-            </select>
-            <select
-              value={planFilter}
-              onChange={(e) => setPlanFilter(e.target.value)}
-              className="rounded-xl border border-scholar-100 bg-paper px-3 py-2.5 text-sm text-scholar-600 outline-none"
-            >
-              <option value="">All Payment Plans</option>
-              <option value="INSTALLMENTS">Installment Plan</option>
-              <option value="ONE_TIME">One-Time Fee</option>
-              <option value="QUARTERLY">Quarterly Recurring</option>
-              <option value="MONTHLY">Monthly Recurring</option>
-              <option value="DEMO">Free 7-Day Demo</option>
-            </select>
-          </div>
+      <Card sx={{ p: 2.5 }}>
+        <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
+            <TextField
+              size="small"
+              placeholder="Search by student name"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} style={{ color: "#7E9BBC" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ flex: 1, maxWidth: { sm: 260 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" } }}
+            />
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="fee-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+              <Select
+                labelId="fee-status-label"
+                label="Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="PAID">Paid</MenuItem>
+                <MenuItem value="PARTIAL">Partial</MenuItem>
+                <MenuItem value="PENDING">Pending</MenuItem>
+                <MenuItem value="OVERDUE">Overdue</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel id="fee-plan-label" sx={{ fontSize: "0.75rem" }}>Payment Plan</InputLabel>
+              <Select
+                labelId="fee-plan-label"
+                label="Payment Plan"
+                value={planFilter}
+                onChange={(e) => setPlanFilter(e.target.value)}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All Payment Plans</MenuItem>
+                <MenuItem value="INSTALLMENTS">Installment Plan</MenuItem>
+                <MenuItem value="ONE_TIME">One-Time Fee</MenuItem>
+                <MenuItem value="QUARTERLY">Quarterly Recurring</MenuItem>
+                <MenuItem value="MONTHLY">Monthly Recurring</MenuItem>
+                <MenuItem value="DEMO">Free 7-Day Demo</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-          <div className="flex flex-wrap gap-2">
-            <button
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Bell size={14} />}
               onClick={() => setRemindersOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+              sx={{ borderRadius: "12px", borderColor: "#fde68a", bgcolor: "#FFFBEB", color: "#92400e", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#FEF3C7", borderColor: "#fcd34d" } }}
             >
-              <Bell size={14} /> Fee Reminders
-            </button>
-            <button
+              Fee Reminders
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ShieldCheck size={14} />}
               onClick={() => setReconcileOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-scholar-200 bg-paper px-3.5 py-2 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#F8FAFC" } }}
             >
-              <ShieldCheck size={14} /> Reconcile
-            </button>
-            <button
+              Reconcile
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RotateCcw size={14} />}
               onClick={() => { setRefundTargetStudent(undefined); setRefundOpen(true); }}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-danger-200 bg-danger-50 px-3.5 py-2 text-xs font-semibold text-danger-700 hover:bg-danger-100"
+              sx={{ borderRadius: "12px", borderColor: "#fecaca", bgcolor: "#FEF2F2", color: "#b91c1c", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#FEE2E2", borderColor: "#fca5a5" } }}
             >
-              <RotateCcw size={14} /> Refund / Credit
-            </button>
-            <button
+              Refund / Credit
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<RefreshCw size={14} />}
               onClick={() => { setRenewTarget(undefined); setRenewOpen(true); }}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-marigold-400 px-3.5 py-2 text-xs font-semibold text-scholar-900 hover:bg-marigold-500"
+              sx={{ borderRadius: "12px", bgcolor: "#E8A33D", color: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, boxShadow: "none", "&:hover": { bgcolor: "#D68F26" } }}
             >
-              <RefreshCw size={14} /> Renew
-            </button>
-            <button
+              Renew
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Plus size={14} />}
               onClick={() => setPaymentOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-scholar-600 px-4 py-2 text-xs font-semibold text-white hover:bg-scholar-700"
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 2, py: 0.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
             >
-              <Plus size={14} /> Record Payment
-            </button>
-          </div>
-        </div>
+              Record Payment
+            </Button>
+          </Stack>
+        </Box>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-scholar-100 text-left text-xs font-medium uppercase tracking-wide text-scholar-400">
-                <th className="py-3 pr-4">Student</th>
-                <th className="py-3 pr-4">Course</th>
-                <th className="py-3 pr-4">Total Fee</th>
-                <th className="py-3 pr-4">Paid</th>
-                <th className="py-3 pr-4">Pending</th>
-                <th className="py-3 pr-4">Due Date</th>
-                <th className="py-3 pr-4">Payment Status</th>
-                <th className="py-3 pr-4">Plan</th>
-                <th className="py-3 pr-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+          <Table sx={{ minWidth: 960 }} size="small">
+            <TableHead>
+              <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
+                <TableCell>Student</TableCell>
+                <TableCell>Course</TableCell>
+                <TableCell>Total Fee</TableCell>
+                <TableCell>Paid</TableCell>
+                <TableCell>Pending</TableCell>
+                <TableCell>Due Date</TableCell>
+                <TableCell>Payment Status</TableCell>
+                <TableCell>Plan</TableCell>
+                <TableCell align="right">Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filtered.map((s) => {
                 const relevantDate = s.plan === "DEMO" ? s.demoExpiresAt : s.currentPeriodEnd;
                 const left = daysLeft(relevantDate);
+                const total = Number(s.totalFee) || 0;
+                const paid = Number(s.paidFee) || 0;
+                const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((paid / total) * 100))) : 0;
+                const barColor =
+                  s.status === "PAID" ? "#10b981" : s.status === "OVERDUE" ? "#f43f5e" : s.status === "PARTIAL" ? "#f59e0b" : "#94a3b8";
                 return (
-                  <tr key={s.id} className="border-b border-scholar-50 last:border-0 hover:bg-paper/60">
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-scholar-50 text-xs font-semibold text-scholar-600">
+                  <TableRow key={s.id} hover sx={{ "&:last-child td": { borderBottom: 0 }, "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75, pr: 2 } }}>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Avatar sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#4E6E93", fontSize: "0.70rem", fontWeight: 700 }}>
                           {initials(s.name)}
-                        </div>
-                        <span className="font-medium text-ink">{s.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4 text-scholar-500">{s.course.name}</td>
-                    <td className="py-3 pr-4 tabular-nums text-scholar-500">{formatCurrency(s.totalFee)}</td>
-                    <td className="py-3 pr-4 tabular-nums text-success-600">{formatCurrency(s.paidFee)}</td>
-                    <td className="py-3 pr-4 tabular-nums font-medium text-ink">
-                      <div className="flex flex-col gap-1">
-                        <span>{formatCurrency(s.pending)}</span>
-                        {(() => {
-                          const total = Number(s.totalFee) || 0;
-                          const paid = Number(s.paidFee) || 0;
-                          const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((paid / total) * 100))) : 0;
-                          const barColor =
-                            s.status === "PAID" ? "bg-emerald-500" : s.status === "OVERDUE" ? "bg-rose-500" : s.status === "PARTIAL" ? "bg-amber-500" : "bg-scholar-400";
-                          return (
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-1.5 flex-1 rounded-full bg-scholar-100">
-                                <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                              </div>
-                              <span className="text-[10px] font-semibold text-scholar-500 tabular-nums">{pct}%</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4 text-scholar-500">{s.dueDate ? formatDate(s.dueDate) : "—"}</td>
-                    <td className="py-3 pr-4">
+                        </Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>{s.name}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: "#64748b", fontSize: "0.80rem" }}>{s.course.name}</TableCell>
+                    <TableCell sx={{ fontSize: "0.80rem", color: "#64748b" }} className="tabular-nums">{formatCurrency(s.totalFee)}</TableCell>
+                    <TableCell sx={{ fontSize: "0.80rem", color: "#059669", fontWeight: 600 }} className="tabular-nums">{formatCurrency(s.paidFee)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, minWidth: 120 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }} className="tabular-nums">{formatCurrency(s.pending)}</Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          <Box sx={{ height: 6, flex: 1, borderRadius: 999, bgcolor: "#F1F5F9", overflow: "hidden" }}>
+                            <Box sx={{ height: 6, borderRadius: 999, width: `${pct}%`, bgcolor: barColor, transition: "width 0.3s" }} />
+                          </Box>
+                          <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, color: "#64748b" }} className="tabular-nums">{pct}%</Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: "0.80rem", color: "#64748b" }}>{s.dueDate ? formatDate(s.dueDate) : "—"}</TableCell>
+                    <TableCell>
                       <Badge tone={feeStatusTone(s.status)} dot>{feeStatusLabel(s.status)}</Badge>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex flex-col gap-0.5">
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                         {s.plan === "INSTALLMENTS" ? (
                           <>
-                            <span className="inline-flex items-center rounded-md bg-scholar-100 px-2 py-0.5 text-[11px] font-bold text-scholar-800 border border-scholar-200 w-fit">
-                              Installment Plan
-                            </span>
+                            <Chip label="Installment Plan" size="small" sx={{ fontSize: "11px", fontWeight: 700, bgcolor: "#EEF2F7", color: "#1E3A5F", border: "1px solid #D6E0EB", height: 20, borderRadius: "6px", width: "fit-content" }} />
                             {Array.isArray(s.installmentPlan) && (
-                              <span className="text-[10px] text-scholar-500 font-medium">
+                              <Typography variant="caption" sx={{ fontSize: "10px", color: "#64748b", fontWeight: 500 }}>
                                 {s.installmentPlan.filter((i: any) => i.status === "PAID").length}/{s.installmentPlan.length} Cleared
-                              </span>
+                              </Typography>
                             )}
                           </>
                         ) : s.plan === "ONE_TIME" ? (
-                          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 w-fit">
-                            One-Time Full
-                          </span>
+                          <Chip label="One-Time Full" size="small" sx={{ fontSize: "11px", fontWeight: 700, bgcolor: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", height: 20, borderRadius: "6px", width: "fit-content" }} />
                         ) : (
                           <>
                             <Badge tone={planTone[s.planStatus]} dot>
                               {s.plan === "QUARTERLY" ? `Quarterly (${planStatusLabel(s.planStatus)})` : planStatusLabel(s.planStatus)}
                             </Badge>
                             {left !== null && (
-                              <span className="text-[11px] text-scholar-400">
+                              <Typography variant="caption" sx={{ fontSize: "11px", color: "#64748b" }}>
                                 {left >= 0 ? `${left} day${left === 1 ? "" : "s"} left` : `${Math.abs(left)} day${Math.abs(left) === 1 ? "" : "s"} overdue`}
-                              </span>
+                              </Typography>
                             )}
                           </>
                         )}
-                      </div>
-                    </td>
-                    <td className="py-3 pr-2 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.75} sx={{ justifyContent: "flex-end" }}>
                         {s.pending > 0 && (
-                          <button
+                          <Button
+                            variant="outlined"
+                            size="small"
                             onClick={() => openPaymentFor(s.id)}
-                            className="rounded-lg border border-scholar-200 bg-scholar-50 px-2.5 py-1 text-xs font-semibold text-scholar-700 hover:bg-scholar-100"
+                            sx={{ borderRadius: "8px", borderColor: "#D6E0EB", bgcolor: "#F8FAFC", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", px: 1.5, py: 0.5, minWidth: 0, "&:hover": { bgcolor: "#EEF2F7" } }}
                           >
                             Collect
-                          </button>
+                          </Button>
                         )}
                         {(s.plan === "DEMO" || s.plan === "MONTHLY" || s.plan === "QUARTERLY") && (
-                          <button
+                          <Button
+                            variant="outlined"
+                            size="small"
                             onClick={() => openRenewFor(s.id)}
-                            className="rounded-lg border border-marigold-400 px-2.5 py-1 text-xs font-semibold text-marigold-600 hover:bg-marigold-50"
+                            sx={{ borderRadius: "8px", borderColor: "#E8A33D", color: "#92400e", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", px: 1.5, py: 0.5, minWidth: 0, bgcolor: "#FFFBEB", "&:hover": { bgcolor: "#FEF3C7" } }}
                           >
                             Renew
-                          </button>
+                          </Button>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="py-10 text-center text-sm text-scholar-400">
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 5, color: "#94a3b8", fontSize: "0.875rem" }}>
                     No students match your search or filters.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
 
       <RecordPaymentDrawer

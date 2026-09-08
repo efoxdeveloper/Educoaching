@@ -2,10 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RotateCcw, AlertTriangle, Loader2 } from "lucide-react";
+import { RotateCcw, AlertTriangle } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { formatCurrency } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type Student = {
   id: string;
@@ -99,97 +110,110 @@ export function ProcessRefundDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Process Fee Refund / Credit Note">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {error && (
-          <div className="rounded-xl bg-danger-50 border border-danger-200 p-3 text-xs text-danger-700 flex items-start gap-2">
-            <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
+          <Alert severity="error" icon={<AlertTriangle size={15} />} sx={{ borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #FECACA", bgcolor: "#FEF2F2" }}>
+            {error}
+          </Alert>
         )}
 
         {success && (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800">
+          <Alert severity="success" sx={{ borderRadius: "12px", fontSize: "0.875rem", border: "1px solid #A7F3D0", bgcolor: "#ECFDF5" }}>
             Refund processed successfully! Credit receipt generated and balance updated.
-          </div>
+          </Alert>
         )}
 
-        <Field label="Student">
-          <select
-            className={inputClass}
+        <FormControl fullWidth size="small">
+          <InputLabel id="refund-student-label">Student</InputLabel>
+          <Select
+            labelId="refund-student-label"
+            label="Student"
             value={studentId}
             onChange={(e) => {
               setStudentId(e.target.value);
               setAmount("");
             }}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
             {students.map((s) => (
-              <option key={s.id} value={s.id}>
+              <MenuItem key={s.id} value={s.id} sx={{ fontSize: "0.875rem" }}>
                 {s.name} (Paid: {formatCurrency(Number(s.paidFee))})
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </Field>
+          </Select>
+        </FormControl>
 
         {selected && (
-          <div className="rounded-xl border border-scholar-200 bg-scholar-50 p-3 text-xs flex items-center justify-between">
-            <span className="text-scholar-600 font-medium">Max Refundable Amount:</span>
-            <span className="font-bold text-ink font-mono">{formatCurrency(maxRefundable)}</span>
-          </div>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b" }}>Max Refundable Amount:</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontFamily: "monospace", fontSize: "0.875rem" }}>{formatCurrency(maxRefundable)}</Typography>
+          </Paper>
         )}
 
-        <Field label="Refund Amount (INR)">
-          <input
-            type="number"
-            min={1}
-            max={maxRefundable}
-            step="any"
-            className={inputClass}
-            placeholder="e.g. 5000"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-        </Field>
+        <TextField
+          label="Refund Amount (INR)"
+          required
+          fullWidth
+          size="small"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="e.g. 5000"
+          slotProps={{
+            inputLabel: { shrink: true },
+            htmlInput: { min: 1, max: maxRefundable, step: "any" },
+          }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
 
-        <Field label="Refund Mode">
-          <select className={inputClass} value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="Cash Refund">Cash Refund</option>
-            <option value="Bank Transfer">Bank Transfer / NEFT</option>
-            <option value="UPI Refund">UPI</option>
-            <option value="Cheque">Cheque</option>
-            <option value="Razorpay Refund">Online Payment Gateway</option>
-          </select>
-        </Field>
-
-        <Field label="Reason for Refund (Mandatory)">
-          <textarea
-            rows={3}
-            className={inputClass}
-            placeholder="e.g. Course withdrawal within cooling-off period / batch timing conflict..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            required
-          />
-        </Field>
-
-        <div className="pt-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-scholar-200 py-2.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
+        <FormControl fullWidth size="small">
+          <InputLabel id="refund-mode-label">Refund Mode</InputLabel>
+          <Select
+            labelId="refund-mode-label"
+            label="Refund Mode"
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
+            <MenuItem value="Cash Refund">Cash Refund</MenuItem>
+            <MenuItem value="Bank Transfer">Bank Transfer / NEFT</MenuItem>
+            <MenuItem value="UPI Refund">UPI</MenuItem>
+            <MenuItem value="Cheque">Cheque</MenuItem>
+            <MenuItem value="Razorpay Refund">Online Payment Gateway</MenuItem>
+          </Select>
+        </FormControl>
+
+        <TextField
+          label="Reason for Refund (Mandatory)"
+          required
+          fullWidth
+          size="small"
+          multiline
+          rows={3}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g. Course withdrawal within cooling-off period / batch timing conflict..."
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
+        />
+
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#475569", fontWeight: 600, textTransform: "none", py: 1.25 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="contained"
+            color="error"
+            fullWidth
             disabled={loading || maxRefundable <= 0}
-            className="flex-1 rounded-xl bg-danger-600 py-2.5 text-xs font-bold text-white hover:bg-danger-700 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+            startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <RotateCcw size={14} />}
+            sx={{ borderRadius: "12px", fontWeight: 700, textTransform: "none", py: 1.25, boxShadow: "none", bgcolor: "#DC2626", "&:hover": { bgcolor: "#B91C1C" } }}
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-            <span>{loading ? "Processing..." : "Issue Refund"}</span>
-          </button>
-        </div>
-      </form>
+            {loading ? "Processing..." : "Issue Refund"}
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

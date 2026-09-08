@@ -1,8 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Bell, Send, CheckCircle2, AlertTriangle, MessageSquare, Mail, History } from "lucide-react";
+import { Bell, Send, CheckCircle2, AlertTriangle, MessageSquare, Mail, History, X } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import DrawerMUI from "@mui/material/Drawer";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import Checkbox from "@mui/material/Checkbox";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 
 type Candidate = {
   id: string;
@@ -122,285 +144,234 @@ export function FeeRemindersDrawer({
     return true;
   });
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-scholar-950/40 backdrop-blur-sm">
-      <div className="flex h-full w-full max-w-3xl flex-col bg-paper shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-scholar-100 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
-              <Bell size={18} />
-            </div>
-            <div>
-              <h2 className="font-display text-lg font-semibold text-ink">Automated Fee Reminders</h2>
-              <p className="text-xs text-scholar-500">
-                Notify students & parents of upcoming or overdue payments via WhatsApp & Email
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-scholar-400 hover:bg-scholar-50 hover:text-ink"
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <DrawerMUI
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      slotProps={{ backdrop: { sx: { bgcolor: "rgba(13,26,42,0.4)" } } }}
+      sx={{
+        zIndex: 50,
+        "& .MuiDrawer-paper": {
+          width: "100%",
+          maxWidth: 760,
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+          boxShadow: "0 8px 30px rgba(13,26,42,0.12)",
+          borderLeft: "1px solid #D6E0EB",
+          boxSizing: "border-box",
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", px: 3, py: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#FFFBEB", color: "#92400e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Bell size={18} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontSize: "1.125rem", fontWeight: 600, color: "#171A21" }}>Automated Fee Reminders</Typography>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>Notify students & parents of upcoming or overdue payments via WhatsApp & Email</Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ color: "#7E9BBC", "&:hover": { color: "#171A21", bgcolor: "rgba(0,0,0,0.04)" } }}>
+          <X size={20} />
+        </IconButton>
+      </Box>
 
-        {/* Tab switcher */}
-        <div className="flex border-b border-scholar-100 px-6 pt-2">
-          <button
-            onClick={() => setTab("candidates")}
-            className={`border-b-2 px-4 py-2 text-xs font-semibold ${
-              tab === "candidates"
-                ? "border-scholar-600 text-scholar-900"
-                : "border-transparent text-scholar-400 hover:text-scholar-600"
-            }`}
-          >
-            Reminder Candidates ({loading ? "..." : filteredCandidates.length})
-          </button>
-          <button
-            onClick={() => setTab("history")}
-            className={`flex items-center gap-1.5 border-b-2 px-4 py-2 text-xs font-semibold ${
-              tab === "history"
-                ? "border-scholar-600 text-scholar-900"
-                : "border-transparent text-scholar-400 hover:text-scholar-600"
-            }`}
-          >
-            <History size={13} /> Dispatch History ({history.length})
-          </button>
-        </div>
+      <Box sx={{ borderBottom: "1px solid #D6E0EB", px: 3, pt: 1 }}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          sx={{ "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.75rem", minHeight: 36, py: 1 } }}
+        >
+          <Tab value="candidates" label={`Reminder Candidates (${loading ? "..." : filteredCandidates.length})`} />
+          <Tab value="history" label={`Dispatch History (${history.length})`} icon={<History size={13} />} iconPosition="start" />
+        </Tabs>
+      </Box>
 
-        {/* Status banner */}
-        {statusMessage && (
-          <div className="border-b border-scholar-100 bg-scholar-50 px-6 py-2.5 text-xs text-scholar-700">
-            {statusMessage}
-          </div>
-        )}
+      {statusMessage && (
+        <Alert severity="info" sx={{ borderRadius: 0, borderBottom: "1px solid #D6E0EB", fontSize: "0.75rem", bgcolor: "#EEF2F7" }}>
+          {statusMessage}
+        </Alert>
+      )}
 
-        {/* Stats Row */}
-        {stats && tab === "candidates" && (
-          <div className="grid grid-cols-4 gap-3 border-b border-scholar-100 bg-scholar-50/50 p-4">
-            <div className="rounded-lg border border-scholar-100 bg-white p-3">
-              <p className="text-[11px] font-medium text-scholar-400">Total Unpaid Balance</p>
-              <p className="text-base font-bold text-ink">{formatCurrency(stats.totalDue)}</p>
-            </div>
-            <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3">
-              <p className="text-[11px] font-medium text-rose-700">Overdue Students</p>
-              <p className="text-base font-bold text-rose-800">{stats.overdueCount}</p>
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3">
-              <p className="text-[11px] font-medium text-amber-700">Due in 3 Days</p>
-              <p className="text-base font-bold text-amber-800">{stats.dueSoonCount}</p>
-            </div>
-            <div className="rounded-lg border border-scholar-200 bg-white p-3">
-              <p className="text-[11px] font-medium text-scholar-400">Target Selected</p>
-              <p className="text-base font-bold text-scholar-700">{selectedIds.size}</p>
-            </div>
-          </div>
-        )}
+      {stats && tab === "candidates" && (
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, p: 2, borderBottom: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#7E9BBC" }}>Total Unpaid Balance</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1rem" }}>{formatCurrency(stats.totalDue)}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FECACA", bgcolor: "#FEF2F2" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#B91C1C" }}>Overdue Students</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#B91C1C", fontSize: "1rem" }}>{stats.overdueCount}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#92400e" }}>Due in 3 Days</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#92400e", fontSize: "1rem" }}>{stats.dueSoonCount}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#7E9BBC" }}>Target Selected</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#334155", fontSize: "1rem" }}>{selectedIds.size}</Typography>
+          </Paper>
+        </Box>
+      )}
 
-        {tab === "candidates" ? (
-          <>
-            {/* Filters & Channel Selector */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-scholar-100 px-6 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-scholar-500">Filter:</span>
-                <button
-                  onClick={() => setFilter("ALL")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
-                    filter === "ALL"
-                      ? "bg-scholar-700 text-white"
-                      : "border border-scholar-200 bg-white text-scholar-600 hover:bg-scholar-50"
-                  }`}
-                >
-                  All ({candidates.length})
-                </button>
-                <button
-                  onClick={() => setFilter("OVERDUE")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
-                    filter === "OVERDUE"
-                      ? "bg-rose-600 text-white"
-                      : "border border-scholar-200 bg-white text-scholar-600 hover:bg-scholar-50"
-                  }`}
-                >
-                  Overdue ({stats?.overdueCount || 0})
-                </button>
-                <button
-                  onClick={() => setFilter("DUE_SOON")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
-                    filter === "DUE_SOON"
-                      ? "bg-amber-600 text-white"
-                      : "border border-scholar-200 bg-white text-scholar-600 hover:bg-scholar-50"
-                  }`}
-                >
-                  Due Soon ({stats?.dueSoonCount || 0})
-                </button>
-              </div>
+      {tab === "candidates" ? (
+        <>
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid #D6E0EB", px: 3, py: 1.5 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>Filter:</Typography>
+              <Button variant={filter === "ALL" ? "contained" : "outlined"} size="small" onClick={() => setFilter("ALL")} sx={{ borderRadius: "12px", fontSize: "0.70rem", fontWeight: 600, textTransform: "none", py: 0.5, px: 1.5, bgcolor: filter === "ALL" ? "#1E3A5F" : "white", color: filter === "ALL" ? "white" : "#475569", borderColor: "#D6E0EB", boxShadow: "none", "&:hover": { bgcolor: filter === "ALL" ? "#182F4C" : "#F8FAFC" } }}>
+                All ({candidates.length})
+              </Button>
+              <Button variant={filter === "OVERDUE" ? "contained" : "outlined"} size="small" onClick={() => setFilter("OVERDUE")} sx={{ borderRadius: "12px", fontSize: "0.70rem", fontWeight: 600, textTransform: "none", py: 0.5, px: 1.5, bgcolor: filter === "OVERDUE" ? "#DC2626" : "white", color: filter === "OVERDUE" ? "white" : "#475569", borderColor: "#D6E0EB", boxShadow: "none", "&:hover": { bgcolor: filter === "OVERDUE" ? "#B91C1C" : "#F8FAFC" } }}>
+                Overdue ({stats?.overdueCount || 0})
+              </Button>
+              <Button variant={filter === "DUE_SOON" ? "contained" : "outlined"} size="small" onClick={() => setFilter("DUE_SOON")} sx={{ borderRadius: "12px", fontSize: "0.70rem", fontWeight: 600, textTransform: "none", py: 0.5, px: 1.5, bgcolor: filter === "DUE_SOON" ? "#D97706" : "white", color: filter === "DUE_SOON" ? "white" : "#475569", borderColor: "#D6E0EB", boxShadow: "none", "&:hover": { bgcolor: filter === "DUE_SOON" ? "#B45309" : "#F8FAFC" } }}>
+                Due Soon ({stats?.dueSoonCount || 0})
+              </Button>
+            </Stack>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-scholar-500">Channel:</span>
-                <select
-                  value={channel}
-                  onChange={(e) => setChannel(e.target.value as "WHATSAPP" | "EMAIL" | "ALL")}
-                  className="rounded-lg border border-scholar-200 bg-white px-2.5 py-1 text-xs font-medium text-scholar-700 outline-none"
-                >
-                  <option value="ALL">WhatsApp & Email (Both)</option>
-                  <option value="WHATSAPP">WhatsApp Only</option>
-                  <option value="EMAIL">Email Only</option>
-                </select>
-              </div>
-            </div>
+            <FormControl size="small" sx={{ minWidth: 190 }}>
+              <InputLabel id="reminder-channel-label" sx={{ fontSize: "0.75rem" }}>Channel</InputLabel>
+              <Select
+                labelId="reminder-channel-label"
+                label="Channel"
+                value={channel}
+                onChange={(e) => setChannel(e.target.value as "WHATSAPP" | "EMAIL" | "ALL")}
+                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="ALL">WhatsApp & Email (Both)</MenuItem>
+                <MenuItem value="WHATSAPP">WhatsApp Only</MenuItem>
+                <MenuItem value="EMAIL">Email Only</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-            {/* Candidates Table */}
-            <div className="flex-1 overflow-y-auto px-6 py-3">
-              {filteredCandidates.length === 0 ? (
-                <div className="flex h-48 flex-col items-center justify-center text-center text-sm text-scholar-400">
-                  <CheckCircle2 size={32} className="mb-2 text-emerald-500" />
-                  <p>All clear! No students match this fee filter.</p>
-                </div>
-              ) : (
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-scholar-100 text-[11px] font-semibold uppercase tracking-wider text-scholar-400">
-                      <th className="w-8 pb-2">
-                        <input
-                          type="checkbox"
+          <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 2 }}>
+            {filteredCandidates.length === 0 ? (
+              <Box sx={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#94A3B8", gap: 1 }}>
+                <CheckCircle2 size={32} style={{ color: "#10b981" }} />
+                <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#64748b" }}>All clear! No students match this fee filter.</Typography>
+              </Box>
+            ) : (
+              <TableContainer>
+                <Table size="small" sx={{ minWidth: 500 }}>
+                  <TableHead>
+                    <TableRow sx={{ "& th": { fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", borderBottom: "1px solid #D6E0EB", py: 1 } }}>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          size="small"
                           checked={selectedIds.size >= filteredCandidates.length && filteredCandidates.length > 0}
                           onChange={toggleSelectAll}
-                          className="h-3.5 w-3.5 rounded border-scholar-300 text-scholar-600"
+                          sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }}
                         />
-                      </th>
-                      <th className="pb-2">Student / Course</th>
-                      <th className="pb-2">Contact</th>
-                      <th className="pb-2">Pending Due</th>
-                      <th className="pb-2">Due Date</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2 text-right">Last Alert</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-scholar-50">
+                      </TableCell>
+                      <TableCell>Student / Course</TableCell>
+                      <TableCell>Contact</TableCell>
+                      <TableCell>Pending Due</TableCell>
+                      <TableCell>Due Date</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Last Alert</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {filteredCandidates.map((c) => (
-                      <tr key={c.id} className="hover:bg-scholar-50/50">
-                        <td className="py-2.5">
-                          <input
-                            type="checkbox"
+                      <TableRow key={c.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.25 } }}>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            size="small"
                             checked={selectedIds.has(c.id)}
                             onChange={() => toggleStudent(c.id)}
-                            className="h-3.5 w-3.5 rounded border-scholar-300 text-scholar-600"
+                            sx={{ color: "#7E9BBC", "&.Mui-checked": { color: "#1E3A5F" } }}
                           />
-                        </td>
-                        <td className="py-2.5">
-                          <p className="font-semibold text-ink">{c.name}</p>
-                          <p className="text-[11px] text-scholar-400">{c.courseName}</p>
-                        </td>
-                        <td className="py-2.5">
-                          <div className="flex flex-col text-[11px] text-scholar-600">
-                            <span>{c.parentMobile ? `Parent: ${c.parentMobile}` : c.mobile}</span>
-                            {c.email && <span className="text-[10px] text-scholar-400">{c.email}</span>}
-                          </div>
-                        </td>
-                        <td className="py-2.5 font-bold text-ink">
-                          {formatCurrency(c.dueAmount)}
-                        </td>
-                        <td className="py-2.5 text-scholar-500">
-                          {c.dueDate ? formatDate(c.dueDate) : "—"}
-                        </td>
-                        <td className="py-2.5">
-                          {c.status === "OVERDUE" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 font-medium text-rose-700">
-                              <AlertTriangle size={11} /> Overdue
-                            </span>
-                          )}
-                          {c.status === "DUE_SOON" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
-                              Due Soon
-                            </span>
-                          )}
-                          {c.status === "PENDING" && (
-                            <span className="rounded-full bg-scholar-50 px-2 py-0.5 font-medium text-scholar-600">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-right text-[11px] text-scholar-400">
-                          {c.lastReminderSentAt ? formatDate(c.lastReminderSentAt) : "Never"}
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{c.name}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{c.courseName}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "#475569", display: "block" }}>{c.parentMobile ? `Parent: ${c.parentMobile}` : c.mobile}</Typography>
+                          {c.email && <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>{c.email}</Typography>}
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>{formatCurrency(c.dueAmount)}</TableCell>
+                        <TableCell sx={{ fontSize: "0.80rem", color: "#64748b" }}>{c.dueDate ? formatDate(c.dueDate) : "—"}</TableCell>
+                        <TableCell>
+                          {c.status === "OVERDUE" && <Chip icon={<AlertTriangle size={11} />} label="Overdue" size="small" sx={{ bgcolor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                          {c.status === "DUE_SOON" && <Chip label="Due Soon" size="small" sx={{ bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                          {c.status === "PENDING" && <Chip label="Pending" size="small" variant="outlined" sx={{ bgcolor: "#F8FAFC", color: "#475569", borderColor: "#D6E0EB", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{c.lastReminderSentAt ? formatDate(c.lastReminderSentAt) : "Never"}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Footer Dispatch Action */}
-            <div className="flex items-center justify-between border-t border-scholar-100 bg-scholar-50/60 px-6 py-4">
-              <p className="text-xs text-scholar-500">
-                {selectedIds.size} student{selectedIds.size === 1 ? "" : "s"} selected for dispatch
-              </p>
-              <button
-                onClick={handleSend}
-                disabled={sending || selectedIds.size === 0}
-                className="flex items-center gap-2 rounded-xl bg-scholar-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-scholar-700 disabled:opacity-50"
-              >
-                <Send size={15} />
-                {sending ? "Sending Reminders..." : `Send Reminders (${selectedIds.size})`}
-              </button>
-            </div>
-          </>
-        ) : (
-          /* History View */
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {history.length === 0 ? (
-              <div className="flex h-48 flex-col items-center justify-center text-center text-sm text-scholar-400">
-                <History size={32} className="mb-2 text-scholar-300" />
-                <p>No reminders sent yet.</p>
-              </div>
-            ) : (
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-scholar-100 text-[11px] font-semibold uppercase tracking-wider text-scholar-400">
-                    <th className="pb-2">Student</th>
-                    <th className="pb-2">Channel</th>
-                    <th className="pb-2">Recipient</th>
-                    <th className="pb-2">Due Amount</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2 text-right">Sent Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-scholar-50">
-                  {history.map((h) => (
-                    <tr key={h.id} className="hover:bg-scholar-50/50">
-                      <td className="py-2.5 font-semibold text-ink">{h.student?.name}</td>
-                      <td className="py-2.5">
-                        <span className="inline-flex items-center gap-1 rounded bg-scholar-100 px-1.5 py-0.5 font-mono text-[10px] text-scholar-700">
-                          {h.channel === "WHATSAPP" ? <MessageSquare size={11} /> : <Mail size={11} />}
-                          {h.channel}
-                        </span>
-                      </td>
-                      <td className="py-2.5 font-mono text-[11px] text-scholar-600">{h.recipient}</td>
-                      <td className="py-2.5 font-semibold text-ink">{formatCurrency(Number(h.amountDue))}</td>
-                      <td className="py-2.5">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            h.status === "SENT"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-rose-50 text-rose-700"
-                          }`}
-                        >
-                          {h.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 text-right text-[11px] text-scholar-400">{formatDate(h.sentAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
-          </div>
-        )}
-      </div>
-    </div>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.5)", px: 3, py: 2 }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              {selectedIds.size} student{selectedIds.size === 1 ? "" : "s"} selected for dispatch
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleSend}
+              disabled={sending || selectedIds.size === 0}
+              startIcon={<Send size={15} />}
+              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.875rem", textTransform: "none", px: 3, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+            >
+              {sending ? "Sending Reminders..." : `Send Reminders (${selectedIds.size})`}
+            </Button>
+          </Box>
+        </>
+      ) : (
+        <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 2 }}>
+          {history.length === 0 ? (
+            <Box sx={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#94A3B8", gap: 1 }}>
+              <History size={32} style={{ color: "#CBD5E1" }} />
+              <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#64748b" }}>No reminders sent yet.</Typography>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ "& th": { fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", borderBottom: "1px solid #D6E0EB", py: 1 } }}>
+                    <TableCell>Student</TableCell>
+                    <TableCell>Channel</TableCell>
+                    <TableCell>Recipient</TableCell>
+                    <TableCell>Due Amount</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Sent Time</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.map((h) => (
+                    <TableRow key={h.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.25 } }}>
+                      <TableCell sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{h.student?.name}</TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={h.channel === "WHATSAPP" ? <MessageSquare size={11} /> : <Mail size={11} />}
+                          label={h.channel}
+                          size="small"
+                          sx={{ bgcolor: "#EEF2F7", color: "#1E3A5F", border: "1px solid #D6E0EB", fontWeight: 600, fontSize: "11px", height: 22, fontFamily: "monospace" }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: "monospace", fontSize: "11px", color: "#475569" }}>{h.recipient}</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{formatCurrency(Number(h.amountDue))}</TableCell>
+                      <TableCell>
+                        <Chip label={h.status} size="small" sx={{ fontSize: "11px", fontWeight: 600, height: 22, bgcolor: h.status === "SENT" ? "#ECFDF5" : "#FEF2F2", color: h.status === "SENT" ? "#047857" : "#B91C1C", border: h.status === "SENT" ? "1px solid #A7F3D0" : "1px solid #FECACA" }} />
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{formatDate(h.sentAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
+    </DrawerMUI>
   );
 }

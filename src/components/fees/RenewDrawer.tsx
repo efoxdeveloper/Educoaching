@@ -4,10 +4,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Calendar } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
-import { Field, inputClass } from "@/components/ui/Field";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { RENEWAL_PERIOD_DAYS, QUARTERLY_RENEWAL_PERIOD_DAYS, ANNUAL_RENEWAL_PERIOD_DAYS } from "@/lib/subscription";
 import { useRazorpayCheckout } from "@/lib/useRazorpayCheckout";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import Divider from "@mui/material/Divider";
 
 type Student = {
   id: string;
@@ -122,137 +133,140 @@ export function RenewDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Renew Subscription">
-      <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
         {(error || payError) && (
-          <p className="rounded-xl bg-danger-50 px-3 py-2.5 text-xs text-danger-600 font-medium">{error || payError}</p>
+          <Alert severity="error" sx={{ borderRadius: "12px", fontSize: "0.875rem" }}>
+            {error || payError}
+          </Alert>
         )}
 
-        <Field label="Student">
-          <select
-            required
-            className={inputClass}
+        <FormControl fullWidth size="small" required>
+          <InputLabel id="renew-student-label">Student</InputLabel>
+          <Select
+            labelId="renew-student-label"
+            label="Student"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
             {students.map((s) => (
-              <option key={s.id} value={s.id}>
+              <MenuItem key={s.id} value={s.id} sx={{ fontSize: "0.875rem" }}>
                 {s.name} ({s.plan === "QUARTERLY" ? "Quarterly" : s.plan === "DEMO" ? "Demo" : "Monthly"})
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </Field>
+          </Select>
+        </FormControl>
 
-        {/* Renewal Plan Cycle */}
-        <div className="rounded-xl border border-scholar-200 bg-scholar-50/60 p-3 space-y-2">
-          <label className="text-xs font-bold text-scholar-800 flex items-center justify-between">
-            <span>Renewal Billing Cycle</span>
-            <span className="text-[10px] text-scholar-500 font-normal">Extends access by {periodDays} days</span>
-          </label>
+        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b" }}>Renewal Billing Cycle</Typography>
+            <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Extends access by {periodDays} days</Typography>
+          </Box>
 
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handlePlanTypeChange("MONTHLY")}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold border transition-all text-center ${
-                planType === "MONTHLY"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Monthly
-              <span className="block text-[10px] opacity-80">(+30 Days)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handlePlanTypeChange("QUARTERLY")}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold border transition-all text-center ${
-                planType === "QUARTERLY"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Quarterly
-              <span className="block text-[10px] opacity-80">(+90 Days / 3 Mo)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handlePlanTypeChange("ANNUAL")}
-              className={`rounded-lg py-2 px-2 text-xs font-semibold border transition-all text-center ${
-                planType === "ANNUAL"
-                  ? "bg-scholar-600 text-white border-scholar-600 shadow-xs"
-                  : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
-              }`}
-            >
-              Annual
-              <span className="block text-[10px] opacity-80">(+365 Days)</span>
-            </button>
-          </div>
-        </div>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
+            {[
+              { id: "MONTHLY", label: "Monthly", sub: "(+30 Days)" },
+              { id: "QUARTERLY", label: "Quarterly", sub: "(+90 Days / 3 Mo)" },
+              { id: "ANNUAL", label: "Annual", sub: "(+365 Days)" },
+            ].map((opt) => (
+              <Paper
+                key={opt.id}
+                variant="outlined"
+                onClick={() => handlePlanTypeChange(opt.id as typeof planType)}
+                sx={{
+                  py: 1.25,
+                  px: 1,
+                  borderRadius: "12px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  borderColor: planType === opt.id ? "#1E3A5F" : "#D6E0EB",
+                  bgcolor: planType === opt.id ? "#1E3A5F" : "white",
+                  color: planType === opt.id ? "white" : "#334155",
+                  transition: "all 0.15s",
+                  "&:hover": { bgcolor: planType === opt.id ? "#182F4C" : "#F8FAFC" },
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: planType === opt.id ? "white" : "#1E293b", display: "block" }}>{opt.label}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", color: planType === opt.id ? "rgba(255,255,255,0.7)" : "#7E9BBC" }}>{opt.sub}</Typography>
+              </Paper>
+            ))}
+          </Box>
+        </Paper>
 
         {selected && (
-          <p className="rounded-xl bg-scholar-50 p-3 text-xs text-scholar-600 flex items-center gap-1.5">
-            <Calendar size={14} className="text-scholar-500 shrink-0" />
-            <span>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "#EEF2F7", borderColor: "#D6E0EB", display: "flex", alignItems: "center", gap: 1 }}>
+            <Calendar size={14} style={{ color: "#64748b", flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#475569" }}>
               {selected.plan === "DEMO"
                 ? "Currently on 7-Day Demo. "
                 : selected.currentPeriodEnd
                 ? `Current period ends ${formatDate(selected.currentPeriodEnd)}. `
                 : "No active period set. "}
-              Renewing will grant <strong>{periodDays} days</strong> of continuous access.
-            </span>
-          </p>
+              Renewing will grant <Box component="span" sx={{ fontWeight: 800, color: "#1E3A5F" }}>{periodDays} days</Box> of continuous access.
+            </Typography>
+          </Paper>
         )}
 
-        <Field label={`Renewal Amount (₹) — ${planType === "QUARTERLY" ? "Quarterly Fee (3 Months)" : planType === "ANNUAL" ? "Annual Fee (1 Year)" : "Monthly Fee"}`}>
-          <input
-            required
-            type="number"
-            min={1}
-            className={`${inputClass} font-bold text-ink`}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-          />
-        </Field>
+        <TextField
+          label={`Renewal Amount (₹) — ${planType === "QUARTERLY" ? "Quarterly Fee (3 Months)" : planType === "ANNUAL" ? "Annual Fee (1 Year)" : "Monthly Fee"}`}
+          required
+          fullWidth
+          size="small"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          slotProps={{
+            inputLabel: { shrink: true },
+            htmlInput: { min: 1, step: 1 },
+          }}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white", fontWeight: 700 } }}
+        />
 
-        <button
+        <Button
           type="button"
+          variant="outlined"
+          fullWidth
           onClick={handlePayOnline}
           disabled={processing}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-scholar-600 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-scholar-50 disabled:opacity-60 transition-colors shadow-xs"
+          startIcon={<CreditCard size={15} />}
+          sx={{ borderRadius: "12px", borderWidth: 2, borderColor: "#1E3A5F", color: "#1E3A5F", fontWeight: 600, textTransform: "none", py: 1.25, "&:hover": { bgcolor: "#EEF2F7", borderColor: "#1E3A5F" } }}
         >
-          <CreditCard size={15} /> {processing ? "Opening payment gateway..." : "Pay Online via Razorpay / UPI"}
-        </button>
+          {processing ? "Opening payment gateway..." : "Pay Online via Razorpay / UPI"}
+        </Button>
 
-        <div className="flex items-center gap-3 text-[11px] text-scholar-400">
-          <div className="h-px flex-1 bg-scholar-200" /> or record offline / manual renewal <div className="h-px flex-1 bg-scholar-200" />
-        </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
+          <Divider sx={{ flex: 1, borderColor: "#D6E0EB" }} />
+          <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC", whiteSpace: "nowrap" }}>or record offline / manual renewal</Typography>
+          <Divider sx={{ flex: 1, borderColor: "#D6E0EB" }} />
+        </Box>
 
-        <Field label="Payment Method">
-          <select className={inputClass} value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI / QR Code</option>
-            <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
-            <option value="Card">Card</option>
-            <option value="Cheque">Cheque</option>
-          </select>
-        </Field>
-
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-scholar-100 py-2.5 text-xs font-semibold text-scholar-600 hover:bg-scholar-50">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 rounded-xl bg-scholar-600 py-2.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-60 shadow-xs"
+        <FormControl fullWidth size="small">
+          <InputLabel id="renew-method-label">Payment Method</InputLabel>
+          <Select
+            labelId="renew-method-label"
+            label="Payment Method"
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.875rem" }}
           >
+            <MenuItem value="Cash">Cash</MenuItem>
+            <MenuItem value="UPI">UPI / QR Code</MenuItem>
+            <MenuItem value="Bank Transfer">Bank Transfer (NEFT/IMPS)</MenuItem>
+            <MenuItem value="Card">Card</MenuItem>
+            <MenuItem value="Cheque">Cheque</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
+          <Button type="button" variant="outlined" fullWidth onClick={onClose} sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#64748b", fontWeight: 600, textTransform: "none", py: 1.25 }}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}>
             {loading ? "Recording..." : "Confirm Renewal"}
-          </button>
-        </div>
-      </form>
+          </Button>
+        </Stack>
+      </Box>
     </Drawer>
   );
 }

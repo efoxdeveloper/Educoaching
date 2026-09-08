@@ -1,8 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, RefreshCw, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { RefreshCw, CheckCircle2, AlertCircle, Clock, X } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import DrawerMUI from "@mui/material/Drawer";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
 type Transaction = {
   id: string;
@@ -86,153 +101,148 @@ export function ReconciliationDrawer({
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-scholar-950/40 backdrop-blur-sm">
-      <div className="flex h-full w-full max-w-3xl flex-col bg-paper shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-scholar-100 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
-              <RefreshCw size={18} className={reconciling ? "animate-spin" : ""} />
-            </div>
-            <div>
-              <h2 className="font-display text-lg font-semibold text-ink">Payment Reconciliation</h2>
-              <p className="text-xs text-scholar-500">
-                Audit Razorpay gateway orders, sync webhooks, and auto-settle pending student dues
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-scholar-400 hover:bg-scholar-50 hover:text-ink"
+    <DrawerMUI
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      slotProps={{ backdrop: { sx: { bgcolor: "rgba(13,26,42,0.4)" } } }}
+      sx={{
+        zIndex: 50,
+        "& .MuiDrawer-paper": {
+          width: "100%",
+          maxWidth: 760,
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+          boxShadow: "0 8px 30px rgba(13,26,42,0.12)",
+          borderLeft: "1px solid #D6E0EB",
+          boxSizing: "border-box",
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", px: 3, py: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#E9F7EF", color: "#1F9D66", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <RefreshCw size={18} style={{ animation: reconciling ? "spin 1s linear infinite" : undefined } as any} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontSize: "1.125rem", fontWeight: 600, color: "#171A21" }}>Payment Reconciliation</Typography>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>Audit Razorpay gateway orders, sync webhooks, and auto-settle pending student dues</Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ color: "#7E9BBC", "&:hover": { color: "#171A21", bgcolor: "rgba(0,0,0,0.04)" } }}>
+          <X size={20} />
+        </IconButton>
+      </Box>
+
+      {statusMessage && (
+        <Alert severity="info" sx={{ borderRadius: 0, borderBottom: "1px solid #D6E0EB", fontSize: "0.75rem", bgcolor: "#EEF2F7", color: "#4E6E93", py: 1 }}>
+          {statusMessage}
+        </Alert>
+      )}
+
+      {stats && (
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, p: 2, borderBottom: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.5)" }}>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#7E9BBC" }}>Total Online Orders</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#171A21", fontSize: "1.125rem" }}>{stats.total}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#A7F3D0", bgcolor: "#ECFDF5" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#047857" }}>Settled (Success)</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#047857", fontSize: "1.125rem" }}>{stats.success}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FDE68A", bgcolor: "#FFFBEB" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#92400e" }}>Pending Gateway</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#92400e", fontSize: "1.125rem" }}>{stats.pending}</Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", borderColor: "#FECACA", bgcolor: "#FEF2F2" }}>
+            <Typography variant="caption" sx={{ fontSize: "11px", fontWeight: 500, color: "#B91C1C" }}>Failed / Dropouts</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#B91C1C", fontSize: "1.125rem" }}>{stats.failed}</Typography>
+          </Paper>
+        </Box>
+      )}
+
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", px: 3, py: 1.5 }}>
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>
+          Webhook endpoint: <Box component="code" sx={{ borderRadius: "6px", bgcolor: "#EEF2F7", px: 0.5, py: 0.25, fontFamily: "monospace", fontSize: "11px" }}>/api/webhooks/razorpay</Box>
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={fetchTransactions}
+            disabled={loading || reconciling}
+            startIcon={<RefreshCw size={14} style={{ animation: loading ? "spin 1s linear infinite" : undefined } as any} />}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", py: 0.75 }}
           >
-            <X size={20} />
-          </button>
-        </div>
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleReconcile}
+            disabled={reconciling}
+            startIcon={<RefreshCw size={14} style={{ animation: reconciling ? "spin 1s linear infinite" : undefined } as any} />}
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", boxShadow: "none", py: 0.75, "&:hover": { bgcolor: "#182F4C" } }}
+          >
+            {reconciling ? "Reconciling..." : "Run Auto-Reconciliation"}
+          </Button>
+        </Stack>
+      </Box>
 
-        {/* Status / Alert banner */}
-        {statusMessage && (
-          <div className="border-b border-scholar-100 bg-scholar-50 px-6 py-2.5 text-xs text-scholar-700">
-            {statusMessage}
-          </div>
-        )}
-
-        {/* Stats Row */}
-        {stats && (
-          <div className="grid grid-cols-4 gap-3 border-b border-scholar-100 bg-scholar-50/50 p-4">
-            <div className="rounded-lg border border-scholar-100 bg-white p-3">
-              <p className="text-[11px] font-medium text-scholar-400">Total Online Orders</p>
-              <p className="text-lg font-bold text-ink">{stats.total}</p>
-            </div>
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
-              <p className="text-[11px] font-medium text-emerald-700">Settled (Success)</p>
-              <p className="text-lg font-bold text-emerald-800">{stats.success}</p>
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3">
-              <p className="text-[11px] font-medium text-amber-700">Pending Gateway</p>
-              <p className="text-lg font-bold text-amber-800">{stats.pending}</p>
-            </div>
-            <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3">
-              <p className="text-[11px] font-medium text-rose-700">Failed / Dropouts</p>
-              <p className="text-lg font-bold text-rose-800">{stats.failed}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Action Toolbar */}
-        <div className="flex items-center justify-between border-b border-scholar-100 px-6 py-3">
-          <p className="text-xs text-scholar-500">
-            Webhook endpoint: <code className="rounded bg-scholar-100 px-1 py-0.5 font-mono text-[11px]">/api/webhooks/razorpay</code>
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={fetchTransactions}
-              disabled={loading || reconciling}
-              className="flex items-center gap-1.5 rounded-lg border border-scholar-200 px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
-            </button>
-            <button
-              onClick={handleReconcile}
-              disabled={reconciling}
-              className="flex items-center gap-1.5 rounded-lg bg-scholar-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-scholar-700 disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={reconciling ? "animate-spin" : ""} />
-              {reconciling ? "Reconciling..." : "Run Auto-Reconciliation"}
-            </button>
-          </div>
-        </div>
-
-        {/* Transactions Table */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {transactions.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center text-center text-sm text-scholar-400">
-              <Clock size={32} className="mb-2 text-scholar-300" />
-              <p>No online transactions recorded yet.</p>
-              <p className="text-xs">Online payments via Razorpay checkout will automatically appear here.</p>
-            </div>
-          ) : (
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-scholar-100 text-[11px] font-semibold uppercase tracking-wider text-scholar-400">
-                  <th className="pb-2">Student</th>
-                  <th className="pb-2">Amount</th>
-                  <th className="pb-2">Order / Payment ID</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2">Gateway Sync</th>
-                  <th className="pb-2 text-right">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-scholar-50">
+      <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 2 }}>
+        {transactions.length === 0 ? (
+          <Box sx={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#94A3B8", gap: 1 }}>
+            <Clock size={32} style={{ color: "#CBD5E1" }} />
+            <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#64748b" }}>No online transactions recorded yet.</Typography>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#94A3B8" }}>Online payments via Razorpay checkout will automatically appear here.</Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small" sx={{ minWidth: 500 }}>
+              <TableHead>
+                <TableRow sx={{ "& th": { fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", borderBottom: "1px solid #D6E0EB", py: 1 } }}>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Order / Payment ID</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Gateway Sync</TableCell>
+                  <TableCell align="right">Time</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-scholar-50/50">
-                    <td className="py-2.5">
-                      <p className="font-semibold text-ink">{tx.student?.name}</p>
-                      <p className="text-[11px] text-scholar-400">{tx.student?.course?.name}</p>
-                    </td>
-                    <td className="py-2.5 font-semibold text-ink">
-                      {formatCurrency(Number(tx.amount))}
-                    </td>
-                    <td className="py-2.5 font-mono text-[11px]">
-                      <p className="text-scholar-700">{tx.orderId}</p>
-                      {tx.paymentId && <p className="text-scholar-400">{tx.paymentId}</p>}
-                    </td>
-                    <td className="py-2.5">
-                      {tx.status === "SUCCESS" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">
-                          <CheckCircle2 size={12} /> Success
-                        </span>
-                      )}
-                      {tx.status === "PENDING" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
-                          <Clock size={12} /> Pending
-                        </span>
-                      )}
-                      {tx.status === "FAILED" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 font-medium text-rose-700">
-                          <AlertCircle size={12} /> Failed
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5">
+                  <TableRow key={tx.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.25 } }}>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{tx.student?.name}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{tx.student?.course?.name}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.80rem" }}>{formatCurrency(Number(tx.amount))}</TableCell>
+                    <TableCell sx={{ fontFamily: "monospace", fontSize: "11px" }}>
+                      <Typography variant="caption" sx={{ fontFamily: "monospace", color: "#334155", fontSize: "11px", display: "block" }}>{tx.orderId}</Typography>
+                      {tx.paymentId && <Typography variant="caption" sx={{ fontFamily: "monospace", color: "#94A3B8", fontSize: "11px" }}>{tx.paymentId}</Typography>}
+                    </TableCell>
+                    <TableCell>
+                      {tx.status === "SUCCESS" && <Chip icon={<CheckCircle2 size={12} />} label="Success" size="small" sx={{ bgcolor: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                      {tx.status === "PENDING" && <Chip icon={<Clock size={12} />} label="Pending" size="small" sx={{ bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                      {tx.status === "FAILED" && <Chip icon={<AlertCircle size={12} />} label="Failed" size="small" sx={{ bgcolor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA", fontWeight: 600, fontSize: "11px", height: 22 }} />}
+                    </TableCell>
+                    <TableCell>
                       {tx.reconciled ? (
-                        <span className="text-[11px] text-emerald-600 font-medium">Reconciled</span>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#10b981", fontWeight: 600 }}>Reconciled</Typography>
                       ) : (
-                        <span className="text-[11px] text-scholar-400">Unsettled</span>
+                        <Typography variant="caption" sx={{ fontSize: "11px", color: "#94A3B8" }}>Unsettled</Typography>
                       )}
-                    </td>
-                    <td className="py-2.5 text-right text-[11px] text-scholar-400">
-                      {formatDate(tx.createdAt)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontSize: "11px", color: "#7E9BBC" }}>{formatDate(tx.createdAt)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
+    </DrawerMUI>
   );
 }
