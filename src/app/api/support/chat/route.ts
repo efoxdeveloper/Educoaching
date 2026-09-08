@@ -70,6 +70,7 @@ export async function POST(req: Request) {
 
   const user: any = session.user;
   const userId = user.id as string;
+  const role = String(user.role || "").toUpperCase();
   let instituteId = user.instituteId as string | null;
   if (role === "PLATFORM_ADMIN") {
     const { getInstituteId } = await import("@/lib/tenant");
