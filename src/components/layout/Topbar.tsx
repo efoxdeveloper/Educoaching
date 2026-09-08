@@ -71,8 +71,15 @@ export function Topbar({
         body: JSON.stringify({ branchId: newBranchId }),
       });
       const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Failed to switch branch");
+        return;
+      }
       if (update) {
-        await update({ impersonatingBranchId: data.impersonatingBranchId || newBranchId });
+        await update({
+          impersonatingBranchId: data.impersonatingBranchId || data.branchId || newBranchId,
+          impersonationStartedAt: Date.now(),
+        });
       }
     }
     window.location.reload();

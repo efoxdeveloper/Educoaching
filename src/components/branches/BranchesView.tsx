@@ -80,9 +80,11 @@ export function BranchesView({
         alert(body.error || "Failed to start branch impersonation");
         return;
       }
-      // Per-session JWT: update session with impersonatingBranchId
       try {
-        await update({ impersonatingBranchId: body.impersonatingBranchId || branch.id });
+        await update({
+          impersonatingBranchId: body.impersonatingBranchId || branch.id,
+          impersonationStartedAt: Date.now(),
+        });
       } catch {}
       window.location.reload();
     } catch {
