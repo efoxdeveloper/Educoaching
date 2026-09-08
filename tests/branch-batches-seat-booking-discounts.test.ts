@@ -10,7 +10,7 @@ describe("Branch-Specific Batch Allocation (Without Faculty Requirement)", () =>
     };
 
     const branches = [
-      { id: "branch-kota", name: "Kota Main Campus", city: "Kota" },
+      { id: "branch-kota", name: "Kota Main Branch", city: "Kota" },
       { id: "branch-jaipur", name: "Jaipur Center", city: "Jaipur" },
     ];
 

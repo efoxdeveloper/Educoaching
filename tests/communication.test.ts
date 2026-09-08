@@ -86,7 +86,7 @@ describe("Institute Registration Request and Admin Approval Workflow", () => {
 });
 
 describe("Sub-Branch Request and Admin Approval Workflow", () => {
-  it("should generate a branch processing email for institute owner and main campus", async () => {
+  it("should generate a branch processing email for institute owner and Main Branch", async () => {
     const { sendBranchProcessingEmail } = await import("@/lib/email");
     const result = await sendBranchProcessingEmail({
       to: "owner@testinstitute.com",

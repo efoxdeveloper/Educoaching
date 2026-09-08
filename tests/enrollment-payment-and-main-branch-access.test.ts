@@ -150,7 +150,7 @@ describe("Main Branch Master Access & Cross-Branch Administration", () => {
       return { ok: true };
     };
 
-    expect(validateBranchDelete({ id: "b1", name: "Kota Main Campus", isMainBranch: true }).error).toBeDefined();
+    expect(validateBranchDelete({ id: "b1", name: "Kota Main Branch", isMainBranch: true }).error).toBeDefined();
     expect(validateBranchDelete({ id: "b2", name: "Jaipur Center", isMainBranch: false }).ok).toBe(true);
   });
 });

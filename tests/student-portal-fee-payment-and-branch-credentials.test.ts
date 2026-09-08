@@ -43,14 +43,14 @@ describe("Allocated Batch Read-Only Visibility", () => {
         name: "Morning Pinnacle A",
         timing: "8:30 AM - 10:30 AM (Winter Schedule)",
         status: "Active (Ongoing)",
-        branchName: "Kota Main Campus",
+        branchName: "Kota Main Branch",
         facultyMembers: ["Dr. R. Sharma (Physics)", "Ms. A. Kapoor (Chemistry)"],
       },
     };
 
     expect(studentWithBatch.batch.name).toBe("Morning Pinnacle A");
     expect(studentWithBatch.batch.timing).toContain("Winter Schedule");
-    expect(studentWithBatch.batch.branchName).toBe("Kota Main Campus");
+    expect(studentWithBatch.batch.branchName).toBe("Kota Main Branch");
     expect(studentWithBatch.batch.facultyMembers.length).toBe(2);
   });
 });

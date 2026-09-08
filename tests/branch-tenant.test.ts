@@ -67,9 +67,9 @@ beforeAll(async () => {
 // ─── Test data ───────────────────────────────────────────────────────────────
 const INST_A = "inst-a";
 const INST_B = "inst-b";
-const MAIN_BRANCH_A = { id: "branch-main-a", name: "Main Campus", city: null, state: null, contact: null, guidePhone: null, isMainBranch: true };
+const MAIN_BRANCH_A = { id: "branch-main-a", name: "Main Branch", city: null, state: null, contact: null, guidePhone: null, isMainBranch: true };
 const SUB_BRANCH_A = { id: "branch-sub-a", name: "North Branch", city: null, state: null, contact: null, guidePhone: null, isMainBranch: false };
-const BRANCH_B = { id: "branch-main-b", name: "Main Campus B", city: null, state: null, contact: null, guidePhone: null, isMainBranch: true };
+const BRANCH_B = { id: "branch-main-b", name: "Main Branch B", city: null, state: null, contact: null, guidePhone: null, isMainBranch: true };
 
 function ownerSession(overrides = {}) {
   return {

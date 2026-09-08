@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 describe("Multi-Branch Batch Allocation (Shared Course & Timing Across Campuses)", () => {
   const branches = [
-    { id: "br-kota", name: "Kota Main Campus", city: "Kota" },
+    { id: "br-kota", name: "Kota Main Branch", city: "Kota" },
     { id: "br-jaipur", name: "Jaipur Center", city: "Jaipur" },
     { id: "br-delhi", name: "Delhi South Ext", city: "Delhi" },
   ];
@@ -74,7 +74,7 @@ describe("Multi-Branch Batch Allocation (Shared Course & Timing Across Campuses)
 
 describe("Multi-Branch Faculty Allocation (Morning at Branch A, Evening at Branch B)", () => {
   const branches = [
-    { id: "br-kota", name: "Kota Main Campus" },
+    { id: "br-kota", name: "Kota Main Branch" },
     { id: "br-jaipur", name: "Jaipur Center" },
     { id: "br-delhi", name: "Delhi South Ext" },
   ];

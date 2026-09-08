@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-describe("Main Campus Branch Impersonation", () => {
+describe("Main Branch Branch Impersonation", () => {
   type User = {
     role: string;
     isMainBranch?: boolean;
@@ -11,7 +11,7 @@ describe("Main Campus Branch Impersonation", () => {
     return role === "OWNER" || role === "ADMIN" || role === "PLATFORM_ADMIN" || Boolean(user.isMainBranch);
   };
 
-  it("permits Main Campus staff, Owners, and Admins to impersonate satellite branches", () => {
+  it("permits Main Branch staff, Owners, and Admins to impersonate satellite branches", () => {
     expect(canImpersonateBranch({ role: "OWNER" })).toBe(true);
     expect(canImpersonateBranch({ role: "ADMIN" })).toBe(true);
     expect(canImpersonateBranch({ role: "STAFF", isMainBranch: true })).toBe(true);
@@ -32,7 +32,7 @@ describe("Main Campus Branch Impersonation", () => {
       return studentWhere;
     };
 
-    // When viewing Main Campus (no impersonation)
+    // When viewing Main Branch (no impersonation)
     expect(buildScopedWhere("inst_1", null)).toEqual({ instituteId: "inst_1" });
 
     // When impersonating satellite branch "br_jaipur"
@@ -78,7 +78,7 @@ describe("Guide Phone Number for Main Institute & Branches", () => {
     const branches = [
       {
         id: "b_main",
-        name: "Kota Main Campus",
+        name: "Kota Main Branch",
         isMainBranch: true,
         contact: "+91 98765 11111",
         guidePhone: "+91 98765 22222",

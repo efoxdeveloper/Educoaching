@@ -113,7 +113,7 @@ async function main() {
     prisma.branch.create({
       data: {
         instituteId: institute.id,
-        name: "Main Campus (North)",
+        name: "Main Branch (North)",
         city: "Delhi",
         state: "Delhi",
         address: "Block B, Model Town",

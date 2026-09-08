@@ -9,7 +9,7 @@ describe("Faculty Batch Assignment: Branch & Timing Visibility", () => {
         name: "Morning Pinnacle A",
         timing: "7:00 AM - 9:00 AM",
         courseName: "IIT-JEE Advanced",
-        branchName: "Kota Main Campus",
+        branchName: "Kota Main Branch",
         isAllBranches: false,
       },
       {
@@ -29,7 +29,7 @@ describe("Faculty Batch Assignment: Branch & Timing Visibility", () => {
     const labelKota = formatBatchOption(batches[0]);
     const labelJaipur = formatBatchOption(batches[1]);
 
-    expect(labelKota).toBe("Morning Pinnacle A (7:00 AM - 9:00 AM) • IIT-JEE Advanced 📍 Kota Main Campus");
+    expect(labelKota).toBe("Morning Pinnacle A (7:00 AM - 9:00 AM) • IIT-JEE Advanced 📍 Kota Main Branch");
     expect(labelJaipur).toBe("Morning Pinnacle A (8:00 AM - 10:00 AM) • IIT-JEE Advanced 📍 Jaipur Center");
     expect(labelKota).not.toBe(labelJaipur);
   });

@@ -24,7 +24,7 @@ describe("Course Detailed Management, Fee Structures, and Multi-Branch Allocatio
 
   it("handles course branch allocation filtering correctly", () => {
     const branches = [
-      { id: "b1", name: "Kota Main Campus", city: "Kota" },
+      { id: "b1", name: "Kota Main Branch", city: "Kota" },
       { id: "b2", name: "Jaipur Center", city: "Jaipur" },
       { id: "b3", name: "Delhi South Ext", city: "New Delhi" },
     ];
@@ -40,14 +40,14 @@ describe("Course Detailed Management, Fee Structures, and Multi-Branch Allocatio
         id: "c2",
         name: "NEET Super-30 Dropper",
         isAllBranches: false,
-        branches: [{ id: "b1", name: "Kota Main Campus" }],
+        branches: [{ id: "b1", name: "Kota Main Branch" }],
       },
       {
         id: "c3",
         name: "JEE Advanced Pinnacle",
         isAllBranches: false,
         branches: [
-          { id: "b1", name: "Kota Main Campus" },
+          { id: "b1", name: "Kota Main Branch" },
           { id: "b3", name: "Delhi South Ext" },
         ],
       },
