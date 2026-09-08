@@ -96,7 +96,7 @@ export function EditBatchDrawer({
   const [form, setForm] = useState({
     name: "",
     timing: "",
-    capacity: "40",
+    capacity: "",
     status: "Active",
     startDate: "",
     endDate: "",
@@ -117,7 +117,7 @@ export function EditBatchDrawer({
       setForm({
         name: batch.name,
         timing: batch.timing,
-        capacity: String(batch.capacity),
+        capacity: batch.capacity !== undefined && batch.capacity !== null ? String(batch.capacity) : "",
         status: batch.status,
         startDate: batch.startDate ? batch.startDate.slice(0, 10) : "",
         endDate: batch.endDate ? batch.endDate.slice(0, 10) : "",
@@ -176,10 +176,10 @@ export function EditBatchDrawer({
 
   const totalCapacity = useMemo(() => {
     if (activeBranchList.length <= 1) {
-      return Number(form.capacity) || 40;
+      return Number(form.capacity) || 0;
     }
     return activeBranchList.reduce((sum, b) => {
-      const cap = Number(branchCapacities[b.id]) || Number(form.capacity) || 40;
+      const cap = Number(branchCapacities[b.id]) || Number(form.capacity) || 0;
       return sum + cap;
     }, 0);
   }, [activeBranchList, branchCapacities, form.capacity]);
@@ -207,7 +207,7 @@ export function EditBatchDrawer({
   };
 
   const applyDefaultCapacityToAll = () => {
-    const base = form.capacity || "40";
+    const base = form.capacity || "";
     const newMap: Record<string, string> = {};
     activeBranchList.forEach((b) => {
       newMap[b.id] = base;
@@ -241,7 +241,7 @@ export function EditBatchDrawer({
 
       if (activeBranchList.length > 1) {
         activeBranchList.forEach((b) => {
-          finalBranchCapacities[b.id] = Number(branchCapacities[b.id]) || Number(form.capacity) || 40;
+          finalBranchCapacities[b.id] = Number(branchCapacities[b.id]) || Number(form.capacity) || 0;
           finalBranchTimings[b.id] = branchTimings[b.id] || form.timing;
         });
       }
@@ -560,7 +560,7 @@ export function EditBatchDrawer({
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, maxHeight: 224, overflowY: "auto", pr: 0.5 }}>
               {activeBranchList.map((b) => {
-                const branchCap = branchCapacities[b.id] !== undefined ? branchCapacities[b.id] : form.capacity || "40";
+                const branchCap = branchCapacities[b.id] !== undefined ? branchCapacities[b.id] : form.capacity || "";
                 const branchTime = branchTimings[b.id] !== undefined ? branchTimings[b.id] : form.timing;
                 return (
                   <Paper
@@ -580,8 +580,9 @@ export function EditBatchDrawer({
                           type="number"
                           size="small"
                           value={branchCap}
+                          placeholder="Seats"
                           onChange={(e) => handleBranchCapacityChange(b.id, e.target.value)}
-                          slotProps={{ htmlInput: { min: 1 } } as any}
+                          slotProps={{ htmlInput: { min: 1, placeholder: "Seats" } } as any}
                           sx={{ width: 72, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F8FAFC", "& input": { textAlign: "center", fontWeight: 700, fontSize: "0.75rem", py: 0.75 } } }}
                         />
                       </Box>
@@ -607,7 +608,11 @@ export function EditBatchDrawer({
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#334155" }}>
                 Total Combined Batch Capacity:
               </Typography>
-              <Chip label={`${totalCapacity} Seats Across ${activeBranchList.length} Branches`} size="small" sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 26, borderRadius: "12px" }} />
+              <Chip
+                label={totalCapacity > 0 ? `${totalCapacity} Seats Across ${activeBranchList.length} Branches` : `Not set across ${activeBranchList.length} Branches`}
+                size="small"
+                sx={{ bgcolor: totalCapacity > 0 ? "#1E3A5F" : "#64748B", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 26, borderRadius: "12px" }}
+              />
             </Paper>
           </Paper>
         ) : (
@@ -619,6 +624,7 @@ export function EditBatchDrawer({
             size="small"
             value={form.capacity}
             onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+            placeholder="Enter number of seats"
             slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 1 } as any, input: { startAdornment: <InputAdornment position="start"><Users size={14} style={{ color: "#94A3B8" }} /></InputAdornment> } as any }}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />

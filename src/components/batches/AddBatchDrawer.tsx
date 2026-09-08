@@ -454,7 +454,7 @@ export function AddBatchDrawer({
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, maxHeight: 224, overflowY: "auto", pr: 0.5 }}>
               {activeBranchList.map((b) => {
-                const branchCap = branchCapacities[b.id] !== undefined ? branchCapacities[b.id] : form.capacity || "40";
+                const branchCap = branchCapacities[b.id] !== undefined ? branchCapacities[b.id] : form.capacity || "";
                 const branchTime = branchTimings[b.id] !== undefined ? branchTimings[b.id] : form.timing;
                 return (
                   <Paper
@@ -474,8 +474,9 @@ export function AddBatchDrawer({
                           type="number"
                           size="small"
                           value={branchCap}
+                          placeholder="Seats"
                           onChange={(e) => handleBranchCapacityChange(b.id, e.target.value)}
-                          slotProps={{ htmlInput: { min: 1 } } as any}
+                          slotProps={{ htmlInput: { min: 1, placeholder: "Seats" } } as any}
                           sx={{ width: 72, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F8FAFC", "& input": { textAlign: "center", fontWeight: 700, fontSize: "0.75rem", py: 0.75 } } }}
                         />
                       </Box>
@@ -502,9 +503,9 @@ export function AddBatchDrawer({
                 Total Combined Batch Capacity:
               </Typography>
               <Chip
-                label={`${totalCapacity} Seats Across ${activeBranchList.length} Branches`}
+                label={totalCapacity > 0 ? `${totalCapacity} Seats Across ${activeBranchList.length} Branches` : `Not set across ${activeBranchList.length} Branches`}
                 size="small"
-                sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 26, borderRadius: "12px" }}
+                sx={{ bgcolor: totalCapacity > 0 ? "#1E3A5F" : "#64748B", color: "white", fontWeight: 700, fontSize: "0.75rem", height: 26, borderRadius: "12px" }}
               />
             </Paper>
           </Paper>
