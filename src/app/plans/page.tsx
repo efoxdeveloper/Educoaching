@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { auth } from "@/lib/auth";
 import { getInstituteId } from "@/lib/tenant";
@@ -15,7 +16,9 @@ export default async function PlansPage() {
 
   return (
     <Shell title="My Plans & Subscription" userName={session?.user?.name ?? undefined}>
-      <PlansView canManage={canManage} />
+      <Suspense fallback={null}>
+        <PlansView canManage={canManage} />
+      </Suspense>
     </Shell>
   );
 }

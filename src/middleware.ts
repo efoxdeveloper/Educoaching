@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { isInstituteSubscriptionExpired, isRouteRestrictedBySubscription } from "@/lib/subscription";
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
@@ -71,6 +72,35 @@ export default auth((req) => {
 
   if (role === "PLATFORM_ADMIN" && pathname.startsWith("/portal") && !isImpersonating) {
     return NextResponse.redirect(new URL("/admin", req.url));
+  }
+
+  // Subscription Expiry Gate:
+  // Confine institute staff to only /plans and /settings once expired.
+  // Redirect to /plans?expired=1 or return 402 for restricted APIs.
+  const user = req.auth.user as any;
+  const isExpired = isInstituteSubscriptionExpired({
+    billingCycle: user?.billingCycle,
+    trialEndsAt: user?.trialEndsAt,
+    currentPeriodEnd: user?.currentPeriodEnd,
+  });
+
+  if (
+    isRouteRestrictedBySubscription({
+      pathname,
+      role,
+      isImpersonating: isPlatformImpersonating,
+      isExpired,
+    })
+  ) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Subscription expired. Please renew your plan to continue access." },
+        { status: 402 }
+      );
+    }
+    const plansUrl = new URL("/plans", req.url);
+    plansUrl.searchParams.set("expired", "1");
+    return NextResponse.redirect(plansUrl);
   }
 
   return NextResponse.next();

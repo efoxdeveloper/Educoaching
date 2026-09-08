@@ -69,6 +69,9 @@ export const authCallbacks = {
       token.id = (user as { id?: string }).id;
       token.branchId = (user as { branchId?: string | null }).branchId ?? null;
       token.isMainBranch = (user as { isMainBranch?: boolean }).isMainBranch ?? true;
+      token.billingCycle = (user as any).billingCycle ?? null;
+      token.trialEndsAt = (user as any).trialEndsAt ?? null;
+      token.currentPeriodEnd = (user as any).currentPeriodEnd ?? null;
       // Clear any stale impersonation on fresh login
       token.impersonatingBranchId = null;
       token.impersonationStartedAt = null;
@@ -76,6 +79,9 @@ export const authCallbacks = {
     // Handle session update for per-session impersonation (client calls update({ impersonatingBranchId }))
     if (trigger === "update" && session) {
       const s = session as any;
+      if ("billingCycle" in s) token.billingCycle = s.billingCycle ?? null;
+      if ("trialEndsAt" in s) token.trialEndsAt = s.trialEndsAt ?? null;
+      if ("currentPeriodEnd" in s) token.currentPeriodEnd = s.currentPeriodEnd ?? null;
       if ("impersonatingBranchId" in s) {
         if (s.impersonatingBranchId) {
           token.impersonatingBranchId = s.impersonatingBranchId;
@@ -111,6 +117,9 @@ export const authCallbacks = {
       (session.user as any).impersonationStartedAt = (token as any).impersonationStartedAt as number | null | undefined;
       // Expose isImpersonating for convenience
       (session.user as any).isImpersonatingBranch = Boolean((token as any).impersonatingBranchId);
+      (session.user as any).billingCycle = (token as any).billingCycle ?? null;
+      (session.user as any).trialEndsAt = (token as any).trialEndsAt ?? null;
+      (session.user as any).currentPeriodEnd = (token as any).currentPeriodEnd ?? null;
     }
     return session;
   },
@@ -209,34 +218,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
 
 
+        let instituteBilling = {
+          billingCycle: null as string | null,
+          trialEndsAt: null as string | null,
+          currentPeriodEnd: null as string | null,
+        };
+
         if (user.instituteId) {
-
           const institute = await prisma.institute.findUnique({
-
             where: { id: user.instituteId },
-
-            select: { status: true, emailVerified: true },
-
+            select: {
+              status: true,
+              emailVerified: true,
+              billingCycle: true,
+              trialEndsAt: true,
+              currentPeriodEnd: true,
+            },
           });
 
           if (institute?.status === "SUSPENDED") {
-
             throw new InstituteSuspendedError();
-
           }
 
           if (institute?.status === "PENDING_APPROVAL") {
-
             throw new InstitutePendingApprovalError();
-
           }
 
-           if (institute?.emailVerified === false) {
-
+          if (institute?.emailVerified === false) {
             throw new EmailNotVerifiedError();
-
           }
 
+          if (institute) {
+            instituteBilling = {
+              billingCycle: institute.billingCycle,
+              trialEndsAt: institute.trialEndsAt ? institute.trialEndsAt.toISOString() : null,
+              currentPeriodEnd: institute.currentPeriodEnd ? institute.currentPeriodEnd.toISOString() : null,
+            };
+          }
         }
 
         if (user.branch && user.branch.status === "PENDING_APPROVAL") {
@@ -253,6 +271,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           instituteId: user.instituteId,
           branchId: user.branchId,
           isMainBranch: isMain,
+          billingCycle: instituteBilling.billingCycle,
+          trialEndsAt: instituteBilling.trialEndsAt,
+          currentPeriodEnd: instituteBilling.currentPeriodEnd,
         };
       },
     }),

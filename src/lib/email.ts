@@ -1203,3 +1203,86 @@ export async function sendAdminEmailChangeCompletedEmail(params: {
   );
   return sendMail(to, title + " — Vidyalaya Platform Admin", html);
 }
+
+export async function sendSubscriptionExpiryEmail(params: {
+  to: string;
+  ownerName?: string | null;
+  instituteName: string;
+  billingCycle: string;
+  endDate: Date;
+  daysRemaining: number;
+  isTrial: boolean;
+  plansUrl?: string;
+}) {
+  const {
+    to,
+    ownerName,
+    instituteName,
+    billingCycle,
+    endDate,
+    daysRemaining,
+    isTrial,
+    plansUrl = `${process.env.NEXTAUTH_URL || "https://vidyalayaclasses.com"}/plans`,
+  } = params;
+
+  const isExpired = daysRemaining <= 0;
+  const planLabel = isTrial ? "Free Trial" : `${billingCycle} Subscription`;
+  const title = isExpired ? `${planLabel} Has Ended` : `${planLabel} Ending Soon`;
+
+  const formattedDate = endDate.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const subject = isExpired
+    ? `${instituteName}: Your ${isTrial ? "free trial" : "subscription"} has ended`
+    : `${instituteName}: Your ${isTrial ? "free trial" : "subscription"} ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+
+  const html = emailShell(
+    title,
+    `
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      Dear ${ownerName || "Institute Owner"},
+    </p>
+    <p style="color: #4E6E93; font-size: 14px; line-height: 1.6;">
+      ${
+        isExpired
+          ? `Your <strong>${planLabel}</strong> for <strong>${instituteName}</strong> has ended on <strong>${formattedDate}</strong>. To continue managing students, admissions, attendance, and branch operations without interruption, please choose a plan and renew your subscription.`
+          : `Your <strong>${planLabel}</strong> for <strong>${instituteName}</strong> is ending soon on <strong>${formattedDate}</strong> (${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining). Renew now to ensure seamless, uninterrupted access to your portal.`
+      }
+    </p>
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0; background: #F8FAFC; border-radius: 8px;">
+      <tr>
+        <td style="padding: 10px 14px; color: #64748B;">Institute</td>
+        <td style="padding: 10px 14px; text-align: right; font-weight: 600; color: #1E293B;">${instituteName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 14px; color: #64748B;">Current Plan</td>
+        <td style="padding: 10px 14px; text-align: right; font-weight: 600; color: #1E293B;">${planLabel}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 14px; color: #64748B;">${isExpired ? "Ended On" : "Expiry Date"}</td>
+        <td style="padding: 10px 14px; text-align: right; font-weight: 600; color: ${isExpired ? "#DC2626" : "#D97706"};">${formattedDate}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 14px; color: #64748B;">Status</td>
+        <td style="padding: 10px 14px; text-align: right; font-weight: 600; color: ${isExpired ? "#DC2626" : "#D97706"};">
+          ${isExpired ? "Expired" : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining`}
+        </td>
+      </tr>
+    </table>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${plansUrl}" style="display: inline-block; background: #1E3A5F; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; font-size: 14px;">
+        View Plans & Renew &rarr;
+      </a>
+    </div>
+    <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin-top: 16px;">
+      If you have already renewed your subscription, you can safely ignore this reminder.
+    </p>
+    `
+  );
+
+  return sendMail(to, subject, html);
+}
+

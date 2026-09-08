@@ -51,3 +51,99 @@ export function addMonths(date: Date, months: number): Date {
   result.setMonth(result.getMonth() + months);
   return result;
 }
+
+/**
+ * Pure function to determine if an institute's platform subscription or free trial
+ * has elapsed. Safe for Edge runtime and middleware (no database/Prisma imports).
+ *
+ * Rules:
+ * - TRIAL: checks trialEndsAt < now
+ * - MONTHLY / QUARTERLY / YEARLY: checks currentPeriodEnd < now
+ * - Fails open (returns false) if no end-date is set
+ */
+export function isInstituteSubscriptionExpired(params: {
+  billingCycle?: "TRIAL" | "MONTHLY" | "QUARTERLY" | "YEARLY" | string | null;
+  trialEndsAt?: Date | string | null;
+  currentPeriodEnd?: Date | string | null;
+  now?: Date;
+}): boolean {
+  const now = params.now ? new Date(params.now) : new Date();
+  const cycle = params.billingCycle ? String(params.billingCycle).toUpperCase() : "TRIAL";
+
+  if (cycle === "TRIAL") {
+    if (!params.trialEndsAt) {
+      return false; // fail open if no end-date set
+    }
+    const trialEnd = new Date(params.trialEndsAt);
+    if (isNaN(trialEnd.getTime())) return false;
+    return trialEnd.getTime() < now.getTime();
+  }
+
+  // Paid plans (MONTHLY, QUARTERLY, YEARLY, etc.)
+  if (!params.currentPeriodEnd) {
+    return false; // fail open if no end-date set
+  }
+  const periodEnd = new Date(params.currentPeriodEnd);
+  if (isNaN(periodEnd.getTime())) return false;
+  return periodEnd.getTime() < now.getTime();
+}
+
+/**
+ * Pure route-gate function for middleware.
+ * Confines expired institute staff (OWNER, ADMIN, STAFF, FACULTY, ACCOUNTANT, COUNSELLOR, TECHNICIAN)
+ * to only /plans and /settings.
+ *
+ * Rules:
+ * - If not expired -> false (not restricted)
+ * - Never restricts STUDENT, PARENT, or PLATFORM_ADMIN -> false
+ * - Never restricts when platform admin is impersonating an institute -> false
+ * - Never restricts /plans or /settings routes (or their subpaths) -> false
+ * - Allows essential subscription & settings APIs -> false
+ * - Restricts all other routes -> true (caller should redirect to /plans?expired=1 or return 402)
+ */
+export function isRouteRestrictedBySubscription(params: {
+  pathname: string;
+  role?: string | null;
+  isImpersonating?: boolean;
+  isExpired: boolean;
+}): boolean {
+  if (!params.isExpired) {
+    return false;
+  }
+
+  const role = String(params.role || "").toUpperCase();
+
+  // Never apply to STUDENT, PARENT, or PLATFORM_ADMIN
+  if (role === "STUDENT" || role === "PARENT" || role === "PLATFORM_ADMIN") {
+    return false;
+  }
+
+  // Never apply while platform admin is impersonating an institute
+  if (params.isImpersonating) {
+    return false;
+  }
+
+  const path = params.pathname;
+
+  // Never block /plans or /settings (or subpaths)
+  if (
+    path === "/plans" ||
+    path.startsWith("/plans/") ||
+    path === "/settings" ||
+    path.startsWith("/settings/")
+  ) {
+    return false;
+  }
+
+  // Whitelist essential APIs for subscription viewing, renewing, and settings
+  if (
+    path.startsWith("/api/institutes/me") ||
+    path.startsWith("/api/institutes/subscribe") ||
+    path.startsWith("/api/plans") ||
+    path.startsWith("/api/settings")
+  ) {
+    return false;
+  }
+
+  return true;
+}

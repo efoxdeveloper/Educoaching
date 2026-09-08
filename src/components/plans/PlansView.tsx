@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CreditCard,
   CheckCircle2,
@@ -38,6 +39,9 @@ type InstituteProfile = {
 };
 
 export function PlansView({ canManage }: { canManage: boolean }) {
+  const searchParams = useSearchParams();
+  const isExpiredParam = searchParams.get("expired") === "1";
+
   const [profile, setProfile] = useState<InstituteProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,6 +130,20 @@ export function PlansView({ canManage }: { canManage: boolean }) {
 
   return (
     <div className="space-y-6">
+      {isExpiredParam && (
+        <div className="flex items-start gap-3.5 rounded-2xl border-2 border-danger-400 bg-danger-50 p-4 text-danger-900 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-danger-600 text-white shadow-xs">
+            <AlertCircle size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-danger-950">Subscription Expired</h3>
+            <p className="mt-0.5 text-xs font-semibold text-danger-800 leading-relaxed">
+              Your free trial/subscription has ended — choose a plan below to continue
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner with Quick Status Overview */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-scholar-800 via-scholar-900 to-scholar-950 p-6 text-white shadow-md">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
