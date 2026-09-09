@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Field, inputClass } from "@/components/ui/Field";
-import { Plus, Trash2, CheckCircle2, Search, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Search, Loader2, Sparkles, Upload } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AiQuestionGeneratorModal } from "./AiQuestionGeneratorModal";
 
@@ -55,6 +55,11 @@ export function QuestionBankDrawer({
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<QuestionItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importSaving, setImportSaving] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
@@ -181,6 +186,19 @@ export function QuestionBankDrawer({
           >
             <Sparkles size={13} className="text-amber-500" /> AI Generator
           </button>
+          <label className="flex items-center gap-1.5 rounded-lg border border-scholar-200 bg-white px-3 py-1.5 text-xs font-bold text-scholar-800 hover:bg-scholar-50 cursor-pointer shadow-xs">
+            <Upload size={13} /> Import File
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv,.docx" className="hidden" onChange={async (e)=>{
+              const f=e.target.files?.[0]; if(!f)return;
+              setImportFile(f);
+              const fd=new FormData(); fd.append("file", f); fd.append("subject","General");
+              const res=await fetch("/api/questions/import?preview=true",{method:"POST",body:fd});
+              const data=await res.json();
+              if(!res.ok){ alert(data.error||"Import failed"); return; }
+              setImportPreview(data.questions||[]); setImportErrors(data.parseErrors||[]); setImportOpen(true);
+              e.target.value="";
+            }}/>
+          </label>
         </div>
 
         {tab === "list" ? (
@@ -479,6 +497,54 @@ export function QuestionBankDrawer({
         tone="danger"
         loading={deleteLoading}
       />
+
+      {importOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-sm">Import Preview — {importPreview.length} parsed question(s)</h3>
+              <button onClick={()=>setImportOpen(false)} className="text-scholar-500 hover:text-black">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {importErrors.length>0 && <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-xs text-amber-800">{importErrors.map((e,i)=><div key={i}>• {e}</div>)}</div>}
+              {importPreview.length===0 && <p className="text-xs text-scholar-400 text-center py-8">No questions parsed. Check file format (Excel columns: Question Text, Option A-D, Correct Answer, Explanation, Marks) or PDF structure (numbered Qs with A-D and Answer:).</p>}
+              {importPreview.map((q, idx)=>(
+                <div key={idx} className="rounded-xl border p-3 space-y-2 bg-scholar-50/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">Q{idx+1}: {q.subject || "General"} • {q.difficulty}</span>
+                    <button onClick={()=>setImportPreview(prev=>prev.filter((_,i)=>i!==idx))} className="text-xs text-rose-600 hover:underline">Remove</button>
+                  </div>
+                  <textarea value={q.questionText} onChange={(e)=>setImportPreview(prev=>prev.map((x,i)=>i===idx?{...x,questionText:e.target.value}:x))} className="w-full rounded border p-2 text-xs" rows={2}/>
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.options.map((opt:string, oi:number)=>(
+                      <input key={oi} value={opt} onChange={(e)=>{ const n=[...q.options]; n[oi]=e.target.value; setImportPreview(prev=>prev.map((x,i)=>i===idx?{...x,options:n}:x))}} className={`rounded border p-1.5 text-xs ${String(q.correctAnswer)===String(oi)?"border-emerald-500 bg-emerald-50":"bg-white"}`} placeholder={`Option ${String.fromCharCode(65+oi)}`}/>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <label>Correct: <select value={q.correctAnswer} onChange={(e)=>setImportPreview(prev=>prev.map((x,i)=>i===idx?{...x,correctAnswer:e.target.value}:x))} className="rounded border px-1 py-0.5"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></label>
+                    <label>Marks: <input type="number" value={q.marks} onChange={(e)=>setImportPreview(prev=>prev.map((x,i)=>i===idx?{...x,marks:Number(e.target.value)}:x))} className="w-14 rounded border px-1 py-0.5"/></label>
+                    <label>Neg: <input type="number" value={q.negativeMarks} onChange={(e)=>setImportPreview(prev=>prev.map((x,i)=>i===idx?{...x,negativeMarks:Number(e.target.value)}:x))} className="w-14 rounded border px-1 py-0.5"/></label>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t flex gap-2">
+              <button onClick={()=>setImportOpen(false)} className="flex-1 rounded-xl border py-2 text-xs font-semibold">Cancel</button>
+              <button disabled={importSaving || importPreview.length===0} onClick={async()=>{
+                setImportSaving(true);
+                try{
+                  const fd=new FormData(); if(importFile) fd.append("file", importFile); else fd.append("file", new File([""], "dummy.xlsx")); fd.append("questions", JSON.stringify(importPreview));
+                  const res=await fetch("/api/questions/import",{method:"POST", body: fd});
+                  const data=await res.json();
+                  if(!res.ok) throw new Error(data.error||"Import failed");
+                  alert(`${data.imported} imported, ${data.skipped} skipped` + (data.errors?.length? `\n${data.errors.slice(0,3).join("\n")}`:""));
+                  setImportOpen(false); fetchQuestions();
+                }catch(e:any){ alert(e.message)} finally{setImportSaving(false)}
+              }} className="flex-1 rounded-xl bg-scholar-600 text-white py-2 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1">{importSaving?<Loader2 size={14} className="animate-spin"/>:null} Bulk Import {importPreview.length}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Drawer>
   );
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/tenant";
 import { logAudit, actorFromSession } from "@/lib/audit";
-import { sendCustomAlert } from "@/lib/whatsapp";
+import { sendCustomAlert, isWhatsAppConfigured } from "@/lib/whatsapp";
 import { sendBroadcastEmail } from "@/lib/email";
 import { sendInstituteSms } from "@/lib/sms";
 import { CommunicationChannel, TargetAudience, Prisma } from "@prisma/client";
@@ -119,6 +119,8 @@ export async function POST(req: Request) {
 
   let sentCount = 0;
   let failedCount = 0;
+  let simulatedCount = 0;
+  const isWhatsAppSimulated = validChannel === "WHATSAPP" && !isWhatsAppConfigured();
 
   // Dispatch concurrently in chunks of 5 to maximize pooled connection reuse
   const BATCH_SIZE = 5;
@@ -141,9 +143,11 @@ export async function POST(req: Request) {
           if (validChannel === "WHATSAPP") {
             const phone = r.parentMobile || r.mobile;
             if (phone) {
-              const res = await sendCustomAlert(phone, r.name, personalizedMessage);
-              if (res.sent) sentCount++;
-              else failedCount++;
+              const res: any = await sendCustomAlert(phone, r.name, personalizedMessage);
+              if (res.sent) {
+                sentCount++;
+                if (res.simulated) simulatedCount++;
+              } else failedCount++;
             } else {
               failedCount++;
             }
@@ -196,7 +200,12 @@ export async function POST(req: Request) {
       title: title.trim(),
       channel: validChannel,
       targetAudience: validAudience,
-      filterDetails,
+      filterDetails: {
+        ...(filterDetails as any),
+        simulated: isWhatsAppSimulated || simulatedCount > 0,
+        simulatedCount,
+        whatsappConfigured: isWhatsAppConfigured(),
+      },
       message,
       recipientCount: recipients.length,
       sentCount,
@@ -218,6 +227,8 @@ export async function POST(req: Request) {
       recipientCount: campaign.recipientCount,
       sentCount,
       failedCount,
+      simulated: isWhatsAppSimulated || simulatedCount > 0,
+      simulatedCount,
     },
   });
 
@@ -227,5 +238,8 @@ export async function POST(req: Request) {
     recipientCount: recipients.length,
     sentCount,
     failedCount,
+    simulated: isWhatsAppSimulated || simulatedCount > 0,
+    simulatedCount,
+    whatsappConfigured: isWhatsAppConfigured(),
   });
 }

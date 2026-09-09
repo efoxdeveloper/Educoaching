@@ -127,7 +127,8 @@ export const authCallbacks = {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
+  jwt: { maxAge: 24 * 60 * 60 },
   pages: {
     signIn: "/login",
     error: "/login",

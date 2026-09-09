@@ -16,11 +16,23 @@ export default async function FeesPage() {
     redirect("/dashboard");
   }
 
-  const students = await prisma.student.findMany({
-    where: { instituteId, branchId },
-    include: { course: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [students, courses, batches] = await Promise.all([
+    prisma.student.findMany({
+      where: { instituteId, branchId },
+      include: { course: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.course.findMany({
+      where: { instituteId },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.batch.findMany({
+      where: { instituteId, branchId },
+      select: { id: true, name: true, courseId: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   const serialized = students.map((s) => ({
     id: s.id,
@@ -29,6 +41,8 @@ export default async function FeesPage() {
     paidFee: s.paidFee.toString(),
     dueDate: s.dueDate ? s.dueDate.toISOString() : null,
     course: { name: s.course.name },
+    courseId: s.courseId,
+    batchId: s.batchId,
     plan: s.plan,
     subscriptionStatus: s.subscriptionStatus,
     demoExpiresAt: s.demoExpiresAt ? s.demoExpiresAt.toISOString() : null,
@@ -40,7 +54,7 @@ export default async function FeesPage() {
 
   return (
     <Shell title="Fee & Collection" userName={session?.user?.name ?? undefined}>
-      <FeesView students={serialized} />
+      <FeesView students={serialized} courses={courses} batches={batches} />
     </Shell>
   );
 }

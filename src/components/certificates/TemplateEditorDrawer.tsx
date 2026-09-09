@@ -6,6 +6,8 @@ import { Award, Loader2, Upload, Check } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Field, inputClass } from "@/components/ui/Field";
 
+export type CertificateFieldPos = { key: string; x: number; y: number; fontSize?: number; align?: "left" | "center" | "right"; color?: string; customText?: string };
+
 export type CertificateTemplateData = {
   id?: string;
   name: string;
@@ -15,6 +17,8 @@ export type CertificateTemplateData = {
   signatoryTitle?: string | null;
   logoFileAssetId?: string | null;
   signatureFileAssetId?: string | null;
+  backgroundImageAssetId?: string | null;
+  fieldPositions?: CertificateFieldPos[] | null;
 };
 
 const DEFAULT_BODY =
@@ -31,6 +35,7 @@ export function TemplateEditorDrawer({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(template?.name || "");
   const [title, setTitle] = useState(template?.title || "Certificate of Completion");
@@ -40,8 +45,16 @@ export function TemplateEditorDrawer({
   const [signatureFileAssetId, setSignatureFileAssetId] = useState<string | null>(
     template?.signatureFileAssetId || null
   );
+  const [backgroundImageAssetId, setBackgroundImageAssetId] = useState<string | null>(
+    (template as any)?.backgroundImageAssetId || null
+  );
+  const [fieldPositions, setFieldPositions] = useState<CertificateFieldPos[]>(
+    (template as any)?.fieldPositions || []
+  );
+  const [bgPreviewUrl, setBgPreviewUrl] = useState<string | null>(null);
 
   const [uploadingSig, setUploadingSig] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -53,6 +66,10 @@ export function TemplateEditorDrawer({
       setSignatoryName(template.signatoryName || "Authorized Signatory");
       setSignatoryTitle(template.signatoryTitle || "Director / Academic Head");
       setSignatureFileAssetId(template.signatureFileAssetId || null);
+      setBackgroundImageAssetId((template as any).backgroundImageAssetId || null);
+      setFieldPositions((template as any).fieldPositions || []);
+      if ((template as any).backgroundImageAssetId) setBgPreviewUrl(`/api/files/${(template as any).backgroundImageAssetId}`);
+      else setBgPreviewUrl(null);
     } else {
       setName("");
       setTitle("Certificate of Completion");
@@ -60,6 +77,9 @@ export function TemplateEditorDrawer({
       setSignatoryName("Authorized Signatory");
       setSignatoryTitle("Director / Academic Head");
       setSignatureFileAssetId(null);
+      setBackgroundImageAssetId(null);
+      setFieldPositions([]);
+      setBgPreviewUrl(null);
     }
   }, [template, open]);
 
@@ -79,7 +99,7 @@ export function TemplateEditorDrawer({
       formData.append("file", file);
       formData.append("category", "SIGNATURE");
 
-      const res = await fetch("/api/files/upload", {
+      const res = await fetch("/api/files", {
         method: "POST",
         body: formData,
       });
@@ -94,6 +114,44 @@ export function TemplateEditorDrawer({
       setUploadingSig(false);
     }
   };
+
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBg(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", "CERTIFICATE");
+      const res = await fetch("/api/files", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to upload background image");
+      setBackgroundImageAssetId(data.id);
+      setBgPreviewUrl(`/api/files/${data.id}`);
+      // add default field positions if empty
+      if (fieldPositions.length === 0) {
+        setFieldPositions([
+          { key: "studentName", x: 420, y: 200, fontSize: 26, align: "center" },
+          { key: "courseName", x: 420, y: 250, fontSize: 14, align: "center" },
+          { key: "completionDate", x: 60, y: 500, fontSize: 10, align: "left" },
+          { key: "certificateId", x: 60, y: 520, fontSize: 8, align: "left" },
+        ]);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to upload background image");
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
+  const addField = () => {
+    setFieldPositions((prev) => [...prev, { key: "studentName", x: 100, y: 100, fontSize: 14, align: "left" }]);
+  };
+  const updateField = (idx: number, patch: Partial<CertificateFieldPos>) => {
+    setFieldPositions((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
+  };
+  const removeField = (idx: number) => setFieldPositions((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +180,8 @@ export function TemplateEditorDrawer({
           signatoryName: signatoryName.trim(),
           signatoryTitle: signatoryTitle.trim(),
           signatureFileAssetId,
+          backgroundImageAssetId,
+          fieldPositions,
         }),
       });
 
@@ -266,6 +326,65 @@ export function TemplateEditorDrawer({
             )}
           </div>
         </div>
+
+        {/* Background Image Upload */}
+        <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-ink">Background Template Image (PNG/JPG)</span>
+              <p className="text-[11px] text-scholar-500">Upload a full ready-made certificate design — fields will overlay on it.</p>
+            </div>
+            {backgroundImageAssetId && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200"><Check size={12} /> Attached</span>}
+          </div>
+          {bgPreviewUrl && <img src={bgPreviewUrl} alt="Background preview" className="w-full h-32 object-contain rounded-lg border bg-white" />}
+          <div className="flex items-center gap-2">
+            <input type="file" ref={bgInputRef} accept="image/png, image/jpeg" onChange={handleBackgroundUpload} className="hidden" />
+            <button type="button" disabled={uploadingBg} onClick={() => bgInputRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 transition-colors">
+              {uploadingBg ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+              <span>{backgroundImageAssetId ? "Change Background" : "Upload Background Image"}</span>
+            </button>
+            {backgroundImageAssetId && <button type="button" onClick={() => { setBackgroundImageAssetId(null); setBgPreviewUrl(null); }} className="text-xs text-danger-600 hover:underline font-semibold">Remove</button>}
+          </div>
+        </div>
+
+        {/* Field Positions Editor */}
+        {backgroundImageAssetId && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-900">Field Positions on Background</span>
+              <button type="button" onClick={addField} className="text-xs font-bold text-scholar-700 bg-white border px-2 py-1 rounded-lg hover:bg-scholar-50">+ Add Field</button>
+            </div>
+            <p className="text-[11px] text-amber-800">Place editable fields (student name, course, date, certificate ID, custom text) by setting X/Y coordinates (0–842 for landscape A4 width, 0–595 height), font size and alignment. Preview overlay on background above.</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {fieldPositions.map((fp, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-1.5 items-end bg-white p-2 rounded-lg border">
+                  <div className="col-span-3">
+                    <label className="text-[10px] font-semibold text-scholar-600">Field</label>
+                    <select value={fp.key} onChange={(e) => updateField(idx, { key: e.target.value })} className="w-full rounded border px-1.5 py-1 text-xs">
+                      <option value="studentName">Student Name</option>
+                      <option value="courseName">Course Name</option>
+                      <option value="completionDate">Completion Date</option>
+                      <option value="certificateId">Certificate ID</option>
+                      <option value="instituteName">Institute Name</option>
+                      <option value="admissionDate">Admission Date</option>
+                      <option value="certificateTitle">Certificate Title</option>
+                      <option value="signatoryName">Signatory Name</option>
+                      <option value="signatoryTitle">Signatory Title</option>
+                      <option value="customText">Custom Text</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2"><label className="text-[10px] font-semibold text-scholar-600">X</label><input type="number" value={fp.x} onChange={(e) => updateField(idx, { x: Number(e.target.value) })} className="w-full rounded border px-1.5 py-1 text-xs" /></div>
+                  <div className="col-span-2"><label className="text-[10px] font-semibold text-scholar-600">Y</label><input type="number" value={fp.y} onChange={(e) => updateField(idx, { y: Number(e.target.value) })} className="w-full rounded border px-1.5 py-1 text-xs" /></div>
+                  <div className="col-span-2"><label className="text-[10px] font-semibold text-scholar-600">Size</label><input type="number" value={fp.fontSize || 12} onChange={(e) => updateField(idx, { fontSize: Number(e.target.value) })} className="w-full rounded border px-1.5 py-1 text-xs" /></div>
+                  <div className="col-span-2"><label className="text-[10px] font-semibold text-scholar-600">Align</label><select value={fp.align || "left"} onChange={(e) => updateField(idx, { align: e.target.value as any })} className="w-full rounded border px-1.5 py-1 text-xs"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>
+                  <div className="col-span-1 flex justify-end"><button type="button" onClick={() => removeField(idx)} className="text-rose-600 hover:text-rose-800 text-xs font-bold">✕</button></div>
+                  {fp.key === "customText" && <div className="col-span-12"><input placeholder="Custom text (supports {studentName} etc.)" value={fp.customText || ""} onChange={(e) => updateField(idx, { customText: e.target.value })} className="w-full rounded border px-1.5 py-1 text-xs" /></div>}
+                </div>
+              ))}
+              {fieldPositions.length === 0 && <p className="text-xs text-scholar-400 text-center py-2">No fields yet — click Add Field.</p>}
+            </div>
+          </div>
+        )}
 
         <div className="pt-2 flex items-center gap-2">
           <button

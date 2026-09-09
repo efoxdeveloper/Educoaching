@@ -33,7 +33,7 @@ export default async function CertificatesPage() {
   return (
     <Shell title="Course Certificates" userName={session?.user?.name ?? undefined}>
       <CertificatesView
-        initialTemplates={templates}
+        initialTemplates={templates as any}
         courses={courses}
         batches={batches}
       />

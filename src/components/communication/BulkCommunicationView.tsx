@@ -241,6 +241,7 @@ export function BulkCommunicationView() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [smsConfigured, setSmsConfigured] = useState(false);
+  const [whatsappConfigured, setWhatsappConfigured] = useState<boolean | null>(null);
 
   // Fetch courses, batches, and SMS config on mount
   useEffect(() => {
@@ -264,6 +265,11 @@ export function BulkCommunicationView() {
         }
       })
       .catch(() => {});
+
+    fetch("/api/communication/whatsapp-status")
+      .then((res) => res.json())
+      .then((data) => setWhatsappConfigured(Boolean(data.configured)))
+      .catch(() => setWhatsappConfigured(false));
   }, []);
 
   // Fetch recipients when filters change
@@ -401,12 +407,24 @@ export function BulkCommunicationView() {
       }
 
       setConfirmBroadcastOpen(false);
-      setSendResult({
-        success: true,
-        message: `Broadcast successfully dispatched to ${data.sentCount} recipients (${data.failedCount} failed/skipped).`,
-      });
+      if (data.simulated) {
+        setSendResult({
+          success: true,
+          message: `Broadcast ran in SIMULATED mode — ${data.sentCount} recipient(s) logged but NOT actually delivered via WhatsApp. Enable live WhatsApp (ENABLE_LIVE_WHATSAPP=true + Twilio credentials) to send real messages. (${data.failedCount} failed/skipped)`,
+        });
+      } else {
+        setSendResult({
+          success: true,
+          message: `Broadcast successfully dispatched to ${data.sentCount} recipients (${data.failedCount} failed/skipped).`,
+        });
+      }
       setTitle("");
       setMessage("");
+      // refresh whatsapp status in case config changed
+      fetch("/api/communication/whatsapp-status")
+        .then((r) => r.json())
+        .then((d) => setWhatsappConfigured(Boolean(d.configured)))
+        .catch(() => {});
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Failed to broadcast message";
       setSendResult({
@@ -636,6 +654,14 @@ export function BulkCommunicationView() {
                       </button>
                     )}
                   </div>
+
+                  {channel === "WHATSAPP" && whatsappConfigured === false && (
+                    <div className="mt-2.5 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                      <p className="font-bold flex items-center gap-1.5"><AlertCircle size={14} /> WhatsApp sending is in test mode — messages are not actually delivered until live dispatch is enabled.</p>
+                      <p className="mt-1 text-[11px] leading-relaxed">Set <code className="bg-white px-1 py-0.5 rounded border">ENABLE_LIVE_WHATSAPP=true</code> and configure <code className="bg-white px-1 py-0.5 rounded border">TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM</code> in your .env, then restart the server. Until then broadcasts are simulated (logged to console only).</p>
+                      <a href="/settings" className="inline-block mt-1.5 font-bold underline hover:text-amber-950 text-[11px]">Learn how to enable &rarr;</a>
+                    </div>
+                  )}
 
                   {!smsConfigured && (
                     <div className="mt-2.5 flex items-center justify-between rounded-xl bg-scholar-50 p-2.5 px-3 border border-scholar-200/70 text-[11px] text-scholar-600">

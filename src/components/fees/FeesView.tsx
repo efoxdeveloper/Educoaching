@@ -39,6 +39,8 @@ type Student = {
   paidFee: string;
   dueDate: string | null;
   course: { name: string };
+  courseId: string;
+  batchId: string | null;
   plan: string;
   subscriptionStatus: string;
   demoExpiresAt: string | null;
@@ -48,6 +50,9 @@ type Student = {
   installmentPlan?: any;
 };
 
+type CourseOpt = { id: string; name: string };
+type BatchOpt = { id: string; name: string; courseId: string };
+
 const planTone: Record<ComputedPlanStatus, "success" | "warn" | "danger" | "neutral"> = {
   TRIAL_ACTIVE: "warn",
   TRIAL_EXPIRED: "danger",
@@ -55,10 +60,12 @@ const planTone: Record<ComputedPlanStatus, "success" | "warn" | "danger" | "neut
   SUBSCRIPTION_EXPIRED: "danger",
 };
 
-export function FeesView({ students }: { students: Student[] }) {
+export function FeesView({ students, courses = [], batches = [] }: { students: Student[]; courses?: CourseOpt[]; batches?: BatchOpt[] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [batchFilter, setBatchFilter] = useState("");
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentTargetStudent, setPaymentTargetStudent] = useState<string | undefined>(undefined);
   const [renewOpen, setRenewOpen] = useState(false);
@@ -86,11 +93,18 @@ export function FeesView({ students }: { students: Student[] }) {
     [students]
   );
 
+  const availableBatches = useMemo(() => {
+    if (!courseFilter) return batches;
+    return batches.filter((b) => b.courseId === courseFilter);
+  }, [batches, courseFilter]);
+
   const filtered = rows.filter((s) => {
     const matchesQuery = query.trim() === "" || s.name.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = !statusFilter || s.status === statusFilter;
     const matchesPlan = !planFilter || s.plan === planFilter;
-    return matchesQuery && matchesStatus && matchesPlan;
+    const matchesCourse = !courseFilter || s.courseId === courseFilter;
+    const matchesBatch = !batchFilter || s.batchId === batchFilter;
+    return matchesQuery && matchesStatus && matchesPlan && matchesCourse && matchesBatch;
   });
 
   const totalCollected = rows.reduce((sum, s) => sum + Number(s.paidFee), 0);
@@ -169,9 +183,78 @@ export function FeesView({ students }: { students: Student[] }) {
                 <MenuItem value="DEMO">Free 7-Day Demo</MenuItem>
               </Select>
             </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="fee-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
+              <Select
+                labelId="fee-course-label"
+                label="Course"
+                value={courseFilter}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCourseFilter(v);
+                  setBatchFilter("");
+                }}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All Courses</MenuItem>
+                {courses.map((c) => (
+                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="fee-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
+              <Select
+                labelId="fee-batch-label"
+                label="Batch"
+                value={batchFilter}
+                onChange={(e) => setBatchFilter(e.target.value)}
+                disabled={availableBatches.length === 0}
+                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                <MenuItem value="">All Batches</MenuItem>
+                {availableBatches.map((b) => (
+                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>{b.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
 
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (statusFilter) params.set("status", statusFilter);
+                if (planFilter) params.set("plan", planFilter);
+                if (courseFilter) params.set("courseId", courseFilter);
+                if (batchFilter) params.set("batchId", batchFilter);
+                if (query) params.set("q", query);
+                params.set("format", "xlsx");
+                window.location.href = `/api/fees/export?${params.toString()}`;
+              }}
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75 }}
+            >
+              Export Excel
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (statusFilter) params.set("status", statusFilter);
+                if (planFilter) params.set("plan", planFilter);
+                if (courseFilter) params.set("courseId", courseFilter);
+                if (batchFilter) params.set("batchId", batchFilter);
+                if (query) params.set("q", query);
+                params.set("format", "pdf");
+                window.location.href = `/api/fees/export?${params.toString()}`;
+              }}
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75 }}
+            >
+              Export PDF
+            </Button>
             <Button
               variant="outlined"
               size="small"

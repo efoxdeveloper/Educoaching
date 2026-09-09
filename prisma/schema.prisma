@@ -549,6 +549,31 @@ model Attendance {
   @@index([batchId])
 }
 
+model AttendanceCorrectionRequest {
+  id                 String           @id @default(cuid())
+  instituteId        String
+  branchId           String
+  attendanceId       String?
+  studentId          String
+  batchId            String
+  date               DateTime         @db.Date
+  requestedByUserId  String
+  currentStatus      AttendanceStatus
+  requestedStatus    AttendanceStatus
+  reason             String
+  status             String           @default("PENDING")
+  reviewedByUserId   String?
+  reviewedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([instituteId])
+  @@index([branchId])
+  @@index([batchId])
+  @@index([studentId])
+  @@index([status])
+}
+
 model StaffAttendance {
   id          String                @id @default(cuid())
   instituteId String
@@ -986,19 +1011,21 @@ model LiveClass {
 }
 
 model CertificateTemplate {
-  id                   String              @id @default(cuid())
-  instituteId          String
-  name                 String
-  title                String              @default("Certificate of Completion")
-  bodyText             String              @default("This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.")
-  logoFileAssetId      String?
-  signatureFileAssetId String?
-  signatoryName        String?             @default("Authorized Signatory")
-  signatoryTitle       String?             @default("Director / Academic Head")
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  issuedCertificates   CertificateIssued[]
-  institute            Institute           @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  id                      String              @id @default(cuid())
+  instituteId             String
+  name                    String
+  title                   String              @default("Certificate of Completion")
+  bodyText                String              @default("This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.")
+  logoFileAssetId         String?
+  signatureFileAssetId    String?
+  backgroundImageAssetId  String?
+  fieldPositions          Json?
+  signatoryName           String?             @default("Authorized Signatory")
+  signatoryTitle          String?             @default("Director / Academic Head")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  issuedCertificates      CertificateIssued[]
+  institute               Institute           @relation(fields: [instituteId], references: [id], onDelete: Cascade)
 
   @@index([instituteId])
 }

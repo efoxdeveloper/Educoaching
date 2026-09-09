@@ -3,6 +3,32 @@ import { prisma } from "@/lib/prisma";
 import { requireInstitute } from "@/lib/tenant";
 import { sendAbsentNotification, sendLateNotification } from "@/lib/whatsapp";
 
+async function isFacultyAllowedToAccessBatch(ctx: Awaited<ReturnType<typeof requireInstitute>>, batchId: string): Promise<boolean> {
+  if ("error" in ctx) return false;
+  const role = String((ctx as any).role || "").toUpperCase();
+  if (role !== "FACULTY") return true;
+  const sessionUser = (ctx as any).session?.user as { id?: string; email?: string | null } | undefined;
+  if (!sessionUser) return false;
+  const faculty = await prisma.faculty.findFirst({
+    where: {
+      instituteId: (ctx as any).instituteId,
+      OR: [
+        ...(sessionUser.id ? [{ userId: sessionUser.id }] : []),
+        ...(sessionUser.email ? [{ email: { equals: sessionUser.email, mode: "insensitive" as const } }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+  if (!faculty) return false;
+  const batchFaculty = await prisma.batchFaculty.findFirst({
+    where: { batchId, facultyId: faculty.id },
+  });
+  // Also check if batch's faculty relation includes this faculty (BatchFaculty join)
+  if (batchFaculty) return true;
+  // Fallback: also allow if batch.faculty list contains faculty (covers same table)
+  return false;
+}
+
 export async function GET(req: Request) {
   const ctx = await requireInstitute();
   if ("error" in ctx) return ctx.error;
@@ -19,6 +45,10 @@ export async function GET(req: Request) {
   if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
   if (batch.branchId && batch.branchId !== ctx.branchId) {
     return NextResponse.json({ error: "Forbidden: batch belongs to a different branch" }, { status: 403 });
+  }
+
+  if (!(await isFacultyAllowedToAccessBatch(ctx, batchId))) {
+    return NextResponse.json({ error: "Forbidden: you are not assigned to this batch" }, { status: 403 });
   }
 
   const records = await prisma.attendance.findMany({
@@ -48,6 +78,10 @@ export async function POST(req: Request) {
   if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
   if (batch.branchId && batch.branchId !== ctx.branchId) {
     return NextResponse.json({ error: "Forbidden: batch belongs to a different branch" }, { status: 403 });
+  }
+
+  if (!(await isFacultyAllowedToAccessBatch(ctx, batchId))) {
+    return NextResponse.json({ error: "Forbidden: you are not assigned to this batch" }, { status: 403 });
   }
 
   const day = new Date(date);

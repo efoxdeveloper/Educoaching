@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { getStorageProvider, buildStorageKey } from "@/lib/storage";
 import { formatDate } from "@/lib/utils";
 
+export type CertificateFieldPosition = {
+  key: string; // e.g. studentName, courseName, completionDate, certificateId, customText
+  x: number;
+  y: number;
+  fontSize?: number;
+  align?: "left" | "center" | "right";
+  color?: string;
+  customText?: string;
+};
+
 export interface CertificateData {
   instituteId: string;
   instituteName: string;
@@ -18,6 +28,8 @@ export interface CertificateData {
   signatoryTitle?: string | null;
   logoBuffer?: Buffer | null;
   signatureBuffer?: Buffer | null;
+  backgroundImageBuffer?: Buffer | null;
+  fieldPositions?: CertificateFieldPosition[] | null;
   certificateId?: string;
 }
 
@@ -70,146 +82,205 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
       const width = 841.89;
       const height = 595.28;
 
-      // Outer & Inner Decorative Borders
-      doc.rect(20, 20, width - 40, height - 40).lineWidth(3).strokeColor("#1E3A8A").stroke();
-      doc.rect(28, 28, width - 56, height - 56).lineWidth(1).strokeColor("#D97706").stroke();
-      doc.rect(34, 34, width - 68, height - 68).lineWidth(0.5).strokeColor("#CBD5E1").stroke();
-
-      // Corner Accents
-      const drawCorner = (x: number, y: number) => {
-        doc.rect(x, y, 16, 16).fill("#1E3A8A");
-      };
-      drawCorner(28, 28);
-      drawCorner(width - 44, 28);
-      drawCorner(28, height - 44);
-      drawCorner(width - 44, height - 44);
-
-      let currentY = 50;
-
-      // Optional Institute Logo
-      if (data.logoBuffer && data.logoBuffer.length > 0) {
+      // If custom background image provided, use it as full-bleed instead of programmatic layout
+      if (data.backgroundImageBuffer && data.backgroundImageBuffer.length > 0) {
         try {
-          doc.image(data.logoBuffer, width / 2 - 35, currentY, { width: 70, height: 45, fit: [70, 45], align: "center" });
-          currentY += 52;
+          doc.image(data.backgroundImageBuffer, 0, 0, { width, height });
         } catch {
-          // Fall back if image format invalid
-          currentY += 10;
+          // ignore invalid background
+        }
+        // Overlay fieldPositions on top of background
+        const fieldValues: Record<string, string> = {
+          studentName: data.studentName,
+          courseName: data.courseName,
+          completionDate: formatDate(data.completionDate),
+          instituteName: data.instituteName,
+          admissionDate: data.admissionDate ? formatDate(data.admissionDate) : "",
+          certificateId: data.certificateId ? data.certificateId.slice(-10).toUpperCase() : "",
+          certificateTitle: data.templateTitle,
+          signatoryName: data.signatoryName || "Authorized Signatory",
+          signatoryTitle: data.signatoryTitle || "Director / Academic Head",
+        };
+        const positions = data.fieldPositions && Array.isArray(data.fieldPositions) && data.fieldPositions.length > 0
+          ? data.fieldPositions
+          : [
+              { key: "studentName", x: width / 2 - 150, y: height / 2 - 20, fontSize: 26, align: "center" as const },
+              { key: "courseName", x: width / 2 - 150, y: height / 2 + 20, fontSize: 12, align: "center" as const },
+              { key: "completionDate", x: 60, y: height - 80, fontSize: 9.5, align: "left" as const },
+              { key: "certificateId", x: 60, y: height - 65, fontSize: 8.5, align: "left" as const },
+            ];
+
+        for (const fp of positions) {
+          let text = fieldValues[fp.key] ?? fp.customText ?? "";
+          // For generic bodyText field, substitute placeholders
+          if (fp.key === "bodyText" || fp.key === "customText") {
+            text = fp.customText ? substitutePlaceholders(fp.customText, {
+              studentName: data.studentName,
+              courseName: data.courseName,
+              completionDate: formatDate(data.completionDate),
+              instituteName: data.instituteName,
+              admissionDate: data.admissionDate ? formatDate(data.admissionDate) : undefined,
+              certificateId: data.certificateId,
+            }) : text;
+          }
+          if (!text) continue;
+          const fontSize = fp.fontSize || 12;
+          const align = fp.align || "left";
+          const color = fp.color || "#0F172A";
+          try {
+            doc.fontSize(fontSize).font("Helvetica-Bold").fillColor(color).text(text, fp.x, fp.y, { width: 300, align, lineBreak: false });
+          } catch {}
+        }
+
+        // If signature buffer exists, place near signatory if not covered by fieldPositions
+        const hasSigField = positions.some((p) => p.key === "signature");
+        if (!hasSigField && data.signatureBuffer && data.signatureBuffer.length > 0) {
+          try {
+            doc.image(data.signatureBuffer, width - 240, height - 110, { width: 140, height: 40, fit: [140, 40] });
+          } catch {}
         }
       } else {
-        currentY += 15;
-      }
+        // Outer & Inner Decorative Borders
+        doc.rect(20, 20, width - 40, height - 40).lineWidth(3).strokeColor("#1E3A8A").stroke();
+        doc.rect(28, 28, width - 56, height - 56).lineWidth(1).strokeColor("#D97706").stroke();
+        doc.rect(34, 34, width - 68, height - 68).lineWidth(0.5).strokeColor("#CBD5E1").stroke();
 
-      // Institute Name
-      doc
-        .fontSize(22)
-        .font("Helvetica-Bold")
-        .fillColor("#1E3A8A")
-        .text(data.instituteName.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
+        // Corner Accents
+        const drawCorner = (x: number, y: number) => {
+          doc.rect(x, y, 16, 16).fill("#1E3A8A");
+        };
+        drawCorner(28, 28);
+        drawCorner(width - 44, 28);
+        drawCorner(28, height - 44);
+        drawCorner(width - 44, height - 44);
 
-      currentY += 32;
+        let currentY = 50;
 
-      // Certificate Title
-      doc
-        .fontSize(16)
-        .font("Helvetica-Bold")
-        .fillColor("#D97706")
-        .text(data.templateTitle.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
+        // Optional Institute Logo
+        if (data.logoBuffer && data.logoBuffer.length > 0) {
+          try {
+            doc.image(data.logoBuffer, width / 2 - 35, currentY, { width: 70, height: 45, fit: [70, 45], align: "center" });
+            currentY += 52;
+          } catch {
+            // Fall back if image format invalid
+            currentY += 10;
+          }
+        } else {
+          currentY += 15;
+        }
 
-      currentY += 28;
+        // Institute Name
+        doc
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .fillColor("#1E3A8A")
+          .text(data.instituteName.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
 
-      // Subtitle presentation line
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .fillColor("#475569")
-        .text("PROUDLY PRESENTED TO", 50, currentY, { align: "center", width: width - 100 });
+        currentY += 32;
 
-      currentY += 20;
+        // Certificate Title
+        doc
+          .fontSize(16)
+          .font("Helvetica-Bold")
+          .fillColor("#D97706")
+          .text(data.templateTitle.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
 
-      // Student Name Banner
-      doc
-        .fontSize(26)
-        .font("Helvetica-Bold")
-        .fillColor("#0F172A")
-        .text(data.studentName, 50, currentY, { align: "center", width: width - 100 });
+        currentY += 28;
 
-      currentY += 36;
+        // Subtitle presentation line
+        doc
+          .fontSize(12)
+          .font("Helvetica")
+          .fillColor("#475569")
+          .text("PROUDLY PRESENTED TO", 50, currentY, { align: "center", width: width - 100 });
 
-      // Decorative Line Under Student Name
-      doc
-        .moveTo(width / 2 - 120, currentY)
-        .lineTo(width / 2 + 120, currentY)
-        .lineWidth(1.5)
-        .strokeColor("#D97706")
-        .stroke();
+        currentY += 20;
 
-      currentY += 18;
+        // Student Name Banner
+        doc
+          .fontSize(26)
+          .font("Helvetica-Bold")
+          .fillColor("#0F172A")
+          .text(data.studentName, 50, currentY, { align: "center", width: width - 100 });
 
-      // Dynamic Substituted Body Text
-      const formattedBody = substitutePlaceholders(data.templateBodyText, {
-        studentName: data.studentName,
-        courseName: data.courseName,
-        completionDate: formatDate(data.completionDate),
-        instituteName: data.instituteName,
-        admissionDate: data.admissionDate ? formatDate(data.admissionDate) : undefined,
-        certificateId: data.certificateId,
-      });
+        currentY += 36;
 
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .fillColor("#334155")
-        .text(formattedBody, 90, currentY, {
-          align: "center",
-          width: width - 180,
-          lineGap: 6,
+        // Decorative Line Under Student Name
+        doc
+          .moveTo(width / 2 - 120, currentY)
+          .lineTo(width / 2 + 120, currentY)
+          .lineWidth(1.5)
+          .strokeColor("#D97706")
+          .stroke();
+
+        currentY += 18;
+
+        // Dynamic Substituted Body Text
+        const formattedBody = substitutePlaceholders(data.templateBodyText, {
+          studentName: data.studentName,
+          courseName: data.courseName,
+          completionDate: formatDate(data.completionDate),
+          instituteName: data.instituteName,
+          admissionDate: data.admissionDate ? formatDate(data.admissionDate) : undefined,
+          certificateId: data.certificateId,
         });
 
-      // Bottom Section: Left (Date & Certificate ID), Right (Signature)
-      const bottomY = height - 125;
-
-      // Left: Date & ID
-      doc
-        .fontSize(9.5)
-        .font("Helvetica-Bold")
-        .fillColor("#1E3A8A")
-        .text(`Date of Issue: ${formatDate(data.completionDate)}`, 60, bottomY + 35);
-
-      if (data.certificateId) {
         doc
+          .fontSize(12)
+          .font("Helvetica")
+          .fillColor("#334155")
+          .text(formattedBody, 90, currentY, {
+            align: "center",
+            width: width - 180,
+            lineGap: 6,
+          });
+
+        // Bottom Section: Left (Date & Certificate ID), Right (Signature)
+        const bottomY = height - 125;
+
+        // Left: Date & ID
+        doc
+          .fontSize(9.5)
+          .font("Helvetica-Bold")
+          .fillColor("#1E3A8A")
+          .text(`Date of Issue: ${formatDate(data.completionDate)}`, 60, bottomY + 35);
+
+        if (data.certificateId) {
+          doc
+            .fontSize(8.5)
+            .font("Helvetica")
+            .fillColor("#64748B")
+            .text(`Certificate No: ${data.certificateId.slice(-10).toUpperCase()}`, 60, bottomY + 50);
+        }
+
+        // Right: Signatory Box
+        const sigX = width - 260;
+
+        if (data.signatureBuffer && data.signatureBuffer.length > 0) {
+          try {
+            doc.image(data.signatureBuffer, sigX + 20, bottomY, { width: 140, height: 40, fit: [140, 40], align: "center" });
+          } catch {
+            // Ignore invalid image
+          }
+        }
+
+        doc
+          .moveTo(sigX, bottomY + 45)
+          .lineTo(sigX + 190, bottomY + 45)
+          .lineWidth(1)
+          .strokeColor("#94A3B8")
+          .stroke();
+
+        doc
+          .fontSize(10)
+          .font("Helvetica-Bold")
+          .fillColor("#0F172A")
+          .text(data.signatoryName || "Authorized Signatory", sigX, bottomY + 50, { width: 190, align: "center" })
           .fontSize(8.5)
           .font("Helvetica")
           .fillColor("#64748B")
-          .text(`Certificate No: ${data.certificateId.slice(-10).toUpperCase()}`, 60, bottomY + 50);
+          .text(data.signatoryTitle || "Director / Academic Head", sigX, bottomY + 63, { width: 190, align: "center" });
       }
-
-      // Right: Signatory Box
-      const sigX = width - 260;
-
-      if (data.signatureBuffer && data.signatureBuffer.length > 0) {
-        try {
-          doc.image(data.signatureBuffer, sigX + 20, bottomY, { width: 140, height: 40, fit: [140, 40], align: "center" });
-        } catch {
-          // Ignore invalid image
-        }
-      }
-
-      doc
-        .moveTo(sigX, bottomY + 45)
-        .lineTo(sigX + 190, bottomY + 45)
-        .lineWidth(1)
-        .strokeColor("#94A3B8")
-        .stroke();
-
-      doc
-        .fontSize(10)
-        .font("Helvetica-Bold")
-        .fillColor("#0F172A")
-        .text(data.signatoryName || "Authorized Signatory", sigX, bottomY + 50, { width: 190, align: "center" })
-        .fontSize(8.5)
-        .font("Helvetica")
-        .fillColor("#64748B")
-        .text(data.signatoryTitle || "Director / Academic Head", sigX, bottomY + 63, { width: 190, align: "center" });
 
       doc.end();
     } catch (err) {
@@ -302,9 +373,9 @@ export async function generateAndIssueCertificate({
 
   // Load signature buffer if available
   let signatureBuffer: Buffer | null = null;
-  if (template.signatureFileAssetId) {
+  if ((template as any).signatureFileAssetId) {
     const sigAsset = await prisma.fileAsset.findFirst({
-      where: { id: template.signatureFileAssetId, instituteId },
+      where: { id: (template as any).signatureFileAssetId, instituteId },
     });
     if (sigAsset) {
       try {
@@ -312,6 +383,21 @@ export async function generateAndIssueCertificate({
       } catch {}
     }
   }
+
+  // Load background image buffer if available
+  let backgroundImageBuffer: Buffer | null = null;
+  if ((template as any).backgroundImageAssetId) {
+    const bgAsset = await prisma.fileAsset.findFirst({
+      where: { id: (template as any).backgroundImageAssetId, instituteId },
+    });
+    if (bgAsset) {
+      try {
+        backgroundImageBuffer = await storage.read(bgAsset.storageKey);
+      } catch {}
+    }
+  }
+
+  const fieldPositions = (template as any).fieldPositions as CertificateFieldPosition[] | null;
 
   const completionDate = student.courseEndDate ? new Date(student.courseEndDate) : new Date();
 
@@ -330,6 +416,8 @@ export async function generateAndIssueCertificate({
     signatoryTitle: template.signatoryTitle,
     logoBuffer,
     signatureBuffer,
+    backgroundImageBuffer,
+    fieldPositions,
     certificateId: existingIssued?.id || `CERT-${Date.now()}`,
   });
 

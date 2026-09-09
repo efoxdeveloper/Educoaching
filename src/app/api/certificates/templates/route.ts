@@ -29,6 +29,8 @@ export async function POST(req: Request) {
     bodyText,
     logoFileAssetId,
     signatureFileAssetId,
+    backgroundImageAssetId,
+    fieldPositions,
     signatoryName,
     signatoryTitle,
   } = body as {
@@ -37,6 +39,8 @@ export async function POST(req: Request) {
     bodyText?: string;
     logoFileAssetId?: string;
     signatureFileAssetId?: string;
+    backgroundImageAssetId?: string;
+    fieldPositions?: any;
     signatoryName?: string;
     signatoryTitle?: string;
   };
@@ -55,9 +59,11 @@ export async function POST(req: Request) {
         "This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.",
       logoFileAssetId: logoFileAssetId || null,
       signatureFileAssetId: signatureFileAssetId || null,
+      backgroundImageAssetId: backgroundImageAssetId || null,
+      fieldPositions: fieldPositions || undefined,
       signatoryName: signatoryName?.trim() || "Authorized Signatory",
       signatoryTitle: signatoryTitle?.trim() || "Director / Academic Head",
-    },
+    } as any,
   });
 
   await logAudit({

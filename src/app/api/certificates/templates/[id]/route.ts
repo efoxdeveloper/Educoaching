@@ -43,6 +43,8 @@ export async function PATCH(
     bodyText,
     logoFileAssetId,
     signatureFileAssetId,
+    backgroundImageAssetId,
+    fieldPositions,
     signatoryName,
     signatoryTitle,
   } = body;
@@ -55,9 +57,11 @@ export async function PATCH(
       ...(bodyText !== undefined ? { bodyText: String(bodyText).trim() } : {}),
       ...(logoFileAssetId !== undefined ? { logoFileAssetId: logoFileAssetId || null } : {}),
       ...(signatureFileAssetId !== undefined ? { signatureFileAssetId: signatureFileAssetId || null } : {}),
+      ...(backgroundImageAssetId !== undefined ? { backgroundImageAssetId: backgroundImageAssetId || null } : {}),
+      ...(fieldPositions !== undefined ? { fieldPositions: fieldPositions || undefined } : {}),
       ...(signatoryName !== undefined ? { signatoryName: signatoryName ? String(signatoryName).trim() : null } : {}),
       ...(signatoryTitle !== undefined ? { signatoryTitle: signatoryTitle ? String(signatoryTitle).trim() : null } : {}),
-    },
+    } as any,
   });
 
   await logAudit({

@@ -274,6 +274,38 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
             <Button
               variant="outlined"
               size="small"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (startDate) params.set("startDate", startDate);
+                if (endDate) params.set("endDate", endDate);
+                if (courseFilter !== "ALL") params.set("courseId", courseFilter);
+                if (batchFilter !== "ALL") params.set("batchId", batchFilter);
+                params.set("format", "xlsx");
+                window.location.href = `/api/reports/export?${params.toString()}`;
+              }}
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
+            >
+              Export Excel
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (startDate) params.set("startDate", startDate);
+                if (endDate) params.set("endDate", endDate);
+                if (courseFilter !== "ALL") params.set("courseId", courseFilter);
+                if (batchFilter !== "ALL") params.set("batchId", batchFilter);
+                params.set("format", "pdf");
+                window.location.href = `/api/reports/export?${params.toString()}`;
+              }}
+              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
+            >
+              Export PDF
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
               startIcon={<Printer size={14} />}
               onClick={() => window.print()}
               sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
