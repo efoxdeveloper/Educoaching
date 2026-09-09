@@ -30,7 +30,41 @@ export interface CertificateData {
   signatureBuffer?: Buffer | null;
   backgroundImageBuffer?: Buffer | null;
   fieldPositions?: CertificateFieldPosition[] | null;
+  style?: string | null;
   certificateId?: string;
+}
+
+function getStylePalette(style?: string | null) {
+  switch (style) {
+    case "elegant-gold":
+      return {
+        primary: "#92400E",
+        secondary: "#D97706",
+        lightBorder: "#FDE68A",
+        corner: "#B45309",
+        titleColor: "#92400E",
+        instituteColor: "#78350F",
+      };
+    case "minimal-grey":
+      return {
+        primary: "#334155",
+        secondary: "#64748B",
+        lightBorder: "#E2E8F0",
+        corner: "#475569",
+        titleColor: "#334155",
+        instituteColor: "#475569",
+      };
+    case "classic-blue":
+    default:
+      return {
+        primary: "#1E3A8A",
+        secondary: "#D97706",
+        lightBorder: "#CBD5E1",
+        corner: "#1E3A8A",
+        titleColor: "#D97706",
+        instituteColor: "#1E3A8A",
+      };
+  }
 }
 
 /**
@@ -140,14 +174,15 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
           } catch {}
         }
       } else {
-        // Outer & Inner Decorative Borders
-        doc.rect(20, 20, width - 40, height - 40).lineWidth(3).strokeColor("#1E3A8A").stroke();
-        doc.rect(28, 28, width - 56, height - 56).lineWidth(1).strokeColor("#D97706").stroke();
-        doc.rect(34, 34, width - 68, height - 68).lineWidth(0.5).strokeColor("#CBD5E1").stroke();
+        const palette = getStylePalette(data.style);
+        // Outer & Inner Decorative Borders — style-aware
+        doc.rect(20, 20, width - 40, height - 40).lineWidth(3).strokeColor(palette.primary).stroke();
+        doc.rect(28, 28, width - 56, height - 56).lineWidth(1).strokeColor(palette.secondary).stroke();
+        doc.rect(34, 34, width - 68, height - 68).lineWidth(0.5).strokeColor(palette.lightBorder).stroke();
 
         // Corner Accents
         const drawCorner = (x: number, y: number) => {
-          doc.rect(x, y, 16, 16).fill("#1E3A8A");
+          doc.rect(x, y, 16, 16).fill(palette.corner);
         };
         drawCorner(28, 28);
         drawCorner(width - 44, 28);
@@ -173,7 +208,7 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
         doc
           .fontSize(22)
           .font("Helvetica-Bold")
-          .fillColor("#1E3A8A")
+          .fillColor(palette.instituteColor)
           .text(data.instituteName.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
 
         currentY += 32;
@@ -182,7 +217,7 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
         doc
           .fontSize(16)
           .font("Helvetica-Bold")
-          .fillColor("#D97706")
+          .fillColor(palette.titleColor)
           .text(data.templateTitle.toUpperCase(), 50, currentY, { align: "center", width: width - 100 });
 
         currentY += 28;
@@ -210,7 +245,7 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
           .moveTo(width / 2 - 120, currentY)
           .lineTo(width / 2 + 120, currentY)
           .lineWidth(1.5)
-          .strokeColor("#D97706")
+          .strokeColor(palette.secondary)
           .stroke();
 
         currentY += 18;
@@ -242,7 +277,7 @@ export async function generateCertificatePdfBuffer(data: CertificateData): Promi
         doc
           .fontSize(9.5)
           .font("Helvetica-Bold")
-          .fillColor("#1E3A8A")
+          .fillColor(palette.primary)
           .text(`Date of Issue: ${formatDate(data.completionDate)}`, 60, bottomY + 35);
 
         if (data.certificateId) {
@@ -418,6 +453,7 @@ export async function generateAndIssueCertificate({
     signatureBuffer,
     backgroundImageBuffer,
     fieldPositions,
+    style: (template as any).style || "classic-blue",
     certificateId: existingIssued?.id || `CERT-${Date.now()}`,
   });
 

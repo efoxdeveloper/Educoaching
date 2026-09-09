@@ -47,8 +47,10 @@ export async function PATCH(
     fieldPositions,
     signatoryName,
     signatoryTitle,
+    style,
   } = body;
 
+  const validStyles = ["classic-blue", "elegant-gold", "minimal-grey"];
   const updated = await prisma.certificateTemplate.update({
     where: { id: params.id },
     data: {
@@ -59,6 +61,7 @@ export async function PATCH(
       ...(signatureFileAssetId !== undefined ? { signatureFileAssetId: signatureFileAssetId || null } : {}),
       ...(backgroundImageAssetId !== undefined ? { backgroundImageAssetId: backgroundImageAssetId || null } : {}),
       ...(fieldPositions !== undefined ? { fieldPositions: fieldPositions || undefined } : {}),
+      ...(style !== undefined ? { style: validStyles.includes(String(style)) ? String(style) : "classic-blue" } : {}),
       ...(signatoryName !== undefined ? { signatoryName: signatoryName ? String(signatoryName).trim() : null } : {}),
       ...(signatoryTitle !== undefined ? { signatoryTitle: signatoryTitle ? String(signatoryTitle).trim() : null } : {}),
     } as any,

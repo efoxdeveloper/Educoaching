@@ -14,15 +14,15 @@ export async function POST(req: Request) {
     bodyText,
     signatoryName,
     signatoryTitle,
-    backgroundImageAssetId,
-    fieldPositions,
+    logoFileAssetId,
+    style,
   } = body as {
     title?: string;
     bodyText?: string;
     signatoryName?: string | null;
     signatoryTitle?: string | null;
-    backgroundImageAssetId?: string | null;
-    fieldPositions?: any;
+    logoFileAssetId?: string | null;
+    style?: string | null;
   };
 
   // Load institute for name
@@ -31,20 +31,28 @@ export async function POST(req: Request) {
     select: { name: true },
   });
 
-  let backgroundImageBuffer: Buffer | null = null;
-  if (backgroundImageAssetId) {
+  let logoBuffer: Buffer | null = null;
+  if (logoFileAssetId) {
     const asset = await prisma.fileAsset.findFirst({
-      where: { id: backgroundImageAssetId, instituteId: ctx.instituteId },
+      where: { id: logoFileAssetId, instituteId: ctx.instituteId },
     });
     if (asset) {
       try {
-        backgroundImageBuffer = await getStorageProvider().read(asset.storageKey);
+        logoBuffer = await getStorageProvider().read(asset.storageKey);
       } catch {}
     }
   }
-
-  // Also load signature if needed for preview - not required but could include
-  // For preview we use dummy signature if template has one - skip for simplicity
+  if (!logoBuffer) {
+    const instLogo = await prisma.fileAsset.findFirst({
+      where: { instituteId: ctx.instituteId, category: "INSTITUTE_LOGO" },
+      orderBy: { createdAt: "desc" },
+    });
+    if (instLogo) {
+      try {
+        logoBuffer = await getStorageProvider().read(instLogo.storageKey);
+      } catch {}
+    }
+  }
 
   const dummyData = {
     instituteId: ctx.instituteId,
@@ -56,13 +64,13 @@ export async function POST(req: Request) {
       "This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.",
     studentId: "preview-student",
     studentName: "Aarav Sharma",
-    courseName: "Full Stack Development",
+    courseName: "Full Stack Web Development",
     completionDate: new Date(),
     admissionDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
     signatoryName: signatoryName || "Authorized Signatory",
     signatoryTitle: signatoryTitle || "Director / Academic Head",
-    backgroundImageBuffer,
-    fieldPositions: Array.isArray(fieldPositions) ? fieldPositions : null,
+    logoBuffer,
+    style: style || "classic-blue",
     certificateId: "CERT-DEMO01",
   };
 

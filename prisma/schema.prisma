@@ -1016,6 +1016,7 @@ model CertificateTemplate {
   name                    String
   title                   String              @default("Certificate of Completion")
   bodyText                String              @default("This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.")
+  style                   String              @default("classic-blue")
   logoFileAssetId         String?
   signatureFileAssetId    String?
   backgroundImageAssetId  String?

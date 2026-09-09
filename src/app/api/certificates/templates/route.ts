@@ -33,6 +33,7 @@ export async function POST(req: Request) {
     fieldPositions,
     signatoryName,
     signatoryTitle,
+    style,
   } = body as {
     name?: string;
     title?: string;
@@ -43,12 +44,15 @@ export async function POST(req: Request) {
     fieldPositions?: any;
     signatoryName?: string;
     signatoryTitle?: string;
+    style?: string;
   };
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Template name is required" }, { status: 400 });
   }
 
+  const validStyles = ["classic-blue", "elegant-gold", "minimal-grey"];
+  const chosenStyle = style && validStyles.includes(style) ? style : "classic-blue";
   const template = await prisma.certificateTemplate.create({
     data: {
       instituteId: ctx.instituteId,
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
       bodyText:
         bodyText?.trim() ||
         "This is to certify that {studentName} has successfully completed the course {courseName} on {completionDate} at {instituteName}.",
+      style: chosenStyle,
       logoFileAssetId: logoFileAssetId || null,
       signatureFileAssetId: signatureFileAssetId || null,
       backgroundImageAssetId: backgroundImageAssetId || null,
