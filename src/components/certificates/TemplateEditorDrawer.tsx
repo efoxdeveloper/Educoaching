@@ -52,6 +52,76 @@ export function TemplateEditorDrawer({
     (template as any)?.fieldPositions || []
   );
   const [bgPreviewUrl, setBgPreviewUrl] = useState<string | null>(null);
+  const [bgNaturalSize, setBgNaturalSize] = useState<{ w: number; h: number } | null>(null);
+  const [samplePdfUrl, setSamplePdfUrl] = useState<string | null>(null);
+  const [generatingPreview, setGeneratingPreview] = useState(false);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // A4 landscape 841.89 x 595.28 => ratio 1.414
+  const PDF_W = 841.89;
+  const PDF_H = 595.28;
+  const PREVIEW_W = 700;
+  const PREVIEW_H = 495;
+  const SCALE = PREVIEW_W / PDF_W;
+
+  const getSampleText = (key: string, customText?: string) => {
+    const map: Record<string, string> = {
+      studentName: "Aarav Sharma",
+      courseName: "Full Stack Development",
+      completionDate: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      certificateId: "CERT-DEMO01",
+      instituteName: "Vidyalaya Institute",
+      admissionDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      certificateTitle: title || "Certificate of Completion",
+      signatoryName: signatoryName || "Authorized Signatory",
+      signatoryTitle: signatoryTitle || "Director / Academic Head",
+    };
+    if (customText) {
+      let t = customText;
+      Object.entries(map).forEach(([k, v]) => {
+        t = t.replace(new RegExp(`\\{${k}\\}`, "gi"), v);
+      });
+      return t || customText;
+    }
+    return map[key] ?? key;
+  };
+
+  const handleGenerateSample = async () => {
+    setGeneratingPreview(true);
+    setSamplePdfUrl(null);
+    try {
+      const res = await fetch("/api/certificates/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          bodyText,
+          signatoryName,
+          signatoryTitle,
+          backgroundImageAssetId,
+          fieldPositions,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to generate preview");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setSamplePdfUrl(url);
+      // also open in new tab as fallback
+      // window.open(url, "_blank");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to generate preview");
+    } finally {
+      setGeneratingPreview(false);
+    }
+  };
 
   const [uploadingSig, setUploadingSig] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
@@ -70,6 +140,11 @@ export function TemplateEditorDrawer({
       setFieldPositions((template as any).fieldPositions || []);
       if ((template as any).backgroundImageAssetId) setBgPreviewUrl(`/api/files/${(template as any).backgroundImageAssetId}`);
       else setBgPreviewUrl(null);
+      setBgNaturalSize(null);
+      setSamplePdfUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     } else {
       setName("");
       setTitle("Certificate of Completion");
@@ -80,8 +155,19 @@ export function TemplateEditorDrawer({
       setBackgroundImageAssetId(null);
       setFieldPositions([]);
       setBgPreviewUrl(null);
+      setBgNaturalSize(null);
+      setSamplePdfUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     }
   }, [template, open]);
+
+  useEffect(() => {
+    return () => {
+      if (samplePdfUrl) URL.revokeObjectURL(samplePdfUrl);
+    };
+  }, [samplePdfUrl]);
 
   const insertTag = (tag: string) => {
     setBodyText((prev) => `${prev} ${tag}`);
@@ -336,25 +422,142 @@ export function TemplateEditorDrawer({
             </div>
             {backgroundImageAssetId && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200"><Check size={12} /> Attached</span>}
           </div>
-          {bgPreviewUrl && <img src={bgPreviewUrl} alt="Background preview" className="w-full h-32 object-contain rounded-lg border bg-white" />}
           <div className="flex items-center gap-2">
             <input type="file" ref={bgInputRef} accept="image/png, image/jpeg" onChange={handleBackgroundUpload} className="hidden" />
             <button type="button" disabled={uploadingBg} onClick={() => bgInputRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-white px-3 py-1.5 text-xs font-semibold text-scholar-700 hover:bg-scholar-50 transition-colors">
               {uploadingBg ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
               <span>{backgroundImageAssetId ? "Change Background" : "Upload Background Image"}</span>
             </button>
-            {backgroundImageAssetId && <button type="button" onClick={() => { setBackgroundImageAssetId(null); setBgPreviewUrl(null); }} className="text-xs text-danger-600 hover:underline font-semibold">Remove</button>}
+            {backgroundImageAssetId && <button type="button" onClick={() => { setBackgroundImageAssetId(null); setBgPreviewUrl(null); setBgNaturalSize(null); setSamplePdfUrl(null); }} className="text-xs text-danger-600 hover:underline font-semibold">Remove</button>}
           </div>
+          {bgPreviewUrl && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-scholar-700">Live Preview — drag labels to position (A4 landscape 841.89×595.28)</span>
+                {bgNaturalSize &&
+                  (() => {
+                    const ratio = bgNaturalSize.w / bgNaturalSize.h;
+                    const target = PDF_W / PDF_H;
+                    const diff = Math.abs(ratio - target) / target;
+                    if (diff > 0.06) {
+                      return (
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                          This image will be cropped/stretched to fit — recommended ~1684×1191px (1.414:1)
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+              </div>
+              <div
+                ref={previewRef}
+                className="relative overflow-hidden rounded-xl border-2 border-scholar-300 bg-white shadow-sm select-none"
+                style={{ width: PREVIEW_W, height: PREVIEW_H, maxWidth: "100%" }}
+              >
+                <img
+                  src={bgPreviewUrl}
+                  alt="Certificate background"
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    setBgNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+                  }}
+                  className="absolute inset-0 h-full w-full"
+                  style={{ objectFit: "cover" }}
+                  draggable={false}
+                />
+                {fieldPositions.map((fp, idx) => {
+                  const xPx = fp.x * SCALE;
+                  const yPx = fp.y * SCALE;
+                  const fontPx = (fp.fontSize || 12) * SCALE;
+                  const isDragging = draggingIdx === idx;
+                  return (
+                    <div
+                      key={idx}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                        setDraggingIdx(idx);
+                      }}
+                      onPointerMove={(e) => {
+                        if (draggingIdx !== idx) return;
+                        const rect = previewRef.current?.getBoundingClientRect();
+                        if (!rect) return;
+                        const newXpx = e.clientX - rect.left;
+                        const newYpx = e.clientY - rect.top;
+                        const clampedX = Math.max(0, Math.min(PREVIEW_W - 10, newXpx));
+                        const clampedY = Math.max(0, Math.min(PREVIEW_H - 10, newYpx));
+                        const newX = Math.round(clampedX / SCALE);
+                        const newY = Math.round(clampedY / SCALE);
+                        updateField(idx, { x: newX, y: newY });
+                      }}
+                      onPointerUp={(e) => {
+                        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                        setDraggingIdx(null);
+                      }}
+                      className={`absolute cursor-move rounded px-1 py-0.5 text-xs font-bold leading-none shadow-sm ring-1 ${isDragging ? "bg-amber-300 ring-amber-500 z-10" : "bg-white/85 ring-scholar-300 backdrop-blur-sm"}`}
+                      style={{
+                        left: xPx,
+                        top: yPx,
+                        fontSize: fontPx,
+                        color: fp.color || "#0F172A",
+                        textAlign: (fp.align as any) || "left",
+                        maxWidth: 300 * SCALE,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        userSelect: "none",
+                        touchAction: "none",
+                      }}
+                      title={`${fp.key} (${fp.x}, ${fp.y}) — drag to reposition`}
+                    >
+                      {getSampleText(fp.key, fp.customText)}
+                    </div>
+                  );
+                })}
+                {fieldPositions.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+                    <span className="text-xs font-semibold text-scholar-600 bg-white px-3 py-1.5 rounded-full shadow">No fields — click “Add Field” below</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-scholar-500">Preview at {PREVIEW_W}×{PREVIEW_H}px (~A4 landscape 1.414:1, recommended 1684×1191px). Coordinates in PDF points (0–842, 0–595). Drag labels or use numeric inputs below — two-way synced.</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleGenerateSample}
+                  disabled={generatingPreview}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-scholar-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-scholar-800 disabled:opacity-50"
+                >
+                  {generatingPreview ? <Loader2 size={13} className="animate-spin" /> : <Award size={13} />}
+                  <span>{generatingPreview ? "Generating..." : "Generate Sample Preview (PDF)"}</span>
+                </button>
+                {samplePdfUrl && (
+                  <button
+                    type="button"
+                    onClick={() => window.open(samplePdfUrl, "_blank")}
+                    className="inline-flex items-center gap-1 rounded-xl border border-scholar-200 bg-white px-3 py-2 text-xs font-semibold text-scholar-700 hover:bg-scholar-50"
+                  >
+                    Open in new tab
+                  </button>
+                )}
+              </div>
+              {samplePdfUrl && (
+                <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+                  <iframe src={samplePdfUrl} title="Sample certificate PDF" className="h-[360px] w-full" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Field Positions Editor */}
+        {/* Field Positions Editor — numeric fallback / fine-tuning */}
         {backgroundImageAssetId && (
           <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-900">Field Positions on Background</span>
+              <span className="text-xs font-bold text-amber-900">Field Positions (numeric fine-tuning)</span>
               <button type="button" onClick={addField} className="text-xs font-bold text-scholar-700 bg-white border px-2 py-1 rounded-lg hover:bg-scholar-50">+ Add Field</button>
             </div>
-            <p className="text-[11px] text-amber-800">Place editable fields (student name, course, date, certificate ID, custom text) by setting X/Y coordinates (0–842 for landscape A4 width, 0–595 height), font size and alignment. Preview overlay on background above.</p>
+            <p className="text-[11px] text-amber-800">Drag in preview above or edit X/Y directly (0–842 X, 0–595 Y). Changes sync both ways.</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {fieldPositions.map((fp, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-1.5 items-end bg-white p-2 rounded-lg border">
