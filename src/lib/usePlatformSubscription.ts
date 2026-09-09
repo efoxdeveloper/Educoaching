@@ -88,7 +88,12 @@ export function usePlatformSubscription() {
         rzp.open();
       });
     } catch (e) {
-      setPayError(e instanceof Error ? e.message : "Payment failed. Please try again.");
+      const raw = e instanceof Error ? e.message : "Payment failed. Please try again.";
+      if (raw.toLowerCase().includes("razorpay is not configured")) {
+        setPayError("Online payment is temporarily unavailable — contact support to renew");
+      } else {
+        setPayError(raw);
+      }
     } finally {
       setProcessing(false);
     }

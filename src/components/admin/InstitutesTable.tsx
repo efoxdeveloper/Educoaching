@@ -13,6 +13,8 @@ import {
   Phone,
   Mail,
   MapPin,
+  RefreshCw,
+  CreditCard,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -63,6 +65,10 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
     institute: AdminInstituteDetail;
     action: "SUSPEND" | "REACTIVATE" | "GRANT";
   } | null>(null);
+  const [renewTarget, setRenewTarget] = useState<AdminInstituteDetail | null>(null);
+  const [renewPlan, setRenewPlan] = useState<"MONTHLY" | "QUARTERLY" | "YEARLY">("MONTHLY");
+  const [renewNote, setRenewNote] = useState("");
+  const [renewLoading, setRenewLoading] = useState(false);
 
   const filtered = useMemo(() => {
     return institutes.filter((i) => {
@@ -120,6 +126,27 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
       alert("Error starting impersonation.");
     } finally {
       setImpersonatingId(null);
+    }
+  };
+
+  const executeRenew = async () => {
+    if (!renewTarget) return;
+    setRenewLoading(true);
+    try {
+      const res = await fetch(`/api/admin/institutes/${renewTarget.id}/renew`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: renewPlan, note: renewNote }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to renew subscription");
+      setRenewTarget(null);
+      setRenewNote("");
+      router.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to renew");
+    } finally {
+      setRenewLoading(false);
     }
   };
 
@@ -318,6 +345,21 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
                         <Button
                           size="small"
                           variant="outlined"
+                          startIcon={<CreditCard size={13} />}
+                          onClick={() => {
+                            setRenewTarget(i);
+                            setRenewPlan("MONTHLY");
+                            setRenewNote("");
+                          }}
+                          sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.25, borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", "&:hover": { bgcolor: "#F8FAFC" } }}
+                          title="Renew subscription manually (offline) — e.g. cash payment"
+                        >
+                          Renew manually
+                        </Button>
+
+                        <Button
+                          size="small"
+                          variant="outlined"
                           startIcon={i.status === "ACTIVE" ? <Ban size={13} /> : <CheckCircle2 size={13} />}
                           onClick={() =>
                             setStatusTarget({
@@ -427,6 +469,83 @@ export function InstitutesTable({ institutes }: { institutes: AdminInstituteDeta
         }
         loading={!!busyId}
       />
+
+      {/* Manual Renewal Dialog (offline fallback when Razorpay not configured) */}
+      {renewTarget && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            bgcolor: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1400,
+            p: 2,
+          }}
+          onClick={() => !renewLoading && setRenewTarget(null)}
+        >
+          <Paper
+            onClick={(e) => e.stopPropagation()}
+            sx={{ p: 2.5, borderRadius: "16px", width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                <RefreshCw size={16} /> Renew manually — {renewTarget.name}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#64748b", display: "block", mt: 0.5 }}>
+                Current: {renewTarget.billingCycle} · {renewTarget.platformSubscriptionStatus} · renews {formatDate(renewTarget.currentPeriodEnd ?? renewTarget.trialEndsAt)}
+              </Typography>
+            </Box>
+            <FormControl size="small" fullWidth>
+              <InputLabel id="renew-plan-label">Plan</InputLabel>
+              <Select
+                labelId="renew-plan-label"
+                label="Plan"
+                value={renewPlan}
+                onChange={(e) => setRenewPlan(e.target.value as any)}
+                sx={{ borderRadius: "12px", bgcolor: "white" }}
+              >
+                <MenuItem value="MONTHLY">Monthly — ₹1,999 / month</MenuItem>
+                <MenuItem value="QUARTERLY">Quarterly — ₹5,397 / 3 months</MenuItem>
+                <MenuItem value="YEARLY">Yearly — ₹19,190 / year</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              size="small"
+              label="Note (optional)"
+              placeholder="e.g. cash received, UPI ref, offline payment"
+              value={renewNote}
+              onChange={(e) => setRenewNote(e.target.value)}
+              multiline
+              minRows={2}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+            />
+            <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "11px" }}>
+              This will set status to ACTIVE and extend the period using addMonths() (1/3/12 months). Mirrors the student Renewal cash flow.
+            </Typography>
+            <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
+              <Button
+                variant="outlined"
+                onClick={() => setRenewTarget(null)}
+                disabled={renewLoading}
+                sx={{ borderRadius: "12px", textTransform: "none" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={executeRenew}
+                disabled={renewLoading}
+                startIcon={renewLoading ? <CircularProgress size={14} color="inherit" /> : <CreditCard size={14} />}
+                sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", boxShadow: "none" }}
+              >
+                {renewLoading ? "Renewing..." : "Confirm Renewal"}
+              </Button>
+            </Stack>
+          </Paper>
+        </Box>
+      )}
     </Card>
   );
 }
