@@ -20,6 +20,20 @@ body {
   scrollbar-color: #D6E0EB transparent;
 }
 
+/* Responsive layout: prevent page-level horizontal scroll, tables scroll internally */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.MuiTableContainer-root {
+  width: 100% !important;
+  max-width: 100%;
+  overflow-x: auto !important;
+}
+.MuiPaper-root {
+  max-width: 100%;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

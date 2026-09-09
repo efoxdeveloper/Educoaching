@@ -186,6 +186,9 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const allowedList =
     ROLE_ALLOWED_ROUTES[effectiveRole] || (effectiveRole === "PARENT" ? ["/portal"] : ROLE_ALLOWED_ROUTES["STAFF"]);
 
+  const STAFF_ROLES = ["STAFF", "FACULTY", "COUNSELLOR", "ACCOUNTANT", "TECHNICIAN"];
+  const isStaffRole = STAFF_ROLES.includes(effectiveRole);
+
   const visibleNav = nav
     .filter((item) => {
       if (item.featureKey && !features[item.featureKey]) return false;
@@ -196,7 +199,15 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       if (effectiveRole === "STUDENT" || effectiveRole === "PARENT") {
         return item.href === "/portal";
       }
-      // For staff roles, gate item if specific permission required
+      // For staff roles, permission is the single source of truth
+      if (isStaffRole) {
+        if (item.permission) {
+          return hasPermission({ role: effectiveRole, permissions: effectivePermissions }, item.permission);
+        }
+        // Items without permission (dashboard, portal, support) are visible to all staff
+        return true;
+      }
+      // Fallback for any other role
       if (item.permission) {
         if (!hasPermission({ role: effectiveRole, permissions: effectivePermissions }, item.permission)) {
           return false;

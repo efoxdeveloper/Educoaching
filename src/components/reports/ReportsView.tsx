@@ -158,9 +158,50 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
         variant="outlined"
         sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "0 1px 2px rgba(13,26,42,0.04)", display: "flex", flexDirection: "column", gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}
       >
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", xl: "row" }, gap: 2, alignItems: { xl: "center" }, justifyContent: "space-between", width: "100%", maxWidth: "100%", minWidth: 0 }}>
-          {/* Date Presets — MUI Chip group + TextField for custom range */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, maxWidth: "100%" }}>
+        {/* Row 1: Filters — Course, Batch, Timeframe grouped */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" }, gap: 1.5 }}
+          useFlexGap
+        >
+          <FormControl size="small" sx={{ flex: "1 1 140px", minWidth: { xs: "100%", sm: 150 } }}>
+            <InputLabel id="reports-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
+            <Select
+              labelId="reports-course-label"
+              label="Course"
+              value={courseFilter}
+              onChange={(e) => handleCourseChange(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500, height: 40 }}
+            >
+              <MenuItem value="ALL">All Courses</MenuItem>
+              {data.meta.courses.map((c) => (
+                <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ flex: "1 1 140px", minWidth: { xs: "100%", sm: 150 } }}>
+            <InputLabel id="reports-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
+            <Select
+              labelId="reports-batch-label"
+              label="Batch"
+              value={batchFilter}
+              onChange={(e) => handleBatchChange(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500, height: 40 }}
+            >
+              <MenuItem value="ALL">All Batches</MenuItem>
+              {availableBatches.map((b) => (
+                <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, flex: { xs: "1 1 100%", sm: "1 1 auto" } }}>
             <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
               <Calendar size={13} /> Timeframe:
             </Typography>
@@ -192,15 +233,14 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
               ))}
             </Paper>
 
-            {/* Custom Range Form — MUI TextField */}
-            <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.75, ml: { sm: 0.5 } }}>
+            <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.75 }}>
               <TextField
                 size="small"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 28 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
               />
               <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>to</Typography>
               <TextField
@@ -209,111 +249,80 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 28 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
               />
               <Button
                 type="submit"
                 variant="contained"
                 size="small"
                 disabled={!startDate || !endDate}
-                sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, minHeight: 28, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+                sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, minHeight: 32, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
               >
                 Apply
               </Button>
             </Box>
           </Box>
+        </Stack>
 
-          {/* Right Action Tools */}
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", alignItems: "center" }}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="reports-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
-              <Select
-                labelId="reports-course-label"
-                label="Course"
-                value={courseFilter}
-                onChange={(e) => handleCourseChange(e.target.value)}
-                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
-              >
-                <MenuItem value="ALL">All Courses</MenuItem>
-                {data.meta.courses.map((c) => (
-                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>
-                    {c.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        {/* Row 2: Actions — Export/Print grouped */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" }, gap: 1 }}
+          useFlexGap
+        >
+          <IconButton
+            size="small"
+            onClick={() => applyFilters(datePreset)}
+            disabled={isPending}
+            sx={{ width: { xs: "100%", sm: 40 }, height: 36, borderRadius: "12px", border: "1px solid #D6E0EB", bgcolor: "white", color: "#64748b", "&:hover": { color: "#1E3A5F", bgcolor: "#F8FAFC" } }}
+            title="Refresh reports data"
+          >
+            {isPending ? <CircularProgress size={14} sx={{ color: "#4E6E93" }} /> : <RotateCw size={14} />}
+          </IconButton>
 
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="reports-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
-              <Select
-                labelId="reports-batch-label"
-                label="Batch"
-                value={batchFilter}
-                onChange={(e) => handleBatchChange(e.target.value)}
-                sx={{ borderRadius: "12px", bgcolor: "white", fontSize: "0.75rem", fontWeight: 500 }}
-              >
-                <MenuItem value="ALL">All Batches</MenuItem>
-                {availableBatches.map((b) => (
-                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>
-                    {b.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <IconButton
-              size="small"
-              onClick={() => applyFilters(datePreset)}
-              disabled={isPending}
-              sx={{ width: 32, height: 32, borderRadius: "12px", border: "1px solid #D6E0EB", bgcolor: "white", color: "#64748b", "&:hover": { color: "#1E3A5F", bgcolor: "#F8FAFC" } }}
-              title="Refresh reports data"
-            >
-              {isPending ? <CircularProgress size={14} sx={{ color: "#4E6E93" }} /> : <RotateCw size={14} />}
-            </IconButton>
-
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (startDate) params.set("startDate", startDate);
-                if (endDate) params.set("endDate", endDate);
-                if (courseFilter !== "ALL") params.set("courseId", courseFilter);
-                if (batchFilter !== "ALL") params.set("batchId", batchFilter);
-                params.set("format", "xlsx");
-                window.location.href = `/api/reports/export?${params.toString()}`;
-              }}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
-            >
-              Export Excel
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (startDate) params.set("startDate", startDate);
-                if (endDate) params.set("endDate", endDate);
-                if (courseFilter !== "ALL") params.set("courseId", courseFilter);
-                if (batchFilter !== "ALL") params.set("batchId", batchFilter);
-                params.set("format", "pdf");
-                window.location.href = `/api/reports/export?${params.toString()}`;
-              }}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
-            >
-              Export PDF
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Printer size={14} />}
-              onClick={() => window.print()}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", bgcolor: "white", "&:hover": { bgcolor: "#F8FAFC" } }}
-            >
-              Print
-            </Button>
-          </Stack>
-        </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (startDate) params.set("startDate", startDate);
+              if (endDate) params.set("endDate", endDate);
+              if (courseFilter !== "ALL") params.set("courseId", courseFilter);
+              if (batchFilter !== "ALL") params.set("batchId", batchFilter);
+              params.set("format", "xlsx");
+              window.location.href = `/api/reports/export?${params.toString()}`;
+            }}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#F8FAFC" } }}
+          >
+            Export Excel
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (startDate) params.set("startDate", startDate);
+              if (endDate) params.set("endDate", endDate);
+              if (courseFilter !== "ALL") params.set("courseId", courseFilter);
+              if (batchFilter !== "ALL") params.set("batchId", batchFilter);
+              params.set("format", "pdf");
+              window.location.href = `/api/reports/export?${params.toString()}`;
+            }}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", bgcolor: "white", height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#F8FAFC" } }}
+          >
+            Export PDF
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Printer size={14} />}
+            onClick={() => window.print()}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", bgcolor: "white", height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#F8FAFC" } }}
+          >
+            Print
+          </Button>
+        </Stack>
 
         {/* Tab Navigation Bar — MUI Tabs */}
         <Box sx={{ width: "100%", maxWidth: "100%", overflowX: "auto", borderTop: "1px solid #D6E0EB", pt: 1, "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>

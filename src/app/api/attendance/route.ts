@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute } from "@/lib/tenant";
+import { requireInstitute, requirePermission } from "@/lib/tenant";
 import { sendAbsentNotification, sendLateNotification } from "@/lib/whatsapp";
 
 async function isFacultyAllowedToAccessBatch(ctx: Awaited<ReturnType<typeof requireInstitute>>, batchId: string): Promise<boolean> {
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
 
 // Bulk upsert attendance for a batch/date
 export async function POST(req: Request) {
-  const ctx = await requireInstitute();
+  const ctx = await requirePermission("attendance:write");
   if ("error" in ctx) return ctx.error;
 
   const body = await req.json();

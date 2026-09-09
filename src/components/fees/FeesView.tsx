@@ -131,179 +131,190 @@ export function FeesView({ students, courses = [], batches = [] }: { students: S
         <KpiCard label="Renewals Due" value={renewalsDue.toString()} iconName="RefreshCw" accent="marigold" trendTone={renewalsDue > 0 ? "danger" : "success"} trend={renewalsDue > 0 ? "Demo ended or subscription lapsed" : "All caught up"} />
       </Box>
 
-      <Card sx={{ p: 2.5 }}>
-        <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2, alignItems: { lg: "center" }, justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
-            <TextField
-              size="small"
-              placeholder="Search by student name"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search size={16} style={{ color: "#7E9BBC" }} />
-                    </InputAdornment>
-                  ),
-                },
+      <Card sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, width: "100%", minWidth: 0 }}>
+        {/* Row 1: Filters — consistent height, gap, alignment */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" }, gap: 1.5 }}
+          useFlexGap
+        >
+          <TextField
+            size="small"
+            placeholder="Search by student name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} style={{ color: "#7E9BBC" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: { sm: "1 1 200px" }, minWidth: { xs: "100%", sm: 200 }, maxWidth: { sm: 260 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem", height: 40 } }}
+          />
+          <FormControl size="small" sx={{ flex: "1 1 130px", minWidth: { xs: "100%", sm: 140 } }}>
+            <InputLabel id="fee-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
+            <Select
+              labelId="fee-status-label"
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600, height: 40 }}
+            >
+              <MenuItem value="">All statuses</MenuItem>
+              <MenuItem value="PAID">Paid</MenuItem>
+              <MenuItem value="PARTIAL">Partial</MenuItem>
+              <MenuItem value="PENDING">Pending</MenuItem>
+              <MenuItem value="OVERDUE">Overdue</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ flex: "1 1 150px", minWidth: { xs: "100%", sm: 150 } }}>
+            <InputLabel id="fee-plan-label" sx={{ fontSize: "0.75rem" }}>Payment Plan</InputLabel>
+            <Select
+              labelId="fee-plan-label"
+              label="Payment Plan"
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600, height: 40 }}
+            >
+              <MenuItem value="">All Payment Plans</MenuItem>
+              <MenuItem value="INSTALLMENTS">Installment Plan</MenuItem>
+              <MenuItem value="ONE_TIME">One-Time Fee</MenuItem>
+              <MenuItem value="QUARTERLY">Quarterly Recurring</MenuItem>
+              <MenuItem value="MONTHLY">Monthly Recurring</MenuItem>
+              <MenuItem value="DEMO">Free 7-Day Demo</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ flex: "1 1 130px", minWidth: { xs: "100%", sm: 140 } }}>
+            <InputLabel id="fee-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
+            <Select
+              labelId="fee-course-label"
+              label="Course"
+              value={courseFilter}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCourseFilter(v);
+                setBatchFilter("");
               }}
-              sx={{ flex: 1, maxWidth: { sm: 260 }, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.875rem" } }}
-            />
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="fee-status-label" sx={{ fontSize: "0.75rem" }}>Status</InputLabel>
-              <Select
-                labelId="fee-status-label"
-                label="Status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
-              >
-                <MenuItem value="">All statuses</MenuItem>
-                <MenuItem value="PAID">Paid</MenuItem>
-                <MenuItem value="PARTIAL">Partial</MenuItem>
-                <MenuItem value="PENDING">Pending</MenuItem>
-                <MenuItem value="OVERDUE">Overdue</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 170 }}>
-              <InputLabel id="fee-plan-label" sx={{ fontSize: "0.75rem" }}>Payment Plan</InputLabel>
-              <Select
-                labelId="fee-plan-label"
-                label="Payment Plan"
-                value={planFilter}
-                onChange={(e) => setPlanFilter(e.target.value)}
-                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
-              >
-                <MenuItem value="">All Payment Plans</MenuItem>
-                <MenuItem value="INSTALLMENTS">Installment Plan</MenuItem>
-                <MenuItem value="ONE_TIME">One-Time Fee</MenuItem>
-                <MenuItem value="QUARTERLY">Quarterly Recurring</MenuItem>
-                <MenuItem value="MONTHLY">Monthly Recurring</MenuItem>
-                <MenuItem value="DEMO">Free 7-Day Demo</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="fee-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
-              <Select
-                labelId="fee-course-label"
-                label="Course"
-                value={courseFilter}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setCourseFilter(v);
-                  setBatchFilter("");
-                }}
-                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
-              >
-                <MenuItem value="">All Courses</MenuItem>
-                {courses.map((c) => (
-                  <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>{c.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="fee-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
-              <Select
-                labelId="fee-batch-label"
-                label="Batch"
-                value={batchFilter}
-                onChange={(e) => setBatchFilter(e.target.value)}
-                disabled={availableBatches.length === 0}
-                sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
-              >
-                <MenuItem value="">All Batches</MenuItem>
-                {availableBatches.map((b) => (
-                  <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>{b.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+              sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600, height: 40 }}
+            >
+              <MenuItem value="">All Courses</MenuItem>
+              {courses.map((c) => (
+                <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.75rem" }}>{c.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ flex: "1 1 130px", minWidth: { xs: "100%", sm: 140 } }}>
+            <InputLabel id="fee-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
+            <Select
+              labelId="fee-batch-label"
+              label="Batch"
+              value={batchFilter}
+              onChange={(e) => setBatchFilter(e.target.value)}
+              disabled={availableBatches.length === 0}
+              sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600, height: 40 }}
+            >
+              <MenuItem value="">All Batches</MenuItem>
+              {availableBatches.map((b) => (
+                <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.75rem" }}>{b.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (statusFilter) params.set("status", statusFilter);
-                if (planFilter) params.set("plan", planFilter);
-                if (courseFilter) params.set("courseId", courseFilter);
-                if (batchFilter) params.set("batchId", batchFilter);
-                if (query) params.set("q", query);
-                params.set("format", "xlsx");
-                window.location.href = `/api/fees/export?${params.toString()}`;
-              }}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75 }}
-            >
-              Export Excel
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (statusFilter) params.set("status", statusFilter);
-                if (planFilter) params.set("plan", planFilter);
-                if (courseFilter) params.set("courseId", courseFilter);
-                if (batchFilter) params.set("batchId", batchFilter);
-                if (query) params.set("q", query);
-                params.set("format", "pdf");
-                window.location.href = `/api/fees/export?${params.toString()}`;
-              }}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75 }}
-            >
-              Export PDF
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Bell size={14} />}
-              onClick={() => setRemindersOpen(true)}
-              sx={{ borderRadius: "12px", borderColor: "#fde68a", bgcolor: "#FFFBEB", color: "#92400e", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#FEF3C7", borderColor: "#fcd34d" } }}
-            >
-              Fee Reminders
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ShieldCheck size={14} />}
-              onClick={() => setReconcileOpen(true)}
-              sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#F8FAFC" } }}
-            >
-              Reconcile
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<RotateCcw size={14} />}
-              onClick={() => { setRefundTargetStudent(undefined); setRefundOpen(true); }}
-              sx={{ borderRadius: "12px", borderColor: "#fecaca", bgcolor: "#FEF2F2", color: "#b91c1c", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, "&:hover": { bgcolor: "#FEE2E2", borderColor: "#fca5a5" } }}
-            >
-              Refund / Credit
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<RefreshCw size={14} />}
-              onClick={() => { setRenewTarget(undefined); setRenewOpen(true); }}
-              sx={{ borderRadius: "12px", bgcolor: "#E8A33D", color: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, boxShadow: "none", "&:hover": { bgcolor: "#D68F26" } }}
-            >
-              Renew
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<Plus size={14} />}
-              onClick={() => setPaymentOpen(true)}
-              sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 2, py: 0.75, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
-            >
-              Record Payment
-            </Button>
-          </Stack>
-        </Box>
+        {/* Row 2: Actions — separate group, wraps gracefully */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" }, gap: 1 }}
+          useFlexGap
+        >
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (statusFilter) params.set("status", statusFilter);
+              if (planFilter) params.set("plan", planFilter);
+              if (courseFilter) params.set("courseId", courseFilter);
+              if (batchFilter) params.set("batchId", batchFilter);
+              if (query) params.set("q", query);
+              params.set("format", "xlsx");
+              window.location.href = `/api/fees/export?${params.toString()}`;
+            }}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" } }}
+          >
+            Export Excel
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (statusFilter) params.set("status", statusFilter);
+              if (planFilter) params.set("plan", planFilter);
+              if (courseFilter) params.set("courseId", courseFilter);
+              if (batchFilter) params.set("batchId", batchFilter);
+              if (query) params.set("q", query);
+              params.set("format", "pdf");
+              window.location.href = `/api/fees/export?${params.toString()}`;
+            }}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" } }}
+          >
+            Export PDF
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Bell size={14} />}
+            onClick={() => setRemindersOpen(true)}
+            sx={{ borderRadius: "12px", borderColor: "#fde68a", bgcolor: "#FFFBEB", color: "#92400e", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#FEF3C7", borderColor: "#fcd34d" } }}
+          >
+            Fee Reminders
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ShieldCheck size={14} />}
+            onClick={() => setReconcileOpen(true)}
+            sx={{ borderRadius: "12px", borderColor: "#D6E0EB", bgcolor: "white", color: "#334155", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#F8FAFC" } }}
+          >
+            Reconcile
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<RotateCcw size={14} />}
+            onClick={() => { setRefundTargetStudent(undefined); setRefundOpen(true); }}
+            sx={{ borderRadius: "12px", borderColor: "#fecaca", bgcolor: "#FEF2F2", color: "#b91c1c", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" }, "&:hover": { bgcolor: "#FEE2E2", borderColor: "#fca5a5" } }}
+          >
+            Refund / Credit
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<RefreshCw size={14} />}
+            onClick={() => { setRenewTarget(undefined); setRenewOpen(true); }}
+            sx={{ borderRadius: "12px", bgcolor: "#E8A33D", color: "#1E3A5F", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", px: 1.5, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" }, boxShadow: "none", "&:hover": { bgcolor: "#D68F26" } }}
+          >
+            Renew
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Plus size={14} />}
+            onClick={() => setPaymentOpen(true)}
+            sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.75rem", textTransform: "none", px: 2, py: 0.75, height: 36, width: { xs: "100%", sm: "auto" }, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+          >
+            Record Payment
+          </Button>
+        </Stack>
 
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+        <Box sx={{ width: "100%", overflowX: "auto" }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none", minWidth: 0, width: "100%" }}>
           <Table sx={{ minWidth: 960 }} size="small">
             <TableHead>
               <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
@@ -419,6 +430,7 @@ export function FeesView({ students, courses = [], batches = [] }: { students: S
             </TableBody>
           </Table>
         </TableContainer>
+          </Box>
       </Card>
 
       <RecordPaymentDrawer

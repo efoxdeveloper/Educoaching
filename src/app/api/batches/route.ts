@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute } from "@/lib/tenant";
+import { requireInstitute, requirePermission } from "@/lib/tenant";
 
 export async function GET() {
   const ctx = await requireInstitute();
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const ctx = await requireInstitute();
+  const ctx = await requirePermission("batches:write");
   if ("error" in ctx) return ctx.error;
 
   const body = await req.json();

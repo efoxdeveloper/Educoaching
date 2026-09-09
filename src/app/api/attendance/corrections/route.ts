@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const ctx = await requireInstitute();
+  const ctx = await requirePermission("attendance:write");
   if ("error" in ctx) return ctx.error;
   const body = await req.json().catch(() => ({}));
   const { attendanceId, studentId, batchId, date, currentStatus, requestedStatus, reason } = body;

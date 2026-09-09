@@ -69,9 +69,12 @@ export function AttendanceView({
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [corrections, setCorrections] = useState<any[]>([]);
-  const [correctionDialog, setCorrectionDialog] = useState<{ open: boolean; studentId?: string; currentStatus?: Status; requestedStatus?: Status }>({ open: false });
+  const [correctionDialog, setCorrectionDialog] = useState<{ open: boolean; studentId?: string; currentStatus?: Status }>({ open: false });
+  const [correctionRequestedStatus, setCorrectionRequestedStatus] = useState<Status>("PRESENT");
   const [correctionReason, setCorrectionReason] = useState("");
   const [correctionSending, setCorrectionSending] = useState(false);
+
+  const hasPendingCorrection = (studentId: string) => corrections.some((c: any) => c.studentId === studentId);
 
   const availableBatches = useMemo(() => {
     if (!courseId) return batches;
@@ -247,9 +250,10 @@ export function AttendanceView({
           </Alert>
         )}
 
-        {/* Attendance rows — MUI Table (not DataGrid) with Select/Chip for status */}
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
-          <Table size="small" sx={{ minWidth: 500 }}>
+        {/* Attendance rows — responsive Table */}
+        <Box sx={{ width: "100%", overflowX: "auto" }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none", width: "100%", minWidth: 0 }}>
+          <Table size="small" sx={{ minWidth: { xs: 500, sm: 500 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: "rgba(238,242,247,0.5)", "& th": { fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", py: 1.25, borderBottom: "1px solid #D6E0EB" } }}>
                 <TableCell>Student</TableCell>
@@ -312,11 +316,13 @@ export function AttendanceView({
                     </TableCell>
                     <TableCell align="right">
                       {isLocked ? (
-                        <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
-                          {(["PRESENT","ABSENT","LATE"] as Status[]).map((st) => (
-                            <Button key={st} size="small" variant="outlined" onClick={() => { setCorrectionDialog({ open: true, studentId: s.id, currentStatus: marks[s.id], requestedStatus: st }); setCorrectionReason(""); }} sx={{ borderRadius: "8px", fontSize: "0.65rem", py:0.4, px:1, minWidth:0 }} startIcon={<Pencil size={11}/>}>To {st}</Button>
-                          ))}
-                        </Stack>
+                        hasPendingCorrection(s.id) ? (
+                          <Chip label="Correction Pending" size="small" sx={{ fontSize: "0.65rem", height: 22, bgcolor: "#FFFBEB", color: "#92400e", border: "1px solid #FDE68A", fontWeight: 600 }} />
+                        ) : (
+                          <Button size="small" variant="outlined" startIcon={<Pencil size={12} />} onClick={() => { setCorrectionDialog({ open: true, studentId: s.id, currentStatus: marks[s.id] }); setCorrectionRequestedStatus(marks[s.id] === "PRESENT" ? "ABSENT" : "PRESENT"); setCorrectionReason(""); }} sx={{ borderRadius: "8px", fontSize: "0.70rem", fontWeight: 600, textTransform: "none", borderColor: "#D6E0EB", color: "#334155" }}>
+                            Request Correction
+                          </Button>
+                        )
                       ) : (
                         <Stack direction="row" spacing={0.75} sx={{ justifyContent: "flex-end" }}>
                           {(Object.keys(statusMeta) as Status[]).map((st) => {
@@ -359,6 +365,7 @@ export function AttendanceView({
             </TableBody>
           </Table>
         </TableContainer>
+        </Box>
 
         {batchStudents.length > 0 && (
           <Button
@@ -398,29 +405,67 @@ export function AttendanceView({
           {presentCount} of {batchStudents.length} students present
         </Typography>
       </Card>
-      {/* Request Correction Dialog */}
+      {/* Request Correction Dialog — inline on page */}
       {correctionDialog.open && (
-        <Box sx={{ position: "fixed", inset: 0, bgcolor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, p:2 }}>
+        <Box sx={{ position: "fixed", inset: 0, bgcolor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, p: 2 }}>
           <Paper sx={{ p: 3, borderRadius: "16px", maxWidth: 420, width: "100%" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb:1 }}>Request Correction</Typography>
-            <Typography variant="body2" sx={{ fontSize: "0.80rem", color: "#64748b", mb:2 }}>
-              Change from <b>{correctionDialog.currentStatus || "?"}</b> to <b>{correctionDialog.requestedStatus}</b> for {batchStudents.find(s=>s.id===correctionDialog.studentId)?.name} on {date}?
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Request Correction</Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.80rem", color: "#64748b", mb: 2 }}>
+              {batchStudents.find((s) => s.id === correctionDialog.studentId)?.name} — {date} — currently <b>{correctionDialog.currentStatus || "Not marked"}</b>
             </Typography>
-            <TextField fullWidth size="small" placeholder="Reason for correction (required)" value={correctionReason} onChange={(e)=>setCorrectionReason(e.target.value)} sx={{ mb:2 }} />
+            <FormControl size="small" fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="correction-new-status">New Status</InputLabel>
+              <Select
+                labelId="correction-new-status"
+                label="New Status"
+                value={correctionRequestedStatus}
+                onChange={(e) => setCorrectionRequestedStatus(e.target.value as Status)}
+                sx={{ borderRadius: "12px" }}
+              >
+                <MenuItem value="PRESENT">PRESENT</MenuItem>
+                <MenuItem value="ABSENT">ABSENT</MenuItem>
+                <MenuItem value="LATE">LATE</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField fullWidth size="small" placeholder="Reason for correction (required)" value={correctionReason} onChange={(e) => setCorrectionReason(e.target.value)} sx={{ mb: 2 }} multiline minRows={2} />
             <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
-              <Button variant="outlined" size="small" onClick={()=>setCorrectionDialog({open:false})}>Cancel</Button>
-              <Button variant="contained" size="small" disabled={correctionSending || !correctionReason.trim()} onClick={async()=>{
-                setCorrectionSending(true);
-                try{
-                  const res= await fetch("/api/attendance/corrections",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({studentId:correctionDialog.studentId,batchId,date,currentStatus:correctionDialog.currentStatus,requestedStatus:correctionDialog.requestedStatus,reason:correctionReason})});
-                  const data=await res.json();
-                  if(!res.ok) throw new Error(data.error||"Failed");
-                  alert("Correction request submitted for OWNER approval");
-                  setCorrectionDialog({open:false});
-                  // refresh corrections
-                  fetch(`/api/attendance/corrections?status=PENDING`).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCorrections(d.filter((c:any)=>c.batchId===batchId && c.date?.slice(0,10)===date))});
-                }catch(e:any){ alert(e.message)} finally{setCorrectionSending(false)}
-              }}>{correctionSending ? <CircularProgress size={14}/>: "Submit Request"}</Button>
+              <Button variant="outlined" size="small" onClick={() => setCorrectionDialog({ open: false })}>Cancel</Button>
+              <Button
+                variant="contained"
+                size="small"
+                disabled={correctionSending || !correctionReason.trim() || correctionRequestedStatus === correctionDialog.currentStatus}
+                onClick={async () => {
+                  setCorrectionSending(true);
+                  try {
+                    const res = await fetch("/api/attendance/corrections", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        studentId: correctionDialog.studentId,
+                        batchId,
+                        date,
+                        currentStatus: correctionDialog.currentStatus,
+                        requestedStatus: correctionRequestedStatus,
+                        reason: correctionReason,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Failed");
+                    setCorrectionDialog({ open: false });
+                    fetch(`/api/attendance/corrections?status=PENDING`)
+                      .then((r) => r.json())
+                      .then((d) => {
+                        if (Array.isArray(d)) setCorrections(d.filter((c: any) => c.batchId === batchId && c.date?.slice(0, 10) === date));
+                      });
+                  } catch (e: any) {
+                    alert(e.message);
+                  } finally {
+                    setCorrectionSending(false);
+                  }
+                }}
+              >
+                {correctionSending ? <CircularProgress size={14} /> : "Submit Request"}
+              </Button>
             </Stack>
           </Paper>
         </Box>

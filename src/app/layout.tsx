@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   description: "Admin dashboard for coaching institute management",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute } from "@/lib/tenant";
+import { requireInstitute, requirePermission } from "@/lib/tenant";
 import { DEMO_PERIOD_DAYS, RENEWAL_PERIOD_DAYS, QUARTERLY_RENEWAL_PERIOD_DAYS } from "@/lib/subscription";
 import { calculateCourseEndDate } from "@/lib/course-duration";
 import { applyPaymentToInstallments, type FeeInstallment } from "@/lib/installments";
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const ctx = await requireInstitute();
+  const ctx = await requirePermission("students:write");
   if ("error" in ctx) return ctx.error;
 
   const body = await req.json();

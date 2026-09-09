@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireInstitute } from "@/lib/tenant";
+import { requirePermission } from "@/lib/tenant";
 import PDFDocument from "pdfkit";
 
 export async function GET(req: Request) {
-  const ctx = await requireInstitute();
+  const ctx = await requirePermission("payments:write");
   if ("error" in ctx) return ctx.error;
   const { searchParams } = new URL(req.url);
   const format = searchParams.get("format") || "xlsx";
