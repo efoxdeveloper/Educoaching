@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   CreditCard,
   CheckCircle2,
@@ -40,6 +41,7 @@ type InstituteProfile = {
 
 export function PlansView({ canManage }: { canManage: boolean }) {
   const searchParams = useSearchParams();
+  const { update } = useSession();
   const isExpiredParam = searchParams.get("expired") === "1";
 
   const [profile, setProfile] = useState<InstituteProfile | null>(null);
@@ -65,6 +67,15 @@ export function PlansView({ canManage }: { canManage: boolean }) {
       if (!res.ok) throw new Error("Failed to load institute profile");
       const data: InstituteProfile = await res.json();
       setProfile(data);
+      // Sync JWT so middleware unlocks immediately after renewal (without requiring re-login)
+      // This updates the session's billingCycle/trialEndsAt/currentPeriodEnd from DB
+      try {
+        await update({
+          billingCycle: (data as any).billingCycle,
+          trialEndsAt: (data as any).trialEndsAt,
+          currentPeriodEnd: (data as any).currentPeriodEnd,
+        });
+      } catch {}
     } catch {
       setError("Couldn't load subscription details.");
     } finally {
@@ -128,17 +139,24 @@ export function PlansView({ canManage }: { canManage: boolean }) {
     );
   }
 
+  // Persistent banner: show whenever the institute is actually expired, not just when ?expired=1 is present
+  const isActuallyExpired = isExpired || (isTrial && remainingDays !== null && remainingDays <= 0);
+  const showExpiredBanner = isExpiredParam || isActuallyExpired;
+
   return (
     <div className="space-y-6">
-      {isExpiredParam && (
+      {showExpiredBanner && (
         <div className="flex items-start gap-3.5 rounded-2xl border-2 border-danger-400 bg-danger-50 p-4 text-danger-900 shadow-sm animate-in fade-in slide-in-from-top-2">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-danger-600 text-white shadow-xs">
             <AlertCircle size={20} />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-danger-950">Subscription Expired</h3>
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-danger-950">Subscription Expired — Access Limited</h3>
             <p className="mt-0.5 text-xs font-semibold text-danger-800 leading-relaxed">
-              Your free trial/subscription has ended — choose a plan below to continue
+              Your free trial/subscription has ended — choose a plan below to renew and unlock all pages (Students, Fees, Attendance, etc.).
+            </p>
+            <p className="mt-1 text-[11px] text-danger-700">
+              You can still access <strong>My Plans & Subscription</strong> and <strong>Settings</strong> while expired. All other sections will redirect here until renewal — your data is safe and will be fully restored after you renew.
             </p>
           </div>
         </div>

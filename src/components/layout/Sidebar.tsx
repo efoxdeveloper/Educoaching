@@ -29,6 +29,7 @@ import {
   Video,
   HelpCircle,
   X,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import Box from "@mui/material/Box";
@@ -42,6 +43,7 @@ import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from "@/lib/institute-settings";
 import { hasPermission, type Permission } from "@/lib/permissions";
+import { isInstituteSubscriptionExpired, isRouteRestrictedBySubscription } from "@/lib/subscription";
 
 type NavItem = {
   href: string;
@@ -189,6 +191,14 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const STAFF_ROLES = ["STAFF", "FACULTY", "COUNSELLOR", "ACCOUNTANT", "TECHNICIAN"];
   const isStaffRole = STAFF_ROLES.includes(effectiveRole);
 
+  // Subscription gate — for UX: show lock on sidebar when expired
+  const sessionUserSub = session?.user as any;
+  const isSubscriptionExpired = isInstituteSubscriptionExpired({
+    billingCycle: sessionUserSub?.billingCycle,
+    trialEndsAt: sessionUserSub?.trialEndsAt,
+    currentPeriodEnd: sessionUserSub?.currentPeriodEnd,
+  });
+
   const visibleNav = nav
     .filter((item) => {
       if (item.featureKey && !features[item.featureKey]) return false;
@@ -268,11 +278,30 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </Box>
       </Box>
 
+      {/* Subscription expired notice in sidebar */}
+      {isSubscriptionExpired && !isPlatformImpersonating && !["STUDENT", "PARENT", "PLATFORM_ADMIN"].includes(effectiveRole) && (
+        <Box sx={{ mx: 1.5, mb: 1, p: 1.5, borderRadius: 2, bgcolor: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)" }}>
+          <Typography sx={{ fontSize: "11px", fontWeight: 700, color: "#fecaca", display: "flex", alignItems: "center", gap: 0.75 }}>
+            <Lock size={12} /> Plan Expired
+          </Typography>
+          <Typography sx={{ fontSize: "10px", color: "#fecaca", mt: 0.5, lineHeight: 1.4 }}>
+            Renew to unlock all sections. Only Plans & Settings are available.
+          </Typography>
+        </Box>
+      )}
       <Box sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 2 }}>
         <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isLocked =
+              isSubscriptionExpired &&
+              isRouteRestrictedBySubscription({
+                pathname: item.href,
+                role: effectiveRole,
+                isImpersonating: isPlatformImpersonating,
+                isExpired: isSubscriptionExpired,
+              });
             return (
               <ListItem key={item.href} disablePadding>
                 <ListItemButton
@@ -280,26 +309,29 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                   href={item.href}
                   onClick={onClose}
                   selected={active}
+                  title={isLocked ? "Unlocks after renewing your plan" : undefined}
                   sx={{
                     borderRadius: 2,
                     px: 1.5,
                     py: 1.25,
                     gap: 1.5,
                     bgcolor: active ? "rgba(255,255,255,0.1)" : "transparent",
-                    color: active ? "white" : "#f1f5f9",
+                    color: active ? "white" : isLocked ? "#94a3b8" : "#f1f5f9",
                     fontWeight: active ? 700 : 600,
                     fontSize: "0.75rem",
-                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "white" },
+                    opacity: isLocked ? 0.7 : 1,
+                    "&:hover": { bgcolor: isLocked ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)", color: isLocked ? "#94a3b8" : "white" },
                     "&.Mui-selected": { bgcolor: "rgba(255,255,255,0.1)" },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, color: active ? "#fbbf24" : "#e2e8f0" }}>
+                  <ListItemIcon sx={{ minWidth: 0, color: active ? "#fbbf24" : isLocked ? "#64748b" : "#e2e8f0" }}>
                     <Icon size={16} />
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
                     slotProps={{ primary: { sx: { fontSize: "0.75rem", fontWeight: active ? 700 : 600 } } }}
                   />
+                  {isLocked && <Lock size={12} style={{ color: "#64748b", flexShrink: 0 }} />}
                 </ListItemButton>
               </ListItem>
             );

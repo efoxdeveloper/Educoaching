@@ -89,6 +89,20 @@ export function isInstituteSubscriptionExpired(params: {
 }
 
 /**
+ * Roles that are subject to the subscription paywall.
+ * STUDENT, PARENT, PLATFORM_ADMIN are never gated.
+ */
+export const INSTITUTE_STAFF_ROLES = new Set([
+  "OWNER",
+  "ADMIN",
+  "STAFF",
+  "FACULTY",
+  "ACCOUNTANT",
+  "COUNSELLOR",
+  "TECHNICIAN",
+]);
+
+/**
  * Pure route-gate function for middleware.
  * Confines expired institute staff (OWNER, ADMIN, STAFF, FACULTY, ACCOUNTANT, COUNSELLOR, TECHNICIAN)
  * to only /plans and /settings.
@@ -97,7 +111,7 @@ export function isInstituteSubscriptionExpired(params: {
  * - If not expired -> false (not restricted)
  * - Never restricts STUDENT, PARENT, or PLATFORM_ADMIN -> false
  * - Never restricts when platform admin is impersonating an institute -> false
- * - Never restricts /plans or /settings routes (or their subpaths) -> false
+ * - Never restricts /plans, /my-plans, /settings, /login (or subpaths) -> false
  * - Allows essential subscription & settings APIs -> false
  * - Restricts all other routes -> true (caller should redirect to /plans?expired=1 or return 402)
  */
@@ -118,6 +132,17 @@ export function isRouteRestrictedBySubscription(params: {
     return false;
   }
 
+  // Only gate known institute staff roles; unknown roles fail open
+  // (keeps gate explicit and avoids accidentally gating new roles)
+  if (!INSTITUTE_STAFF_ROLES.has(role)) {
+    // For any non-staff role that isn't explicitly allowed, don't block
+    // (previous behavior was to block any other role when expired)
+    // Keep restrictive for now only for staff; unknown roles pass through
+    // to avoid locking out new staff types unintentionally — you can make this
+    // strict by returning true here if you want default-deny.
+    return false;
+  }
+
   // Never apply while platform admin is impersonating an institute
   if (params.isImpersonating) {
     return false;
@@ -125,25 +150,51 @@ export function isRouteRestrictedBySubscription(params: {
 
   const path = params.pathname;
 
-  // Never block /plans or /settings (or subpaths)
+  // Never block /plans, /my-plans, /settings, /login (or subpaths) — plus root handled separately
   if (
     path === "/plans" ||
     path.startsWith("/plans/") ||
+    path === "/my-plans" ||
+    path.startsWith("/my-plans/") ||
     path === "/settings" ||
-    path.startsWith("/settings/")
+    path.startsWith("/settings/") ||
+    path === "/login" ||
+    path.startsWith("/login/")
   ) {
     return false;
   }
 
-  // Whitelist essential APIs for subscription viewing, renewing, and settings
+  // Whitelist essential APIs for subscription viewing, renewing, settings and auth/cron
   if (
     path.startsWith("/api/institutes/me") ||
     path.startsWith("/api/institutes/subscribe") ||
+    path.startsWith("/api/institutes/features") ||
     path.startsWith("/api/plans") ||
-    path.startsWith("/api/settings")
+    path.startsWith("/api/settings") ||
+    path.startsWith("/api/auth") ||
+    path.startsWith("/api/cron") ||
+    path.startsWith("/api/institutes/sms-config")
   ) {
     return false;
   }
 
   return true;
 }
+
+// Back-compat alias for older name referenced in task description
+export const shouldBlockForExpiredPlan = isRouteRestrictedBySubscription;
+
+export const PLAN_GATE_ALLOWED_PREFIXES = [
+  "/plans",
+  "/my-plans",
+  "/settings",
+  "/login",
+  "/api/institutes/me",
+  "/api/institutes/subscribe",
+  "/api/institutes/features",
+  "/api/plans",
+  "/api/settings",
+  "/api/auth",
+  "/api/cron",
+  "/api/institutes/sms-config",
+];

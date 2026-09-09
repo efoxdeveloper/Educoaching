@@ -76,13 +76,39 @@ export default auth((req) => {
 
   // Subscription Expiry Gate:
   // Confine institute staff to only /plans and /settings once expired.
-  // Redirect to /plans?expired=1 or return 402 for restricted APIs.
+  // Every redirect MUST preserve ?expired=1 so the destination always shows the banner.
   const user = req.auth.user as any;
   const isExpired = isInstituteSubscriptionExpired({
     billingCycle: user?.billingCycle,
     trialEndsAt: user?.trialEndsAt,
     currentPeriodEnd: user?.currentPeriodEnd,
   });
+
+  // If expired and on /plans without ?expired=1, redirect to add the banner param
+  // so direct visits to /plans also show why navigation is blocked.
+  if (
+    isExpired &&
+    !isPlatformImpersonating &&
+    !["STUDENT", "PARENT", "PLATFORM_ADMIN"].includes(role) &&
+    (pathname === "/plans" || pathname === "/my-plans") &&
+    req.nextUrl.searchParams.get("expired") !== "1"
+  ) {
+    const url = req.nextUrl.clone();
+    url.searchParams.set("expired", "1");
+    return NextResponse.redirect(url);
+  }
+
+  // Root "/" should cleanly redirect to /plans when expired, not appear as broken dashboard link
+  if (
+    isExpired &&
+    !isPlatformImpersonating &&
+    !["STUDENT", "PARENT", "PLATFORM_ADMIN"].includes(role) &&
+    pathname === "/"
+  ) {
+    const plansUrl = new URL("/plans", req.url);
+    plansUrl.searchParams.set("expired", "1");
+    return NextResponse.redirect(plansUrl);
+  }
 
   if (
     isRouteRestrictedBySubscription({
@@ -98,6 +124,7 @@ export default auth((req) => {
         { status: 402 }
       );
     }
+    // Always re-apply ?expired=1 so the banner is visible on every bounce, not just the first
     const plansUrl = new URL("/plans", req.url);
     plansUrl.searchParams.set("expired", "1");
     return NextResponse.redirect(plansUrl);
@@ -108,8 +135,10 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/api/:path*",
+    "/",
+    "/dashboard",
     "/dashboard/:path*",
+    "/api/:path*",
     "/students/:path*",
     "/admissions/:path*",
     "/courses/:path*",

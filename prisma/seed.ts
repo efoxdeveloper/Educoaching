@@ -48,6 +48,11 @@ async function main() {
   // Institute (tenant) - this is what used to be "the app"; now it's one
   // coaching institute among potentially many.
   const now = new Date();
+  // For local dev: use a long-lived ACTIVE subscription so the demo account doesn't
+  // perpetually expire 7 days after the last seed (which caused the stuck-on-/plans bug).
+  // Keep TRIAL behaviour available via env SEED_TRIAL_DAYS if you want to test the paywall.
+  const trialDays = Number(process.env.SEED_TRIAL_DAYS || 30);
+  const useActiveSeed = process.env.SEED_ACTIVE !== "false"; // default true for dev
   const institute = await prisma.institute.create({
     data: {
       name: "Vidyalaya Classes",
@@ -56,10 +61,11 @@ async function main() {
       mobile: randomMobile(),
       emailVerified: true,
       mobileVerified: true,
-      billingCycle: "TRIAL",
-      platformSubscriptionStatus: "TRIAL",
+      billingCycle: useActiveSeed ? "YEARLY" : "TRIAL",
+      platformSubscriptionStatus: useActiveSeed ? "ACTIVE" : "TRIAL",
       trialStartedAt: now,
-      trialEndsAt: addDays(now, 7),
+      trialEndsAt: addDays(now, trialDays),
+      currentPeriodEnd: useActiveSeed ? addDays(now, 365) : null,
     },
   });
 
