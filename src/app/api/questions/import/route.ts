@@ -208,32 +208,29 @@ export async function POST(req: Request) {
       questions = res.questions.map((q: any) => ({ ...q, subject: subjectParam }));
       parseErrors = res.errors;
     } else if (ext === "pdf" || mime === "application/pdf") {
-      console.log("[import] routing to pdf parser");
-      let pdfParse: any;
+      console.log("[import] routing to pdf parser (v2)");
+      let text: string = "";
       try {
-        const mod: any = await import("pdf-parse");
-        pdfParse = mod.default || mod;
-        console.log("[import:pdf] dynamic import succeeded");
+        const { PDFParse } = await import("pdf-parse");
+        console.log("[import:pdf] PDFParse class loaded");
+        const parser: any = new (PDFParse as any)({ data: buffer });
+        const result: any = await parser.getText();
+        console.log("[import:pdf] getText done, text length", result.text?.length, "keys", Object.keys(result), "numpages", result.numpages ?? result.total ?? result.numPages ?? "unknown", "text preview", (result.text || "").slice(0, 200));
+        text = result.text || "";
+        if (typeof parser.destroy === "function") {
+          try { await parser.destroy(); console.log("[import:pdf] parser destroyed"); } catch (e: any) { console.warn("[import:pdf] parser destroy failed", e?.message); }
+        }
+        if (!text.trim()) {
+          console.error("[import:pdf] no text extracted");
+          return NextResponse.json({ error: "No text extracted from PDF — may be scanned image" }, { status: 400 });
+        }
+        const res = parseTextQuestions(text);
+        questions = res.questions.map((q: any) => ({ ...q, subject: subjectParam }));
+        parseErrors = res.errors;
       } catch (e: any) {
-        console.error("[import:pdf] pdf-parse load failed", e?.message, e?.stack);
-        return NextResponse.json({ error: `Failed to load PDF parser: ${e?.message}` }, { status: 500 });
-      }
-      let data: any;
-      try {
-        data = await pdfParse(buffer);
-        console.log("[import:pdf] pdfParse done, text length", data.text?.length, "numpages", data.numpages);
-      } catch (e: any) {
-        console.error("[import:pdf] pdfParse execution failed", e?.message, e?.stack);
+        console.error("[import:pdf] pdf-parse v2 execution failed", e?.message, e?.stack);
         return NextResponse.json({ error: `Failed to parse PDF content: ${e?.message}` }, { status: 400 });
       }
-      const text = data.text || "";
-      if (!text.trim()) {
-        console.error("[import:pdf] no text extracted");
-        return NextResponse.json({ error: "No text extracted from PDF — may be scanned image" }, { status: 400 });
-      }
-      const res = parseTextQuestions(text);
-      questions = res.questions.map((q: any) => ({ ...q, subject: subjectParam }));
-      parseErrors = res.errors;
     } else {
       console.error("[import] unsupported file type", ext, mime);
       return NextResponse.json({ error: `Unsupported file type ".${ext}" (${mime}). Use .xlsx, .csv, .docx, .pdf` }, { status: 400 });

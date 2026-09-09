@@ -37,6 +37,8 @@ import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 type Student = {
   id: string;
@@ -112,6 +114,8 @@ export function StudentsTable({
   const [docsStudent, setDocsStudent] = useState<Student | null>(null);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
   const [editStudent, setEditStudent] = useState<EditableStudent | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const filtered = useMemo(() => {
     return students.filter((s) => {
@@ -279,7 +283,8 @@ export function StudentsTable({
           </Button>
         </Box>
 
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
+        {!isMobile ? (
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
           <Table sx={{ minWidth: 880 }} size="small">
             <TableHead>
               <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
@@ -420,6 +425,68 @@ export function StudentsTable({
             </TableBody>
           </Table>
         </TableContainer>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {filtered.map((s) => {
+              const dueDate = s.dueDate ? new Date(s.dueDate) : null;
+              const fee = computeFeeStatus(Number(s.totalFee), Number(s.paidFee), dueDate);
+              return (
+                <Card key={s.id} sx={{ p: 2, borderColor: "#D6E0EB" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer" }} onClick={() => setProfileStudentId(s.id)}>
+                      {s.photoUrl ? (
+                        <Avatar src={s.photoUrl} alt={s.name} sx={{ width: 36, height: 36, borderRadius: "8px", border: "1px solid #D6E0EB", bgcolor: "white" }} variant="rounded" />
+                      ) : (
+                        <Avatar sx={{ width: 36, height: 36, borderRadius: "8px", bgcolor: "#EEF2F7", color: "#475569", fontSize: "0.70rem", fontWeight: 700 }} variant="rounded">
+                          {initials(s.name)}
+                        </Avatar>
+                      )}
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#171A21", fontSize: "0.875rem" }}>
+                          {s.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: "0.70rem", color: "#64748b", display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Phone size={12} style={{ color: "#94A3B8" }} /> {s.mobile}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Badge tone={studentStatusTone(s.status)}>{s.status.replace("_", " ")}</Badge>
+                  </Box>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mb: 1.5 }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC", textTransform: "uppercase" }}>Course</Typography>
+                      <Typography variant="body2" sx={{ fontSize: "0.80rem", color: "#171A21", fontWeight: 500 }}>{s.course.name}</Typography>
+                      {s.courseDuration && <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>⏱️ {s.courseDuration}</Typography>}
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC", textTransform: "uppercase" }}>Batch</Typography>
+                      <Typography variant="body2" sx={{ fontSize: "0.80rem", color: "#171A21" }}>{s.batch?.name ?? "—"}</Typography>
+                      {s.branch && <Typography variant="caption" sx={{ fontSize: "10px", color: "#94A3B8" }}>📍 {s.branch.name}</Typography>}
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC", textTransform: "uppercase" }}>Fee status</Typography>
+                      <Box sx={{ mt: 0.5 }}><Badge tone={feeStatusTone(fee)} dot>{feeStatusLabel(fee)}</Badge></Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, color: "#7E9BBC", textTransform: "uppercase" }}>Admission date</Typography>
+                      <Typography variant="body2" sx={{ fontSize: "0.80rem", color: "#64748b" }}>{formatDate(s.admissionDate)}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, borderTop: "1px solid #F1F5F9", pt: 1.5 }}>
+                    <IconButton size="small" onClick={() => setProfileStudentId(s.id)} sx={{ color: "#94A3B8" }}><Eye size={15} /></IconButton>
+                    <IconButton size="small" onClick={() => setEditStudent({ id: s.id, name: s.name, mobile: s.mobile, email: s.email, parentMobile: s.parentMobile, courseId: s.course.id, batchId: s.batch?.id, status: s.status, totalFee: s.totalFee, dueDate: s.dueDate, plan: s.plan })} sx={{ color: "#94A3B8" }}><Pencil size={14} /></IconButton>
+                    <IconButton size="small" onClick={() => setDocsStudent(s)} sx={{ color: "#94A3B8" }}><FileText size={14} /></IconButton>
+                  </Box>
+                </Card>
+              );
+            })}
+            {filtered.length === 0 && (
+              <Typography variant="body2" sx={{ py: 3, textAlign: "center", color: "#94A3B8", fontSize: "0.875rem" }}>
+                No students match your search or filters.
+              </Typography>
+            )}
+          </Box>
+        )}
 
         <Typography variant="caption" sx={{ mt: 1.5, display: "block", fontSize: "0.75rem", color: "#94A3B8" }} className="tabular-nums">
           Showing {filtered.length} of {students.length} students. Total fee outstanding:{" "}

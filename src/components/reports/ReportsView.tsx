@@ -158,14 +158,9 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
         variant="outlined"
         sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "0 1px 2px rgba(13,26,42,0.04)", display: "flex", flexDirection: "column", gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}
       >
-        {/* Row 1: Filters — Course, Batch, Timeframe grouped */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
-          sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" }, gap: 1.5 }}
-          useFlexGap
-        >
-          <FormControl size="small" sx={{ flex: "1 1 140px", minWidth: { xs: "100%", sm: 150 } }}>
+        {/* Row 1: Course + Batch — fixed row */}
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { xs: "stretch", sm: "center" }, width: "100%" }}>
+          <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
             <InputLabel id="reports-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
             <Select
               labelId="reports-course-label"
@@ -183,7 +178,7 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ flex: "1 1 140px", minWidth: { xs: "100%", sm: 150 } }}>
+          <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
             <InputLabel id="reports-batch-label" sx={{ fontSize: "0.75rem" }}>Batch</InputLabel>
             <Select
               labelId="reports-batch-label"
@@ -200,69 +195,71 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
               ))}
             </Select>
           </FormControl>
+        </Box>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, flex: { xs: "1 1 100%", sm: "1 1 auto" } }}>
-            <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
-              <Calendar size={13} /> Timeframe:
-            </Typography>
-            <Paper variant="outlined" sx={{ display: "flex", flexWrap: "wrap", borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", p: 0.5, gap: 0.5 }}>
-              {[
-                { id: "ALL", label: "All Time" },
-                { id: "30D", label: "Last 30 Days" },
-                { id: "90D", label: "Last 90 Days" },
-                { id: "YTD", label: "This Year" },
-              ].map((preset) => (
-                <Chip
-                  key={preset.id}
-                  label={preset.label}
-                  clickable
-                  onClick={() => handlePresetChange(preset.id as any)}
-                  size="small"
-                  sx={{
-                    borderRadius: "8px",
-                    fontWeight: 600,
-                    fontSize: "0.70rem",
-                    height: 26,
-                    bgcolor: datePreset === preset.id ? "white" : "transparent",
-                    color: datePreset === preset.id ? "#1E3A5F" : "#475569",
-                    border: datePreset === preset.id ? "1px solid #D6E0EB" : "1px solid transparent",
-                    boxShadow: datePreset === preset.id ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
-                    "&:hover": { bgcolor: datePreset === preset.id ? "white" : "#EEF2F7" },
-                  }}
-                />
-              ))}
-            </Paper>
+        {/* Row 2: timeframe preset pills — fixed row */}
+        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1, width: "100%", overflowX: "auto" }}>
+          <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, whiteSpace: "nowrap" }}>
+            <Calendar size={13} /> Timeframe:
+          </Typography>
+          <Paper variant="outlined" sx={{ display: "flex", flexDirection: "row", borderRadius: "12px", bgcolor: "#F8FAFC", borderColor: "#D6E0EB", p: 0.5, gap: 0.5, flexShrink: 0 }}>
+            {[
+              { id: "ALL", label: "All Time" },
+              { id: "30D", label: "Last 30 Days" },
+              { id: "90D", label: "Last 90 Days" },
+              { id: "YTD", label: "This Year" },
+            ].map((preset) => (
+              <Chip
+                key={preset.id}
+                label={preset.label}
+                clickable
+                onClick={() => handlePresetChange(preset.id as any)}
+                size="small"
+                sx={{
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "0.70rem",
+                  height: 26,
+                  bgcolor: datePreset === preset.id ? "white" : "transparent",
+                  color: datePreset === preset.id ? "#1E3A5F" : "#475569",
+                  border: datePreset === preset.id ? "1px solid #D6E0EB" : "1px solid transparent",
+                  boxShadow: datePreset === preset.id ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  "&:hover": { bgcolor: datePreset === preset.id ? "white" : "#EEF2F7" },
+                }}
+              />
+            ))}
+          </Paper>
+        </Box>
 
-            <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.75 }}>
-              <TextField
-                size="small"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
-              />
-              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC" }}>to</Typography>
-              <TextField
-                size="small"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                size="small"
-                disabled={!startDate || !endDate}
-                sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, minHeight: 32, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
-              >
-                Apply
-              </Button>
-            </Box>
-          </Box>
-        </Stack>
+        {/* Row 3: custom Date from + Apply — fixed row */}
+        <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 0.75, width: "100%" }}>
+          <TextField
+            size="small"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
+          />
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#7E9BBC", flexShrink: 0 }}>to</Typography>
+          <TextField
+            size="small"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "rgba(238,242,247,0.5)", fontSize: "0.75rem", height: 32 }, "& .MuiOutlinedInput-input": { py: 0.5, px: 1 } }}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            size="small"
+            disabled={!startDate || !endDate}
+            sx={{ borderRadius: "8px", bgcolor: "#1E3A5F", fontWeight: 600, fontSize: "0.70rem", textTransform: "none", py: 0.5, px: 1.5, minHeight: 32, flexShrink: 0, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
+          >
+            Apply
+          </Button>
+        </Box>
 
         {/* Row 2: Actions — Export/Print grouped */}
         <Stack

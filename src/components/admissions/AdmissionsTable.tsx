@@ -412,10 +412,10 @@ export function AdmissionsTable({
           </Card>
         )}
 
-        {/* View Mode 1: Tabular List View (Default - Zero Horizontal Scrolling) */}
+        {/* View Mode 1: Tabular List View — responsive: table on sm+, cards on mobile */}
         {viewMode === "table" && (
           <Card className="overflow-hidden">
-            <div className="w-full overflow-x-auto">
+            <div className="hidden sm:block w-full overflow-x-auto">
               <table className="w-full border-collapse text-xs">
                 <thead className="border-b border-scholar-100 bg-scholar-50/80 text-left uppercase tracking-wider text-scholar-500 font-semibold text-[11px]">
                   <tr>
@@ -602,6 +602,81 @@ export function AdmissionsTable({
                   )}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile card layout — shown only below sm */}
+            <div className="sm:hidden space-y-3 p-3">
+              {filtered.length === 0 ? (
+                <p className="py-6 text-center text-xs text-scholar-400">No leads match your search or filters.</p>
+              ) : (
+                filtered.map((a) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const followDate = a.nextFollowUpDate ? new Date(a.nextFollowUpDate) : null;
+                  const isTodayFollow =
+                    followDate &&
+                    followDate.getDate() === today.getDate() &&
+                    followDate.getMonth() === today.getMonth() &&
+                    followDate.getFullYear() === today.getFullYear();
+                  const isPastFollow = followDate && followDate < today && !isTodayFollow;
+                  return (
+                    <div key={a.id} className="rounded-xl border border-scholar-100 bg-white p-3 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-scholar-100 text-xs font-bold text-scholar-700">
+                            {initials(a.applicantName)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-ink truncate">{a.applicantName}</p>
+                            <span className="rounded bg-scholar-100 px-1 py-0.2 text-[9px] font-bold text-scholar-600 uppercase">{a.source.replace("_", " ")}</span>
+                            <p className="text-[11px] text-scholar-500 flex items-center gap-1 mt-0.5">
+                              {a.mobile}
+                              <a href={`tel:${a.mobile}`} className="text-scholar-400 hover:text-scholar-800"><Phone size={11} /></a>
+                              <a href={`https://wa.me/91${a.mobile}`} target="_blank" rel="noreferrer" className="text-emerald-600"><MessageSquare size={11} /></a>
+                            </p>
+                            {a.email && <p className="text-[10px] text-scholar-400 truncate max-w-[160px]">{a.email}</p>}
+                          </div>
+                        </div>
+                        <div>
+                          {a.priority === "HOT" ? (
+                            <span className="inline-flex items-center gap-0.5 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200/60"><Flame size={10} /> HOT</span>
+                          ) : a.priority === "WARM" ? (
+                            <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200/60"><Zap size={10} /> WARM</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 rounded-md bg-scholar-50 px-1.5 py-0.5 text-[10px] font-semibold text-scholar-600 border border-scholar-200/60"><Snowflake size={10} /> COLD</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <p className="text-[10px] font-semibold text-scholar-500 uppercase">Course & Batch</p>
+                          <p className="font-semibold text-ink truncate">{a.course.name}</p>
+                          <p className="text-scholar-500">{a.batch?.name ?? "Unassigned"} · {formatCurrency(a.feePlan)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-scholar-500 uppercase">Stage</p>
+                          <select value={a.stage} disabled={updatingId === a.id} onChange={(e) => handleStageChange(a.id, e.target.value)} className="mt-0.5 w-full rounded-lg border border-scholar-200 bg-white px-2 py-1 text-xs font-semibold text-scholar-800 outline-none">
+                            {STAGES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-[10px] font-semibold text-scholar-500 uppercase">Follow-up</p>
+                          {a.nextFollowUpDate ? (
+                            <span className={`mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${isPastFollow ? "bg-rose-50 text-rose-700 border border-rose-200" : isTodayFollow ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-scholar-50 text-scholar-700 border border-scholar-200/60"}`}>
+                              <Calendar size={11} />{formatDate(a.nextFollowUpDate)}{isPastFollow ? " (Overdue)" : isTodayFollow ? " (Today)" : ""}
+                            </span>
+                          ) : <span className="text-scholar-400">—</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-scholar-50">
+                        <button type="button" onClick={() => setFollowUpTarget(a)} className="inline-flex items-center gap-1 rounded-lg bg-scholar-100/80 px-2 py-1 text-xs font-bold text-scholar-800"><PhoneCall size={11} />Log Call</button>
+                        <button type="button" onClick={() => setDemoTarget(a)} className="rounded-lg bg-amber-50 p-1.5 text-amber-800 border border-amber-200/60"><Video size={12} /></button>
+                        {a.status !== "ENROLLED" && <button type="button" onClick={() => setConvertTarget(a)} className="rounded-lg bg-emerald-50 p-1.5 text-emerald-800 border border-emerald-200/60"><GraduationCap size={12} /></button>}
+                        {a.stage !== "LOST" && <button type="button" onClick={() => setLostTarget(a)} className="rounded-lg bg-rose-50 p-1.5 text-rose-700 border border-rose-200/60"><AlertOctagon size={12} /></button>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <div className="border-t border-scholar-100 bg-scholar-50/40 px-4 py-2.5 text-xs text-scholar-600 flex items-center justify-between">
