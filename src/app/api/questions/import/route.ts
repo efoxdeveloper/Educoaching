@@ -211,16 +211,9 @@ export async function POST(req: Request) {
       console.log("[import] routing to pdf parser");
       let pdfParse: any;
       try {
-        // Dynamic import to avoid Next.js build-time pdf-parse debug file read
-        // Use lib path directly to bypass test file loading in pdf-parse's index
-        try {
-          const mod = await import("pdf-parse");
-          pdfParse = (mod as any).default || mod;
-          console.log("[import:pdf] dynamic import succeeded");
-        } catch {
-          pdfParse = require("pdf-parse/lib/pdf-parse.js");
-          console.log("[import:pdf] require lib succeeded");
-        }
+        const mod: any = await import("pdf-parse");
+        pdfParse = mod.default || mod;
+        console.log("[import:pdf] dynamic import succeeded");
       } catch (e: any) {
         console.error("[import:pdf] pdf-parse load failed", e?.message, e?.stack);
         return NextResponse.json({ error: `Failed to load PDF parser: ${e?.message}` }, { status: 500 });
