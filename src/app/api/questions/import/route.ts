@@ -100,12 +100,77 @@ function parseTextQuestions(raw: string) {
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
     if (!block.trim()) continue;
-    const qMatch = block.match(/^\s*\d+[\.\)]\s*([\s\S]*?)(?=\n\s*A[\.\)])/m) || block.match(/([\s\S]*?)(?=\n\s*A[\.\)])/);
-    const qText = qMatch ? qMatch[1].trim().replace(/\s+/g, " ") : block.slice(0, 300).trim().replace(/\n/g," ");
-    const optA = (block.match(/\n\s*A[\.\)\\:]?\s*([^\n]+)/i) || [])[1]?.trim();
-    const optB = (block.match(/\n\s*B[\.\)\\:]?\s*([^\n]+)/i) || [])[1]?.trim();
-    const optC = (block.match(/\n\s*C[\.\)\\:]?\s*([^\n]+)/i) || [])[1]?.trim();
-    const optD = (block.match(/\n\s*D[\.\)\\:]?\s*([^\n]+)/i) || [])[1]?.trim();
+
+    // Layout-independent option extraction: find marker positions by scanning whole block
+    const markerRegex = /(?:^|\s)([A-D])\s*[\.\)\:]\s*/gi;
+    const markers: Array<{ letter: string; markerStart: number; matchEnd: number }> = [];
+    let m: RegExpExecArray | null;
+    // Need to reset lastIndex for each block
+    markerRegex.lastIndex = 0;
+    while ((m = markerRegex.exec(block)) !== null) {
+      const full = m[0];
+      const letter = m[1].toUpperCase();
+      const letterIdxInMatch = full.lastIndexOf(letter);
+      const markerStart = m.index + letterIdxInMatch;
+      const matchEnd = markerRegex.lastIndex;
+      // Avoid duplicate for same position (e.g., overlapping)
+      if (markers.length === 0 || markerStart !== markers[markers.length-1].markerStart) {
+        markers.push({ letter, markerStart, matchEnd });
+      }
+      // Prevent infinite loop on zero-length
+      if (m[0].length === 0) markerRegex.lastIndex++;
+    }
+
+    // Also find where Answer/Correct/Explanation/Solution start, so last option ends there
+    const terminatorIndices: number[] = [];
+    const answerMatch = block.match(/Answer\s*[:\-]\s*[A-Da-d1-4]/i);
+    if (answerMatch && answerMatch.index !== undefined) terminatorIndices.push(answerMatch.index);
+    const correctMatch = block.match(/Correct\s*[:\-]\s*[A-Da-d1-4]/i);
+    if (correctMatch && correctMatch.index !== undefined) terminatorIndices.push(correctMatch.index);
+    const explanationIdx = block.search(/Explanation\s*[:\-]/i);
+    if (explanationIdx !== -1) terminatorIndices.push(explanationIdx);
+    const solutionIdx = block.search(/Solution\s*[:\-]/i);
+    if (solutionIdx !== -1) terminatorIndices.push(solutionIdx);
+    const terminatorStart = terminatorIndices.length ? Math.min(...terminatorIndices) : block.length;
+
+    // Build map by letter, and sorted by position
+    const byLetter: Record<string, typeof markers[0]> = {};
+    for (const mk of markers) {
+      // Keep first occurrence per letter; if duplicate letter, keep earliest
+      if (!byLetter[mk.letter]) byLetter[mk.letter] = mk;
+    }
+    const sortedMarkers = [...markers].sort((a,b) => a.markerStart - b.markerStart);
+
+    // Question text: before first option marker, not requiring newline
+    let qText = "";
+    if (sortedMarkers.length > 0) {
+      const firstStart = sortedMarkers[0].markerStart;
+      const rawQ = block.slice(0, firstStart).trim();
+      // Strip leading number like "1. " or "Q1 "
+      const stripped = rawQ.replace(/^\s*(?:Q\s*)?\d+[\.\)]\s*/i, "").trim();
+      qText = stripped.replace(/\s+/g, " ");
+    } else {
+      // No markers — fallback to old behavior for question text
+      const qMatch = block.match(/^\s*\d+[\.\)]\s*([\s\S]*?)(?=(?:^|\s)[A-D]\s*[\.\)\:])/m);
+      qText = qMatch ? qMatch[1].trim().replace(/\s+/g, " ") : block.slice(0, 300).trim().replace(/\n/g," ");
+    }
+
+    // Extract option texts by marker positions
+    const getOpt = (letter: string): string | undefined => {
+      const mk = byLetter[letter];
+      if (!mk) return undefined;
+      // Find next marker after this one in sorted order
+      const idx = sortedMarkers.findIndex(x => x.letter === letter && x.markerStart === mk.markerStart);
+      const nextMarker = idx >= 0 && idx+1 < sortedMarkers.length ? sortedMarkers[idx+1] : null;
+      const end = nextMarker ? nextMarker.markerStart : terminatorStart;
+      const text = block.slice(mk.matchEnd, end).trim().replace(/\s+/g, " ");
+      return text || undefined;
+    };
+    const optA = getOpt("A");
+    const optB = getOpt("B");
+    const optC = getOpt("C");
+    const optD = getOpt("D");
+
     let ansRaw = (block.match(/Answer\s*[:\-]\s*([A-Da-d1-4])/i) || block.match(/Correct\s*[:\-]\s*([A-Da-d1-4])/i) || [])[1]?.trim();
     if (ansRaw) {
       if (/^[A-Da-d]$/.test(ansRaw)) ansRaw = String("ABCD".indexOf(ansRaw.toUpperCase()));
@@ -113,11 +178,20 @@ function parseTextQuestions(raw: string) {
     }
     const expl = (block.match(/Explanation\s*[:\-]\s*([^\n]+)/i) || block.match(/Solution\s*[:\-]\s*([^\n]+)/i) || [])[1]?.trim() || null;
     if (!qText || !optA || !optB || !optC || !optD) {
-      console.log("[import:text] block", i, "failed q/opt missing", { qText: !!qText, optA: !!optA, optB: !!optB, optC: !!optC, optD: !!optD });
+      const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
+      console.log("[import:text] block", i, "failed q/opt missing", { qText: !!qText, optA: !!optA, optB: !!optB, optC: !!optC, optD: !!optD, snippet });
+      errors.push(`Block ${i + 1}: could not parse options — check A) B) C) D) formatting`);
+      continue;
+    }
+    if (markers.length < 4) {
+      const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
+      console.log("[import:text] block", i, "fewer than 4 markers", { found: markers.map(x=>x.letter), snippet });
       errors.push(`Block ${i + 1}: could not parse options — check A) B) C) D) formatting`);
       continue;
     }
     if (!ansRaw || !["0","1","2","3"].includes(ansRaw)) {
+      const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
+      console.log("[import:text] block", i, "missing answer", { snippet });
       errors.push(`Block ${i + 1}: missing correct answer (add "Answer: A/B/C/D")`);
       continue;
     }
