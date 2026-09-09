@@ -32,7 +32,7 @@ const DEPARTMENT_CONFIG = [
   {
     id: "ADMINISTRATION",
     title: "Administration & Front Office",
-    description: "Admissions counselors, campus receptionists, enquiry desks, and fee cashiers.",
+    description: "Admissions counselors, branch receptionists, enquiry desks, and fee cashiers.",
     icon: Building2,
     headerColor: "bg-purple-50 border-purple-200 text-purple-800",
     badgeColor: "neutral",
@@ -49,12 +49,12 @@ const DEPARTMENT_CONFIG = [
   },
   {
     id: "OPERATIONS_SUPPORT",
-    title: "Campus Operations & Support",
-    description: "Campus security, transport drivers, housekeeping, sweepers, and office attendants.",
+    title: "Branch Operations & Support",
+    description: "Branch security, transport drivers, housekeeping, sweepers, and office attendants.",
     icon: Wrench,
     headerColor: "bg-emerald-50 border-emerald-200 text-emerald-800",
     badgeColor: "success",
-    defaultPermissions: ["Campus Access Logging", "Staff Attendance", "Maintenance Requests"],
+    defaultPermissions: ["Branch Access Logging", "Staff Attendance", "Maintenance Requests"],
   },
 ];
 

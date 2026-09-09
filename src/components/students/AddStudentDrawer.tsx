@@ -527,7 +527,7 @@ export function AddStudentDrawer({
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
               <Building2 size={14} style={{ color: "#4E6E93" }} />
-              Campus & Batch Allocation
+              Branch & Batch Allocation
             </Typography>
             <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC" }}>Batches & timings vary by branch</Typography>
           </Box>
@@ -568,8 +568,8 @@ export function AddStudentDrawer({
               </FormControl>
 
               <FormControl fullWidth size="small">
-                <InputLabel id="add-student-branch-label">Branch / Campus Location</InputLabel>
-                <Select labelId="add-student-branch-label" label="Branch / Campus Location" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
+                <InputLabel id="add-student-branch-label">Branch Location</InputLabel>
+                <Select labelId="add-student-branch-label" label="Branch Location" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value, batchId: "" })} sx={{ borderRadius: "12px", bgcolor: "white" }}>
                   <MenuItem value="">All Branches / Main Branch</MenuItem>
                   {branches.map((b) => (
                     <MenuItem key={b.id} value={b.id} sx={{ fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -592,7 +592,7 @@ export function AddStudentDrawer({
               <MenuItem value="">Unassigned Batch</MenuItem>
               {filteredBatches.map((b) => {
                 const branchLabel = b.isAllBranches
-                  ? "All Campuses"
+                  ? "All Branches"
                   : b.branches && b.branches.length > 0
                   ? b.branches.map((br) => br.name).join(", ")
                   : b.branch
@@ -608,7 +608,7 @@ export function AddStudentDrawer({
           </FormControl>
           {filteredBatches.length === 0 && (
             <Typography variant="caption" sx={{ fontSize: "11px", color: "#D97706" }}>
-              No active batches found for this course at the selected campus. You can create a batch under Batches.
+              No active batches found for this course at the selected branch. You can create a batch under Batches.
             </Typography>
           )}
         </Paper>

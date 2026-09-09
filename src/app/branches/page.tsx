@@ -73,7 +73,7 @@ export default async function BranchesPage() {
   });
 
   return (
-    <Shell title="Branches & Campuses" userName={session?.user?.name ?? undefined}>
+    <Shell title="Branches" userName={session?.user?.name ?? undefined}>
       <BranchesView initialBranches={initialBranches} />
     </Shell>
   );

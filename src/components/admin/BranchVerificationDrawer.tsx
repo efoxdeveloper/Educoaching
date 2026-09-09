@@ -131,7 +131,7 @@ export function BranchVerificationDrawer({
 
   const whatsappBranchUrl = branchPhoneDigits
     ? `https://wa.me/91${branchPhoneDigits}?text=${encodeURIComponent(
-        `Hello, this is Platform Administration verifying the sub-branch application for "${branch.name}" under "${branch.institute.name}". Please confirm your physical campus address and center incharge details.`
+        `Hello, this is Platform Administration verifying the sub-branch application for "${branch.name}" under "${branch.institute.name}". Please confirm your physical branch address and center incharge details.`
       )}`
     : null;
 
@@ -273,7 +273,7 @@ Created: ${formatDate(branch.createdAt)}
               Sub-Branch Access Request Under Verification
             </Typography>
             <Typography variant="caption" sx={{ fontSize: "11px", color: "#92400e", display: "block", mt: 0.5, lineHeight: 1.5 }}>
-              Verify the physical address, branch phone number, and parent institute ownership to ensure this campus is genuine and operational before granting full access.
+              Verify the physical address, branch phone number, and parent institute ownership to ensure this branch is genuine and operational before granting full access.
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: "wrap" }}>
               <Button
@@ -323,7 +323,7 @@ Created: ${formatDate(branch.createdAt)}
               </Button>
             }
           >
-            Sub-branch access is <Box component="span" sx={{ fontWeight: 700 }}>Active</Box>. Campus is operating under parent institute.
+            Sub-branch access is <Box component="span" sx={{ fontWeight: 700 }}>Active</Box>. Branch is operating under parent institute.
           </Alert>
         )}
 
@@ -332,7 +332,7 @@ Created: ${formatDate(branch.createdAt)}
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
               <MapPin size={14} style={{ color: "#4E6E93" }} />
-              1. Physical Campus &amp; Location Check
+              1. Physical Branch &amp; Location Check
             </Typography>
             <Typography variant="caption" sx={{ fontSize: "10px", color: "#7E9BBC", fontFamily: "monospace" }}>ID: {branch.id}</Typography>
           </Box>
@@ -340,7 +340,7 @@ Created: ${formatDate(branch.createdAt)}
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 1.5 }}>
             <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", gridColumn: "1 / -1" }}>
               <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "block", mb: 0.5 }}>
-                Full Physical Campus Address
+                Full Physical Branch Address
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.75rem" }}>
                 {fullAddress || "No physical street address specified yet"}

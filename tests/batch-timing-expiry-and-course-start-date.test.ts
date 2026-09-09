@@ -14,7 +14,7 @@ describe("Faculty Batch Assignment: Branch & Timing Visibility", () => {
       },
       {
         id: "b-2",
-        name: "Morning Pinnacle A", // Same name, but different campus & timing!
+        name: "Morning Pinnacle A", // Same name, but different branch & timing!
         timing: "8:00 AM - 10:00 AM",
         courseName: "IIT-JEE Advanced",
         branchName: "Jaipur Center",

@@ -107,7 +107,7 @@ export function InstituteSetupWizard({
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1: Campus & Branding
+  // Step 1: Branch & Branding
   const [address, setAddress] = useState(initialAddress || "");
   const [city, setCity] = useState(initialCity || "");
   const [state, setState] = useState(initialState || "");

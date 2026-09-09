@@ -167,7 +167,7 @@ export function CreateBranchDrawer({
             size="small"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. South Extension Campus, Kota Center"
+            placeholder="e.g. South Extension Branch, Kota Center"
             slotProps={{ inputLabel: { shrink: true } }}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "white" } }}
           />

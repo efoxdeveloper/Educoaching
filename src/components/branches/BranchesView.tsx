@@ -172,7 +172,7 @@ export function BranchesView({
         <Box>
           <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, color: "#171A21", fontSize: "1.25rem" }}>Multi-Branch Center Management</Typography>
           <Typography variant="caption" sx={{ color: "#7E9BBC", fontSize: "0.75rem", display: "block", mt: 0.5 }}>
-            Manage your physical campus centers, track branch-level student enrollment, collections, and profitability.
+            Manage your physical branch centers, track branch-level student enrollment, collections, and profitability.
           </Typography>
         </Box>
 
@@ -185,7 +185,7 @@ export function BranchesView({
           }}
           sx={{ borderRadius: "12px", bgcolor: "#1E3A5F", textTransform: "none", fontWeight: 600, fontSize: "0.75rem", px: 2, py: 1.25, boxShadow: "none", "&:hover": { bgcolor: "#182F4C" } }}
         >
-          Add Campus Branch
+          Add Branch
         </Button>
       </Box>
 
@@ -227,7 +227,7 @@ export function BranchesView({
               <Chip label="Centralized Administration" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#DDD6FE", color: "#4C1D95", border: "1px solid #C4B5FD", textTransform: "uppercase" }} />
             </Box>
             <Typography variant="caption" sx={{ color: "#6D28D9", fontSize: "0.75rem", display: "block", mt: 0.5 }}>
-              The Main Branch (Head Office) has full access to view, switch between, and make changes to all {branches.length} campus branches, including student enrollments, batch schedules, and fee collections.
+              The Main Branch (Head Office) has full access to view, switch between, and make changes to all {branches.length} Branches, including student enrollments, batch schedules, and fee collections.
             </Typography>
           </Box>
         </Box>
@@ -235,10 +235,10 @@ export function BranchesView({
 
       {/* KPI Cards — reuse KpiCard with lazy iconName */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, gap: 2 }}>
-        <KpiCard label="Active Campuses" value={`${activeCount.toLocaleString("en-IN")} / ${branches.length.toLocaleString("en-IN")}`} iconName="Building2" accent="scholar" trend="Operational branch centers" trendTone="neutral" />
-        <KpiCard label="Total Enrolled Students" value={totalStudents.toLocaleString("en-IN")} iconName="Users" accent="scholar" trend="Across all branch campuses" trendTone="neutral" />
+        <KpiCard label="Active Branches" value={`${activeCount.toLocaleString("en-IN")} / ${branches.length.toLocaleString("en-IN")}`} iconName="Building2" accent="scholar" trend="Operational branch centers" trendTone="neutral" />
+        <KpiCard label="Total Enrolled Students" value={totalStudents.toLocaleString("en-IN")} iconName="Users" accent="scholar" trend="Across all Branches" trendTone="neutral" />
         <KpiCard label="Total Fee Collections" value={formatCurrency(totalCollections)} iconName="Wallet" accent="marigold" trend="Total cash inflow collected" trendTone="neutral" />
-        <KpiCard label="Net Campus Profit" value={formatCurrency(totalProfit)} iconName={totalProfit >= 0 ? "TrendingUp" : "TrendingDown"} accent={totalProfit >= 0 ? "scholar" : "marigold"} trend="After deducting campus expenses" trendTone={totalProfit >= 0 ? "success" : "danger"} />
+        <KpiCard label="Net Branch Profit" value={formatCurrency(totalProfit)} iconName={totalProfit >= 0 ? "TrendingUp" : "TrendingDown"} accent={totalProfit >= 0 ? "scholar" : "marigold"} trend="After deducting branch expenses" trendTone={totalProfit >= 0 ? "success" : "danger"} />
       </Box>
 
       {/* Filter and Search */}

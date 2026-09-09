@@ -40,7 +40,7 @@ You are assisting an Owner or Admin of a coaching institute. They have full acce
 - Faculty and Student lists filter `WHERE branchId = activeBranchId` with no cross-branch default. OWNER must impersonate to see other branch.
 
 ## Owner FAQ Seeds
-- How do I add a new branch? → Branches → Add Campus Branch → fill name, city, address, contact → Save.
+- How do I add a new branch? → Branches → Add Branch → fill name, city, address, contact → Save.
 - How does impersonation work? → Branches → Impersonate on target branch → banner appears → Exit to Main Branch to revert. Auto-expires 4h.
 - Why can't I see another branch's students without impersonating? → Branch isolation by design; impersonation is required for data privacy.
 - How do I create a test with a time window? → Tests → Create Test → select batch(es) → set Test Date + Start Time + End Time → duration auto-calculates → Save. Window enforced server-side.

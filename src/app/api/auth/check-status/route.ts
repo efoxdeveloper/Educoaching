@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             status: "PENDING_APPROVAL",
             type: "institute",
             title: "Registration Request in Processing",
-            message: `Your registration request for "${institute.name}" is currently in processing. Our platform administrator is verifying your institute details and physical campus. You will receive an email once access is granted.`,
+            message: `Your registration request for "${institute.name}" is currently in processing. Our platform administrator is verifying your institute details and physical branch. You will receive an email once access is granted.`,
           });
         }
         if (institute.status === "SUSPENDED") {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
           status: "PENDING_APPROVAL",
           type: "institute",
           title: "Registration Request in Processing",
-          message: `Your registration request for "${user.institute.name}" is currently in processing. Our platform administrator is verifying your institute details and physical campus. You will receive an email once access is granted.`,
+          message: `Your registration request for "${user.institute.name}" is currently in processing. Our platform administrator is verifying your institute details and physical branch. You will receive an email once access is granted.`,
         });
       }
       if (user.institute.status === "SUSPENDED") {

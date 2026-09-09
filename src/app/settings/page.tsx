@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     <Shell title="Institute Setup" userName={session?.user?.name ?? undefined}>
       <div className="mb-6">
         <p className="text-sm text-scholar-400">
-          Your institute&apos;s profile, campus details, and branding.
+          Your institute&apos;s profile, branch details, and branding.
           {!canManage && " Only Owners and Admins can make changes here."}
         </p>
       </div>

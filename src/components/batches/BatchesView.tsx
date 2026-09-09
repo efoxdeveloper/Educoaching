@@ -167,7 +167,7 @@ export function BatchesView({
         <Box sx={{ display: "flex", flex: 1, flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { sm: "center" } }}>
           <TextField
             size="small"
-            placeholder="Search batches, course, campus..."
+            placeholder="Search batches, course, branch..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             slotProps={{
@@ -262,11 +262,11 @@ export function BatchesView({
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#334155", fontWeight: 600, fontSize: "0.75rem" }}>
                     <Building2 size={13} style={{ color: "#64748b", flexShrink: 0 }} />
-                    Campus Allocation:
+                    Branch Allocation:
                   </Box>
                   {b.isAllBranches ? (
                     <Chip
-                      label="🌐 All Campuses (Joint / Shared Program)"
+                      label="🌐 All Branches (Joint / Shared Program)"
                       size="small"
                       sx={{ bgcolor: "#f3e8ff", color: "#6b21a8", border: "1px solid #e9d5ff", fontWeight: 700, fontSize: "10px", height: 22, borderRadius: "6px", width: "fit-content" }}
                     />

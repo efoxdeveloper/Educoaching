@@ -347,7 +347,7 @@ ${
           </Box>
         </Paper>
 
-        {/* Section 2: Physical Campus Location & Entity Legitimacy */}
+        {/* Section 2: Physical Branch Location & Entity Legitimacy */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1.25, mb: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.5, color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -362,7 +362,7 @@ ${
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
             <Paper variant="outlined" sx={{ p: 1.5, borderRadius: "12px", bgcolor: "rgba(238,242,247,0.5)", borderColor: "#D6E0EB", gridColumn: "1 / -1" }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Physical Campus Address & City</Typography>
+                <Typography variant="caption" sx={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC" }}>Physical Branch Address & City</Typography>
                 {institute.address && (
                   <IconButton size="small" onClick={() => copyToClipboard(institute.address || "", "address")} sx={{ color: "#7E9BBC", width: 20, height: 20 }}>
                     {copiedField === "address" ? <Check size={13} style={{ color: "#059669" }} /> : <Copy size={13} />}
@@ -413,13 +413,13 @@ ${
           </Box>
         </Paper>
 
-        {/* Section 3: Branch Campuses Submitted on Signup */}
+        {/* Section 3: Branches Submitted on Signup */}
         {institute.branches && institute.branches.length > 0 && (
           <Paper variant="outlined" sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB" }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #D6E0EB", pb: 1, mb: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Building2 size={15} style={{ color: "#4E6E93" }} />
-                Configured Campus Branches ({institute.branches.length})
+                Configured Branches ({institute.branches.length})
               </Typography>
             </Box>
             <Stack spacing={1} sx={{ maxHeight: 160, overflowY: "auto", pr: 0.5 }}>

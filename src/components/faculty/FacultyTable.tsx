@@ -257,7 +257,7 @@ export function FacultyTable({
               <tr className="border-b border-scholar-100 text-xs font-medium text-scholar-400">
                 <th className="pb-3 pl-2">Name &amp; Specialization</th>
                 <th className="pb-3">Department &amp; Role</th>
-                <th className="pb-3">Branch Campus Allocation</th>
+                <th className="pb-3">Branch Allocation</th>
                 <th className="pb-3">System Access</th>
                 <th className="pb-3">Contact</th>
                 <th className="pb-3">Salary</th>
@@ -325,11 +325,11 @@ export function FacultyTable({
                         </span>
                       </td>
 
-                      {/* Multi-Branch Campus Allocation */}
+                      {/* Multi-Branch Allocation */}
                       <td className="py-3.5">
                         {f.isAllBranches ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
-                            🌐 All Campuses (Visiting Star)
+                            🌐 All Branches (Visiting Star)
                           </span>
                         ) : allocatedBranches.length > 0 ? (
                           <div className="flex flex-wrap gap-1">

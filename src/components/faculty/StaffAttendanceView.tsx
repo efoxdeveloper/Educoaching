@@ -333,7 +333,7 @@ export function StaffAttendanceView({
               <option value="OPERATIONS_SUPPORT">Operations &amp; Support</option>
             </select>
 
-            {/* Campus Filter */}
+            {/* Branch Filter */}
             {branches.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <Filter size={14} className="text-scholar-400" />
@@ -395,7 +395,7 @@ export function StaffAttendanceView({
               <tr className="border-b border-scholar-100 text-xs font-medium text-scholar-400">
                 <th className="pb-3 pl-2">Staff Member</th>
                 <th className="pb-3">Department &amp; Role</th>
-                <th className="pb-3">Campus</th>
+                <th className="pb-3">Branch</th>
                 <th className="pb-3 text-center">Attendance Status</th>
                 <th className="pb-3 text-center">Check-In</th>
                 <th className="pb-3 text-center">Check-Out</th>
@@ -412,7 +412,7 @@ export function StaffAttendanceView({
               ) : (
                 filteredFaculty.map((f) => {
                   const currentStatus = marks[f.id] || "PRESENT";
-                  const campusName = f.isAllBranches
+                  const branchName = f.isAllBranches
                     ? "All Branches"
                     : f.branches && f.branches.length > 0
                     ? f.branches.map((b) => b.name).join(", ")
@@ -445,9 +445,9 @@ export function StaffAttendanceView({
                         </div>
                       </td>
 
-                      {/* Campus */}
+                      {/* Branch */}
                       <td className="py-3 text-xs text-scholar-600 max-w-[150px] truncate">
-                        {campusName}
+                        {branchName}
                       </td>
 
                       {/* Status Toggle Buttons */}

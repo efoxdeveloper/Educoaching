@@ -1081,7 +1081,7 @@ export function StudentPortalView({
                       </Typography>
                     </Stack>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "11px", mt: 1, display: "block" }}>
-                      Please report to campus 10 minutes prior to lecture start.
+                      Please report to branch 10 minutes prior to lecture start.
                     </Typography>
                   </Paper>
 
@@ -1110,7 +1110,7 @@ export function StudentPortalView({
                 <Paper elevation={0} sx={{ p: 1.5, borderRadius: "12px", border: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.55)", display: "flex", alignItems: "flex-start", gap: 1.2 }}>
                   <Lock size={15} color="#4E6E93" style={{ flexShrink: 0, marginTop: 2 }} />
                   <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#4E6E93", lineHeight: 1.5 }}>
-                    <Box component="span" sx={{ fontWeight: 700 }}>Notice</Box>: Students can only view their allocated batch and schedule. Batch timing adjustments, subject additions, or campus transfers must be requested through your campus administration.
+                    <Box component="span" sx={{ fontWeight: 700 }}>Notice</Box>: Students can only view their allocated batch and schedule. Batch timing adjustments, subject additions, or branch transfers must be requested through your branch administration.
                   </Typography>
                 </Paper>
               </Stack>

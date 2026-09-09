@@ -91,10 +91,10 @@ export function Topbar({
   const isMainBranch = (session?.user as { isMainBranch?: boolean } | undefined)?.isMainBranch ?? true;
   const isSubBranchUser = Boolean(userBranchId && !isMainBranch);
 
-  // Main Branch users, Owners, and Platform Admins can switch between campuses.
+  // Main Branch users, Owners, and Platform Admins can switch between branches.
   // Sub-branch users, Students, Parents, and Faculty are strictly scoped to their assigned branch.
   const isStudentOrParentOrFaculty = userRole === "STUDENT" || userRole === "PARENT" || userRole === "FACULTY";
-  const canSwitchCampus =
+  const canSwitchBranch =
     !isStudentOrParentOrFaculty &&
     !isSubBranchUser &&
     (userRole === "OWNER" || (userRole === "ADMIN" && isMainBranch) || userRole === "PLATFORM_ADMIN");
@@ -147,7 +147,7 @@ export function Topbar({
       </div>
 
       <div className="flex items-center gap-3">
-        {canSwitchCampus ? (
+        {canSwitchBranch ? (
           branches.length > 0 && (
             <div className="flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-scholar-50/60 px-2.5 py-1">
               <Building2 size={14} className="text-scholar-600" />
@@ -155,7 +155,7 @@ export function Topbar({
                 value={selectedBranch}
                 onChange={(e) => handleBranchChange(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-scholar-800 outline-none cursor-pointer"
-                title="Select Campus"
+                title="Select Branch"
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -168,7 +168,7 @@ export function Topbar({
         ) : (
           <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-scholar-50 px-2.5 py-1 text-xs font-semibold text-scholar-700">
             <Building2 size={13} className="text-scholar-500" />
-            <span>{currentBranchName ? `📍 ${currentBranchName} Campus` : "Assigned Campus Credentials"}</span>
+            <span>{currentBranchName ? `📍 ${currentBranchName} Branch` : "Assigned Branch Credentials"}</span>
             {currentBranchIsMain && currentBranchName && <Chip label="Main" size="small" sx={{ height: 18, fontSize: "10px", fontWeight: 700, bgcolor: "#F5F3FF", color: "#4C1D95", border: "1px solid #DDD6FE" }} />}
           </div>
         )}

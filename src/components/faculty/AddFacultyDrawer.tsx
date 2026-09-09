@@ -510,12 +510,12 @@ export function AddFacultyDrawer({
           </div>
         </div>
 
-        {/* Multi-Branch Campus Allocation */}
+        {/* Multi-Branch Allocation */}
         <div className="rounded-xl border border-scholar-200 bg-scholar-50/50 p-3.5 space-y-2.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-scholar-800 flex items-center gap-1.5">
               <Building2 size={14} className="text-scholar-600" />
-              <span>Multi-Branch Campus Allocation</span>
+              <span>Multi-Branch Allocation</span>
             </label>
             {branches.length > 0 && (
               <div className="flex items-center gap-2">
@@ -551,13 +551,13 @@ export function AddFacultyDrawer({
                   onChange={(e) => setIsAllBranches(e.target.checked)}
                   className="h-4 w-4 rounded text-scholar-600 focus:ring-scholar-500"
                 />
-                <span>All Branches / Visiting Star Faculty (Conducts lectures across all campuses)</span>
+                <span>All Branches / Visiting Star Faculty (Conducts lectures across all branches)</span>
               </label>
 
               {!isAllBranches && (
                 <div className="space-y-1.5 pt-1">
                   <p className="text-[11px] text-scholar-500">
-                    Allocate campuses where this staff member operates:
+                    Allocate branches where this staff member operates:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
                     {branches.map((b) => {

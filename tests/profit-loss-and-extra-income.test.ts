@@ -65,7 +65,7 @@ describe("Feature 2 — Extra Income tracking + Proper P&L Reports", () => {
     it("ensures sum of per-branch net profits matches the consolidated institute report", () => {
       // Branch 1
       const branch1 = {
-        name: "North Campus",
+        name: "North Branch",
         feesCollected: 60000,
         extraIncome: 15000,
         expenses: 50000,
@@ -75,7 +75,7 @@ describe("Feature 2 — Extra Income tracking + Proper P&L Reports", () => {
 
       // Branch 2
       const branch2 = {
-        name: "South Campus",
+        name: "South Branch",
         feesCollected: 80000,
         extraIncome: 20000,
         expenses: 70000,

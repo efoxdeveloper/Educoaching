@@ -188,7 +188,7 @@ export function AddAdmissionDrawer({
               </select>
             </Field>
 
-            <Field label="Branch / Campus">
+            <Field label="Branch">
               <select
                 className={inputClass}
                 value={form.branchId}

@@ -111,11 +111,11 @@ const FAQS: FaqItem[] = [
     category: "Multi-Branch",
     question: "How do I add and manage multiple branches under our institute?",
     summary:
-      "Create independent branch campuses with their own faculty, batches, and budgets while retaining central head-office oversight.",
+      "Create independent Branches with their own faculty, batches, and budgets while retaining central head-office oversight.",
     steps: [
       "1. Navigate to 'Branches' in the sidebar navigation.",
       "2. Click 'Add Branch' and provide the Branch Name, Code, City, Address, and Branch Manager contact details.",
-      "3. Assign faculty members, staff, batches, and classroom resources specifically to each branch campus.",
+      "3. Assign faculty members, staff, batches, and classroom resources specifically to each Branch.",
       "4. Institute Owners retain central head-office oversight with consolidated financial analytics, branch-wise student counts, and fee collection summaries.",
     ],
   },

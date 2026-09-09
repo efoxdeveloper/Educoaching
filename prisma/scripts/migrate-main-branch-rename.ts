@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * One-off migration: rename stale Main Branch rows from "Main Campus" to correct convention.
+ * One-off migration: rename stale Main Branch rows to correct convention.
  * Correct name: `${institute.name} (Main Branch)` (as used in signup route and setup wizard).
  * Finds every Branch where isMainBranch: true and renames if it doesn't match that pattern.
  * Run: npx tsx prisma/scripts/migrate-main-branch-rename.ts
@@ -33,8 +33,8 @@ async function main() {
     }
 
     // Also consider already correct if name contains "(Main Branch)" and institute name is present — but spec says enforce exact pattern
-    // So we rename any isMainBranch row that doesn't exactly match expected, including stale "Main Campus" variants
-    const isStale = branch.name.includes("Main Campus") || branch.name !== expected;
+    // So we rename any isMainBranch row that doesn't exactly match expected
+    const isStale = branch.name !== expected;
     if (!isStale) {
       console.log(`  SKIP: ${branch.id} "${branch.name}" already matches expected pattern`);
       skipped++;
@@ -51,7 +51,7 @@ async function main() {
 
   console.log(`\nDone — updated: ${updated}, skipped: ${skipped}, total: ${branches.length}`);
   if (updated === 0) {
-    console.log("No stale Main Campus branches found — all Main Branch names already correct.");
+    console.log("No stale Main Branches found — all Main Branch names already correct.");
   } else {
     console.log(`Corrected ${updated} stale Main Branch name(s) to canonical "\${institute.name} (Main Branch)" convention.`);
   }

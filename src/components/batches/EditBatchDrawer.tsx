@@ -230,7 +230,7 @@ export function EditBatchDrawer({
     setError("");
 
     if (!isAllBranches && selectedBranchIds.length === 0 && branches.length > 0) {
-      setError("Please select at least one branch campus or check 'All Branches'.");
+      setError("Please select at least one Branch or check 'All Branches'.");
       return;
     }
 
@@ -426,7 +426,7 @@ export function EditBatchDrawer({
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#1E293b", display: "flex", alignItems: "center", gap: 0.75 }}>
               <Building2 size={14} style={{ color: "#475569" }} />
-              Campus Branch Allocation
+              Branch Allocation
             </Typography>
             {branches.length > 0 && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -472,7 +472,7 @@ export function EditBatchDrawer({
                   }
                   label={
                     <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#334155" }}>
-                      All Branches / Central Hybrid Program (Shared across campuses)
+                      All Branches / Central Hybrid Program (Shared across branches)
                     </Typography>
                   }
                   sx={{ m: 0 }}

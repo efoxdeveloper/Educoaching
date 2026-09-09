@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 describe("Phase 4: Multi-Branch Operations & AI Academic Engine", () => {
   it("calculates branch-level financial metrics and operating margin", () => {
     const branchA = {
-      name: "South Extension Campus",
+      name: "South Extension Branch",
       studentCount: 50,
       totalCollected: 500000,
       totalExpenses: 200000,

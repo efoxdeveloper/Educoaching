@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-describe("Multi-Branch Batch Allocation (Shared Course & Timing Across Campuses)", () => {
+describe("Multi-Branch Batch Allocation (Shared Course & Timing Across Branches)", () => {
   const branches = [
     { id: "br-kota", name: "Kota Main Branch", city: "Kota" },
     { id: "br-jaipur", name: "Jaipur Center", city: "Jaipur" },
@@ -109,7 +109,7 @@ describe("Multi-Branch Faculty Allocation (Morning at Branch A, Evening at Branc
     expect(matchesBranchFilter(starFaculty, "br-delhi")).toBe(false);
   });
 
-  it("supports visiting star faculty allocated to all campuses", () => {
+  it("supports visiting star faculty allocated to all branches", () => {
     const celebrityFaculty = {
       id: "fac-star-guest",
       name: "Dr. K. N. Sharma",

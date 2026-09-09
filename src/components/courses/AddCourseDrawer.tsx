@@ -312,7 +312,7 @@ export function AddCourseDrawer({
               <Building2 size={15} style={{ color: "#475569" }} /> Branch Allocation
             </Typography>
             <Typography variant="caption" sx={{ fontSize: "11px", color: "#7E9BBC" }}>
-              Choose which campus branches offer this program
+              Choose which Branches offer this program
             </Typography>
           </Box>
 

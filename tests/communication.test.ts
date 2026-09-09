@@ -91,7 +91,7 @@ describe("Sub-Branch Request and Admin Approval Workflow", () => {
     const result = await sendBranchProcessingEmail({
       to: "owner@testinstitute.com",
       recipientName: "Dr. Ramesh Sharma",
-      branchName: "South Campus",
+      branchName: "South Branch",
       instituteName: "Ramesh IIT Classes",
       city: "Kota",
     });
@@ -103,7 +103,7 @@ describe("Sub-Branch Request and Admin Approval Workflow", () => {
     const { sendAdminBranchAlertEmail } = await import("@/lib/email");
     const result = await sendAdminBranchAlertEmail({
       to: "admin@platform.test",
-      branchName: "South Campus",
+      branchName: "South Branch",
       instituteName: "Ramesh IIT Classes",
       ownerName: "Dr. Ramesh Sharma",
       city: "Kota",
@@ -120,7 +120,7 @@ describe("Sub-Branch Request and Admin Approval Workflow", () => {
     const result = await sendBranchApprovedEmail({
       to: "owner@testinstitute.com",
       recipientName: "Dr. Ramesh Sharma",
-      branchName: "South Campus",
+      branchName: "South Branch",
       instituteName: "Ramesh IIT Classes",
       portalUrl: "http://localhost:3000/branches",
     });
@@ -131,12 +131,12 @@ describe("Sub-Branch Request and Admin Approval Workflow", () => {
   it("should generate a branch approved email including login credentials", async () => {
     const { sendBranchApprovedEmail } = await import("@/lib/email");
     const result = await sendBranchApprovedEmail({
-      to: "southcampus@testinstitute.com",
-      recipientName: "South Campus Admin",
-      branchName: "South Campus",
+      to: "southbranch@testinstitute.com",
+      recipientName: "South Branch Admin",
+      branchName: "South Branch",
       instituteName: "Ramesh IIT Classes",
       portalUrl: "http://localhost:3000/login?portal=institute",
-      loginEmail: "southcampus@testinstitute.com",
+      loginEmail: "southbranch@testinstitute.com",
     });
 
     expect(result).toHaveProperty("sent");

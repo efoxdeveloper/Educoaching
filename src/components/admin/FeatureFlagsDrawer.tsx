@@ -44,8 +44,8 @@ const FEATURE_DESCRIPTIONS: Record<keyof FeatureFlags, { label: string; desc: st
     desc: "Allow students to pay course fees directly via credit/debit card and UPI checkout.",
   },
   multiBranch: {
-    label: "Multi-Branch Campus Management",
-    desc: "Configure multiple branch locations and campuses under this institute.",
+    label: "Multi-Branch Management",
+    desc: "Configure multiple branch locations under this institute.",
   },
   expenses: {
     label: "Expense Management & Outflow",

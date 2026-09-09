@@ -740,7 +740,7 @@ export async function sendBranchProcessingEmail(params: {
         <strong>Login Email:</strong> <span style="color: #1E3A5F; font-family: monospace;">${loginEmail}</span>
       </p>
       <p style="color: #64748B; font-size: 12px; margin: 0; line-height: 1.5;">
-        Your branch user account has been registered. You can sign in using this email and your chosen password as soon as the platform administrator approves the campus.
+        Your branch user account has been registered. You can sign in using this email and your chosen password as soon as the platform administrator approves the branch.
       </p>
     </div>
     `
@@ -760,7 +760,7 @@ export async function sendBranchProcessingEmail(params: {
         ⏳ Request Currently in Processing
       </p>
       <p style="color: #B45309; font-size: 13px; margin: 0; line-height: 1.5;">
-        Your sub-branch access request is currently being verified and reviewed by our Platform Administrator to confirm campus infrastructure and operational details.
+        Your sub-branch access request is currently being verified and reviewed by our Platform Administrator to confirm branch infrastructure and operational details.
       </p>
     </div>
     ${credentialsBlock}

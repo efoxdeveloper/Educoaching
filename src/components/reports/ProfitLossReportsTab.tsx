@@ -266,7 +266,7 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                 Monthly P&L Comparison: Total Revenue vs. Total Expenses
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem" }}>
-                Tracking monthly trends across fee revenue, extra non-fee income, and campus expenses.
+                Tracking monthly trends across fee revenue, extra non-fee income, and branch expenses.
               </Typography>
             </Box>
 

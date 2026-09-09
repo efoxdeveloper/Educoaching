@@ -216,7 +216,7 @@ export function SignupForm() {
                     2. Once verified, access is granted and you will receive a confirmation email.
                   </p>
                   <p className="text-amber-800 leading-relaxed">
-                    3. On your first login, an interactive <strong>Step-by-Step Setup Wizard</strong> will open to guide you in setting your physical campus address, manual academic session, institute logo, and initial courses.
+                    3. On your first login, an interactive <strong>Step-by-Step Setup Wizard</strong> will open to guide you in setting your physical branch address, manual academic session, institute logo, and initial courses.
                   </p>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export function SignupForm() {
             {/* Physical Address */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-ink">
-                Campus / Institute Address <span className="text-rose-500">*</span>
+                Branch / Institute Address <span className="text-rose-500">*</span>
               </label>
               <div className="flex items-center gap-2 rounded-xl border border-scholar-200 bg-white px-3 py-2.5 focus-within:border-scholar-500 focus-within:ring-2 focus-within:ring-scholar-100">
                 <MapPin size={16} className="text-scholar-400 shrink-0" />

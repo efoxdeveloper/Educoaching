@@ -21,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/tenant", () => ({
   requireInstitute: vi.fn(),
+  requirePermission: vi.fn(),
 }));
 
 vi.mock("@/lib/whatsapp", () => ({
@@ -34,10 +35,10 @@ describe("1 — Student attendance locked after save", () => {
   const date = "2026-09-03";
 
   it("rejects saving attendance if records for batch and date are already locked", async () => {
-    vi.mocked(tenantModule.requireInstitute).mockResolvedValue({
+    vi.mocked(tenantModule.requirePermission).mockResolvedValue({
       instituteId,
-      userId: "user-1",
-      role: "STAFF",
+      branchId: "branch-1",
+      session: { user: { id: "user-1" } },
     } as any);
 
     vi.mocked(prisma.batch.findFirst).mockResolvedValue({
@@ -70,10 +71,10 @@ describe("1 — Student attendance locked after save", () => {
   });
 
   it("saves and sets locked: true on new attendance submission", async () => {
-    vi.mocked(tenantModule.requireInstitute).mockResolvedValue({
+    vi.mocked(tenantModule.requirePermission).mockResolvedValue({
       instituteId,
-      userId: "user-1",
-      role: "STAFF",
+      branchId: "branch-1",
+      session: { user: { id: "user-1" } },
     } as any);
 
     vi.mocked(prisma.batch.findFirst).mockResolvedValue({

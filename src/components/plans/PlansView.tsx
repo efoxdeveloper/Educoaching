@@ -357,7 +357,7 @@ export function PlansView({ canManage }: { canManage: boolean }) {
                 </h2>
               </div>
               <p className="text-xs text-scholar-500 mt-1">
-                Choose the billing cycle that works best for your institute. All features and multi-campus branches are included.
+                Choose the billing cycle that works best for your institute. All features and multiple branches are included.
               </p>
             </div>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
@@ -423,7 +423,7 @@ export function PlansView({ canManage }: { canManage: boolean }) {
                       </div>
                       <div className="flex items-center gap-2">
                         <Check size={15} className="text-emerald-600 shrink-0 font-bold" />
-                        <span><strong>Multi-Campus</strong> Branch Management</span>
+                        <span><strong>Multi-Branch</strong> Management</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Check size={15} className="text-emerald-600 shrink-0 font-bold" />

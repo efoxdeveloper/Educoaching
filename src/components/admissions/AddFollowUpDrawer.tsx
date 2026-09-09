@@ -29,7 +29,7 @@ type LeadTarget = {
 const CALL_STATUSES = [
   { value: "INTERESTED", label: "Interested / Highly Responsive" },
   { value: "CALL_BACK", label: "Requested Call Back Later" },
-  { value: "VISIT_PLANNED", label: "Campus Visit Planned" },
+  { value: "VISIT_PLANNED", label: "Branch Visit Planned" },
   { value: "DEMO_BOOKED", label: "Trial Demo Booked" },
   { value: "NOT_REACHABLE", label: "Not Reachable / Busy" },
   { value: "ENROLLED", label: "Agreed to Enroll" },

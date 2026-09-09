@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-describe("Main Branch Branch Impersonation", () => {
+describe("Main Branch Impersonation", () => {
   type User = {
     role: string;
     isMainBranch?: boolean;

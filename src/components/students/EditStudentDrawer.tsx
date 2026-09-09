@@ -345,10 +345,10 @@ export function EditStudentDrawer({
         {/* Branch correction — visible when student's branch is missing or institute has multiple branches */}
         {branches.length > 0 && (
           <FormControl fullWidth size="small">
-            <InputLabel id="edit-student-branch-label">Branch / Campus</InputLabel>
+            <InputLabel id="edit-student-branch-label">Branch</InputLabel>
             <Select
               labelId="edit-student-branch-label"
-              label="Branch / Campus"
+              label="Branch"
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
               sx={{ borderRadius: "12px", bgcolor: "white" }}

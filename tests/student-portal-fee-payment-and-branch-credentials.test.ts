@@ -1,21 +1,21 @@
 import { describe, it, expect } from "vitest";
 
-describe("Campus Change Permission: Restricted for Faculty & Student", () => {
-  const canSwitchCampus = (role: string) => {
+describe("Branch Change Permission: Restricted for Faculty & Student", () => {
+  const canSwitchBranch = (role: string) => {
     const upper = role.toUpperCase();
     return upper === "OWNER" || upper === "ADMIN" || upper === "PLATFORM_ADMIN";
   };
 
-  it("permits Owner and Admin to switch between all campus branches", () => {
-    expect(canSwitchCampus("OWNER")).toBe(true);
-    expect(canSwitchCampus("ADMIN")).toBe(true);
-    expect(canSwitchCampus("PLATFORM_ADMIN")).toBe(true);
+  it("permits Owner and Admin to switch between all Branches", () => {
+    expect(canSwitchBranch("OWNER")).toBe(true);
+    expect(canSwitchBranch("ADMIN")).toBe(true);
+    expect(canSwitchBranch("PLATFORM_ADMIN")).toBe(true);
   });
 
-  it("blocks Faculty and Students from switching campuses (locked to assigned branch credentials)", () => {
-    expect(canSwitchCampus("FACULTY")).toBe(false);
-    expect(canSwitchCampus("STUDENT")).toBe(false);
-    expect(canSwitchCampus("STAFF")).toBe(false);
+  it("blocks Faculty and Students from switching branches (locked to assigned branch credentials)", () => {
+    expect(canSwitchBranch("FACULTY")).toBe(false);
+    expect(canSwitchBranch("STUDENT")).toBe(false);
+    expect(canSwitchBranch("STAFF")).toBe(false);
   });
 });
 
