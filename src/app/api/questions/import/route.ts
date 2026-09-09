@@ -213,7 +213,10 @@ export async function POST(req: Request) {
       try {
         const { PDFParse } = await import("pdf-parse");
         console.log("[import:pdf] PDFParse class loaded");
-        const parser: any = new (PDFParse as any)({ data: buffer });
+        // Force main-thread parsing (no worker) — this route always runs server-side in Node, never in browser.
+        // Next 14 externalizes pdf-parse (serverComponentsExternalPackages) so pdfjs-dist's worker file resolves,
+        // but we also disable the worker explicitly to avoid "fake worker" setup entirely.
+        const parser: any = new (PDFParse as any)({ data: buffer, verbosity: 0, disableWorker: true } as any);
         const result: any = await parser.getText();
         console.log("[import:pdf] getText done, text length", result.text?.length, "keys", Object.keys(result), "numpages", result.numpages ?? result.total ?? result.numPages ?? "unknown", "text preview", (result.text || "").slice(0, 200));
         text = result.text || "";

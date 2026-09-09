@@ -5,6 +5,7 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["@mui/material"],
+    serverComponentsExternalPackages: ["pdf-parse"],
   },
 };
 
