@@ -67,6 +67,11 @@ export function QuestionBankDrawer({
     tone: "success" | "warn" | "danger" | "info";
   }>({ open: false, title: "", message: "", tone: "info" });
 
+  // Bulk delete selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
@@ -86,6 +91,83 @@ export function QuestionBankDrawer({
       setLoading(false);
     }
   }, [subjectFilter, difficultyFilter, search]);
+
+  // Clear selection when filters change - keeps behavior predictable
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [subjectFilter, difficultyFilter, search]);
+
+  // Also prune selection when question list changes (e.g. after delete)
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const validIds = new Set(questions.map((q) => q.id));
+      const pruned = new Set<string>();
+      for (const id of Array.from(prev)) if (validIds.has(id as string)) pruned.add(id as string);
+      return pruned.size === prev.size ? prev : pruned;
+    });
+  }, [questions]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === questions.length && questions.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(questions.map((q) => q.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      const res = await fetch("/api/questions/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Bulk delete failed");
+      const deleted = data.deleted ?? selectedIds.size;
+      const skipped = data.skipped ?? 0;
+      const total = data.requested ?? selectedIds.size;
+      // Show result dialog with Yes/No style (using existing importResultDialog for consistency)
+      if (skipped > 0) {
+        setImportResultDialog({
+          open: true,
+          title: "Partial Delete",
+          message: `${deleted} of ${total} questions deleted, ${skipped} could not be deleted${data.notFound?.length ? ` (${skipped} not found or not owned)` : " because they are linked to an active test"}.`,
+          tone: "warn",
+        });
+      } else {
+        setImportResultDialog({
+          open: true,
+          title: "Delete Successful",
+          message: `${deleted} question(s) deleted successfully.`,
+          tone: "success",
+        });
+      }
+      setSelectedIds(new Set());
+      setBulkConfirmOpen(false);
+      fetchQuestions();
+    } catch (e: any) {
+      setImportResultDialog({
+        open: true,
+        title: "Bulk Delete Failed",
+        message: e.message || "Failed to delete selected questions",
+        tone: "danger",
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -265,6 +347,35 @@ export function QuestionBankDrawer({
               </select>
             </div>
 
+            {/* Bulk selection action bar */}
+            {questions.length > 0 && (
+              <div className="flex items-center justify-between rounded-xl border border-scholar-200 bg-white px-3 py-2">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === questions.length && questions.length > 0}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-scholar-300 text-scholar-600 focus:ring-scholar-500"
+                  />
+                  Select All
+                </label>
+                {selectedIds.size > 0 ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-scholar-700">{selectedIds.size} question(s) selected</span>
+                    <button
+                      type="button"
+                      onClick={() => setBulkConfirmOpen(true)}
+                      className="rounded-lg bg-rose-600 px-3 py-1 text-xs font-bold text-white hover:bg-rose-700 transition-colors"
+                    >
+                      Delete Selected
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-scholar-400">{questions.length} question(s)</span>
+                )}
+              </div>
+            )}
+
             {/* Questions List */}
             {loading ? (
               <div className="flex h-48 items-center justify-center">
@@ -279,10 +390,16 @@ export function QuestionBankDrawer({
                 {questions.map((q, idx) => (
                   <div
                     key={q.id}
-                    className="rounded-xl border border-scholar-100 bg-scholar-50/40 p-4 space-y-2 hover:border-scholar-300 transition-all"
+                    className={`rounded-xl border p-4 space-y-2 transition-all ${selectedIds.has(q.id) ? "border-scholar-300 bg-scholar-50" : "border-scholar-100 bg-scholar-50/40 hover:border-scholar-300"}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(q.id)}
+                          onChange={() => toggleSelect(q.id)}
+                          className="h-4 w-4 rounded border-scholar-300 text-scholar-600 focus:ring-scholar-500"
+                        />
                         <span className="flex h-5 w-5 items-center justify-center rounded-md bg-scholar-200 text-[10px] font-bold text-scholar-800">
                           {idx + 1}
                         </span>
@@ -592,6 +709,17 @@ export function QuestionBankDrawer({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={bulkConfirmOpen}
+        onClose={() => setBulkConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Questions"
+        message={`Are you sure you want to delete ${selectedIds.size} question(s)? This action cannot be undone.`}
+        confirmLabel={`Yes, Delete ${selectedIds.size}`}
+        cancelLabel="No, Cancel"
+        tone="danger"
+        loading={bulkDeleting}
+      />
       <ConfirmDialog
         open={importResultDialog.open}
         onClose={() => setImportResultDialog((prev) => ({ ...prev, open: false }))}
