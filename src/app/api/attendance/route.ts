@@ -105,20 +105,38 @@ export async function POST(req: Request) {
     );
   }
 
+  // Enforce all-or-nothing: require full batch attendance before locking
+  const totalStudents = (prisma.student as any).count
+    ? await (prisma.student as any).count({
+        where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string, batchId },
+      })
+    : (await prisma.student.findMany({ where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string, batchId } } as any)).length;
+  if (records.length !== totalStudents) {
+    const remaining = totalStudents - records.length;
+    return NextResponse.json(
+      { error: `Please mark attendance for all ${totalStudents} students before saving — ${remaining} remaining` },
+      { status: 400 }
+    );
+  }
+
   // Snapshot what attendance looked like before this save, so we only notify parents
   // when a student is newly marked Absent/Late - not every time attendance is re-saved.
   const existing = await prisma.attendance.findMany({ where: { batchId, date: day, instituteId: ctx.instituteId, branchId: ctx.branchId as string } });
   const previousStatus = new Map(existing.map((r) => [r.studentId, r.status]));
 
-  await Promise.all(
-    records.map((r) =>
-      prisma.attendance.upsert({
-        where: { studentId_date: { studentId: r.studentId, date: day } },
-        update: { status: r.status, batchId, locked: true, branchId: ctx.branchId as string },
-        create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId, branchId: ctx.branchId as string, locked: true },
-      })
-    )
+  // All-or-nothing transaction: upsert all records with locked=true atomically
+  const ops = records.map((r) =>
+    prisma.attendance.upsert({
+      where: { studentId_date: { studentId: r.studentId, date: day } },
+      update: { status: r.status, batchId, locked: true, branchId: ctx.branchId as string },
+      create: { studentId: r.studentId, batchId, date: day, status: r.status, instituteId: ctx.instituteId, branchId: ctx.branchId as string, locked: true },
+    })
   );
+  if ((prisma as any).$transaction) {
+    await (prisma as any).$transaction(ops);
+  } else {
+    await Promise.all(ops);
+  }
 
   // Fire WhatsApp alerts to parents for newly Absent/Late students - never let this block the response.
   const newlyFlagged = records.filter(

@@ -15,7 +15,16 @@ vi.mock("@/lib/prisma", () => ({
     },
     student: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
+    $transaction: vi.fn(async (ops: any[]) => {
+      // Simulate transaction by awaiting each upsert promise
+      const results: any[] = [];
+      for (const op of ops) {
+        results.push(await op);
+      }
+      return results;
+    }),
   },
 }));
 
@@ -85,7 +94,12 @@ describe("1 — Student attendance locked after save", () => {
 
     vi.mocked(prisma.attendance.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.attendance.findMany).mockResolvedValue([]);
+    vi.mocked((prisma.student as any).count).mockResolvedValue(2);
     vi.mocked(prisma.attendance.upsert).mockResolvedValue({} as any);
+    vi.mocked((prisma as any).$transaction).mockImplementation(async (ops: any[]) => {
+      for (const op of ops) await op;
+      return [];
+    });
 
     const req = new Request("http://localhost/api/attendance", {
       method: "POST",
@@ -119,5 +133,108 @@ describe("1 — Student attendance locked after save", () => {
         }),
       })
     );
+  });
+
+  it("rejects partial attendance and does not lock any rows", async () => {
+    vi.mocked(tenantModule.requirePermission).mockResolvedValue({
+      instituteId,
+      branchId: "branch-1",
+      session: { user: { id: "user-1" } },
+    } as any);
+
+    vi.mocked(prisma.batch.findFirst).mockResolvedValue({
+      id: batchId,
+      name: "Physics Batch A",
+      instituteId,
+    } as any);
+
+    vi.mocked(prisma.attendance.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.attendance.findMany).mockResolvedValue([]);
+    vi.mocked((prisma.student as any).count).mockResolvedValue(10);
+    vi.mocked(prisma.attendance.upsert).mockClear();
+    vi.mocked((prisma as any).$transaction).mockClear();
+
+    const req = new Request("http://localhost/api/attendance", {
+      method: "POST",
+      body: JSON.stringify({
+        batchId,
+        date,
+        records: [{ studentId: "s1", status: "PRESENT" }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res!.status).toBe(400);
+    const data = await res!.json();
+    expect(data.error).toMatch(/Please mark attendance for all 10 students before saving — 9 remaining/);
+    expect(prisma.attendance.upsert).not.toHaveBeenCalled();
+    expect((prisma as any).$transaction).not.toHaveBeenCalled();
+  });
+
+  it("isolates batches: marking Batch A does not block Batch B on same date", async () => {
+    vi.mocked(tenantModule.requirePermission).mockResolvedValue({
+      instituteId,
+      branchId: "branch-1",
+      session: { user: { id: "user-1" } },
+    } as any);
+
+    // Batch A has 2 students, Batch B has 2 students - both succeed independently
+    vi.mocked(prisma.batch.findFirst).mockResolvedValue({
+      id: "batch-A",
+      name: "Batch A",
+      instituteId,
+    } as any);
+
+    vi.mocked(prisma.attendance.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.attendance.findMany).mockResolvedValue([]);
+    vi.mocked((prisma.student as any).count).mockResolvedValue(2);
+    vi.mocked(prisma.attendance.upsert).mockResolvedValue({} as any);
+    vi.mocked((prisma as any).$transaction).mockImplementation(async (ops: any[]) => {
+      for (const op of ops) await op;
+      return [];
+    });
+
+    const reqA = new Request("http://localhost/api/attendance", {
+      method: "POST",
+      body: JSON.stringify({
+        batchId: "batch-A",
+        date,
+        records: [
+          { studentId: "s1", status: "PRESENT" },
+          { studentId: "s2", status: "PRESENT" },
+        ],
+      }),
+    });
+    const resA = await POST(reqA);
+    expect(resA!.status).toBe(200);
+
+    // Now Batch B on same date should still be saveable – locked check is per batchId
+    vi.mocked(prisma.batch.findFirst).mockResolvedValue({
+      id: "batch-B",
+      name: "Batch B",
+      instituteId,
+    } as any);
+    (vi.mocked(prisma.attendance.findFirst) as any).mockImplementation(async (args: any) => {
+      // Only return locked if batchId is batch-A, simulate Batch B not locked
+      if (args?.where?.batchId === "batch-B") return null;
+      return null;
+    });
+    vi.mocked((prisma.student as any).count).mockResolvedValue(2);
+    vi.mocked(prisma.attendance.upsert).mockClear();
+
+    const reqB = new Request("http://localhost/api/attendance", {
+      method: "POST",
+      body: JSON.stringify({
+        batchId: "batch-B",
+        date,
+        records: [
+          { studentId: "s3", status: "ABSENT" },
+          { studentId: "s4", status: "PRESENT" },
+        ],
+      }),
+    });
+    const resB = await POST(reqB);
+    expect(resB!.status).toBe(200);
+    expect(prisma.attendance.upsert).toHaveBeenCalled();
   });
 });

@@ -83,19 +83,70 @@ function parseTextQuestions(raw: string) {
   const errors: string[] = [];
   // Normalize line endings
   const normalized = raw.replace(/\r\n/g, "\n");
-  // Split by question numbers — try multiple patterns
-  let blocks = normalized.split(/(?=^\s*\d+[\.\)]\s+)/m).filter(b=>b.trim().length>20);
-  console.log("[import:text] blocks split1", blocks.length);
-  if (blocks.length <= 1) {
-    const alt = normalized.split(/(?=Q\s*\d+[\.\)]?\s*)/i).filter(b=>b.trim().length>20);
-    console.log("[import:text] blocks split alt", alt.length);
-    if (alt.length > blocks.length) blocks = alt;
+  // Run BOTH split patterns unconditionally and pick whichever yields most blocks with all 4 option markers
+  const blocksBare = normalized.split(/(?=^\s*\d+[\.\)]\s+)/m).filter(b=>b.trim().length>20);
+  const blocksQ = normalized.split(/(?=Q\s*\d+[\.\)]?\s*)/i).filter(b=>b.trim().length>20);
+  console.log("[import:text] blocks bare", blocksBare.length, "blocks Q", blocksQ.length);
+
+  const countGoodBlocks = (bks: string[]) => {
+    let good = 0;
+    for (const block of bks) {
+      const terminatorIndices: number[] = [];
+      const answerMatch = block.match(/Answer\s*[:\-]\s*[A-Da-d1-4]/i);
+      if (answerMatch && answerMatch.index !== undefined) terminatorIndices.push(answerMatch.index);
+      const correctMatch = block.match(/Correct\s*[:\-]\s*[A-Da-d1-4]/i);
+      if (correctMatch && correctMatch.index !== undefined) terminatorIndices.push(correctMatch.index);
+      const explanationIdx = block.search(/Explanation\s*[:\-]/i);
+      if (explanationIdx !== -1) terminatorIndices.push(explanationIdx);
+      const solutionIdx = block.search(/Solution\s*[:\-]/i);
+      if (solutionIdx !== -1) terminatorIndices.push(solutionIdx);
+      const terminatorStart = terminatorIndices.length ? Math.min(...terminatorIndices) : block.length;
+      const markerRegex = /(?:^|\s)([A-D])\s*[\.\)\:]\s*/gi;
+      const found = new Set<string>();
+      let mm: RegExpExecArray | null;
+      markerRegex.lastIndex = 0;
+      while ((mm = markerRegex.exec(block)) !== null) {
+        const full = mm[0];
+        const letter = mm[1].toUpperCase();
+        const markerStart = mm.index + full.lastIndexOf(letter);
+        if (markerStart >= terminatorStart) continue;
+        found.add(letter);
+        if (mm[0].length === 0) markerRegex.lastIndex++;
+      }
+      if (found.has("A") && found.has("B") && found.has("C") && found.has("D")) good++;
+    }
+    return good;
+  };
+
+  const bareGood = countGoodBlocks(blocksBare);
+  const qGood = countGoodBlocks(blocksQ);
+  console.log("[import:text] good blocks bare", bareGood, "Q", qGood);
+
+  let blocks: string[];
+  if (bareGood > qGood) {
+    blocks = blocksBare;
+    console.log("[import:text] picked bare split");
+  } else if (qGood > 0) {
+    blocks = blocksQ;
+    console.log("[import:text] picked Q split");
+  } else {
+    // No good blocks from either, fall back to raw length comparison
+    if (blocksBare.length > blocksQ.length) blocks = blocksBare;
+    else blocks = blocksQ;
+    console.log("[import:text] no good blocks, picked by raw length", blocks.length);
   }
+
   if (blocks.length <= 1) {
     // fallback: split by "Answer" boundaries
     const fallback = normalized.split(/\n\s*\d+[\.\)]/).filter(b=>b.trim().length>30);
     console.log("[import:text] blocks fallback", fallback.length);
-    if (fallback.length > 1) blocks = fallback.map((b,i)=> `${i+1}. ${b}`);
+    if (fallback.length > 1) {
+      const fallbackGood = countGoodBlocks(fallback);
+      if (fallbackGood > 0 || fallback.length > blocks.length) {
+        blocks = fallback.map((b,i)=> `${i+1}. ${b}`);
+        console.log("[import:text] using fallback blocks", blocks.length);
+      }
+    }
   }
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
@@ -133,13 +184,16 @@ function parseTextQuestions(raw: string) {
     if (solutionIdx !== -1) terminatorIndices.push(solutionIdx);
     const terminatorStart = terminatorIndices.length ? Math.min(...terminatorIndices) : block.length;
 
-    // Build map by letter, and sorted by position
+    // Ignore any option marker at or after the terminator (e.g. "B)" inside "Answer: B)")
+    const markersBeforeTerminator = markers.filter(mk => mk.markerStart < terminatorStart);
+
+    // Build map by letter, and sorted by position (only markers before terminator)
     const byLetter: Record<string, typeof markers[0]> = {};
-    for (const mk of markers) {
+    for (const mk of markersBeforeTerminator) {
       // Keep first occurrence per letter; if duplicate letter, keep earliest
       if (!byLetter[mk.letter]) byLetter[mk.letter] = mk;
     }
-    const sortedMarkers = [...markers].sort((a,b) => a.markerStart - b.markerStart);
+    const sortedMarkers = [...markersBeforeTerminator].sort((a,b) => a.markerStart - b.markerStart);
 
     // Question text: before first option marker, not requiring newline
     let qText = "";
@@ -183,9 +237,9 @@ function parseTextQuestions(raw: string) {
       errors.push(`Block ${i + 1}: could not parse options — check A) B) C) D) formatting`);
       continue;
     }
-    if (markers.length < 4) {
+    if (markersBeforeTerminator.length < 4) {
       const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
-      console.log("[import:text] block", i, "fewer than 4 markers", { found: markers.map(x=>x.letter), snippet });
+      console.log("[import:text] block", i, "fewer than 4 markers", { found: markersBeforeTerminator.map(x=>x.letter), snippet });
       errors.push(`Block ${i + 1}: could not parse options — check A) B) C) D) formatting`);
       continue;
     }

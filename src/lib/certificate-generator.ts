@@ -350,14 +350,38 @@ export async function generateAndIssueCertificate({
   });
 
   if (existingIssued && !forceRegenerate) {
-    const file = await prisma.fileAsset.findUnique({ where: { id: existingIssued.pdfFileAssetId } });
-    if (file) {
-      return {
-        issuedId: existingIssued.id,
-        fileId: file.id,
-        storageKey: file.storageKey,
-        downloadUrl: `/api/files/${file.id}`,
-      };
+    // Auto-regenerate if template was edited after certificate was issued
+    const templateForCheck = await prisma.certificateTemplate.findFirst({
+      where: { id: templateId, instituteId },
+    });
+    if (templateForCheck) {
+      const tmplUpdatedAt = (templateForCheck as any).updatedAt ? new Date((templateForCheck as any).updatedAt) : null;
+      const issuedTimeRaw =
+        (existingIssued as any).updatedAt || (existingIssued as any).createdAt || (existingIssued as any).issuedAt;
+      const issuedTime = issuedTimeRaw ? new Date(issuedTimeRaw) : null;
+      const shouldAutoRegenerate = tmplUpdatedAt && issuedTime && tmplUpdatedAt > issuedTime;
+      if (!shouldAutoRegenerate) {
+        const file = await prisma.fileAsset.findUnique({ where: { id: existingIssued.pdfFileAssetId } });
+        if (file) {
+          return {
+            issuedId: existingIssued.id,
+            fileId: file.id,
+            storageKey: file.storageKey,
+            downloadUrl: `/api/files/${file.id}`,
+          };
+        }
+      }
+      // else template updated after issuance → fall through to regenerate
+    } else {
+      const file = await prisma.fileAsset.findUnique({ where: { id: existingIssued.pdfFileAssetId } });
+      if (file) {
+        return {
+          issuedId: existingIssued.id,
+          fileId: file.id,
+          storageKey: file.storageKey,
+          downloadUrl: `/api/files/${file.id}`,
+        };
+      }
     }
   }
 
