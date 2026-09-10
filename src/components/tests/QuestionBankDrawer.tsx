@@ -60,6 +60,12 @@ export function QuestionBankDrawer({
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importSaving, setImportSaving] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResultDialog, setImportResultDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: React.ReactNode;
+    tone: "success" | "warn" | "danger" | "info";
+  }>({ open: false, title: "", message: "", tone: "info" });
 
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
@@ -192,11 +198,29 @@ export function QuestionBankDrawer({
               const f=e.target.files?.[0]; if(!f)return;
               setImportFile(f);
               const fd=new FormData(); fd.append("file", f); fd.append("subject","General");
-              const res=await fetch("/api/questions/import?preview=true",{method:"POST",body:fd});
-              const data=await res.json();
-              if(!res.ok){ alert(data.error||"Import failed"); return; }
-              setImportPreview(data.questions||[]); setImportErrors(data.parseErrors||[]); setImportOpen(true);
-              e.target.value="";
+              try {
+                const res=await fetch("/api/questions/import?preview=true",{method:"POST",body:fd});
+                const data=await res.json();
+                if(!res.ok){
+                  setImportResultDialog({
+                    open: true,
+                    title: "Import Preview Failed",
+                    message: data.error || "Import failed — please check file format",
+                    tone: "danger",
+                  });
+                  return;
+                }
+                setImportPreview(data.questions||[]); setImportErrors(data.parseErrors||[]); setImportOpen(true);
+              } catch (err: any) {
+                setImportResultDialog({
+                  open: true,
+                  title: "Import Preview Failed",
+                  message: err?.message || "Failed to preview file",
+                  tone: "danger",
+                });
+              } finally {
+                e.target.value="";
+              }
             }}/>
           </label>
         </div>
@@ -537,14 +561,47 @@ export function QuestionBankDrawer({
                   const res=await fetch("/api/questions/import",{method:"POST", body: fd});
                   const data=await res.json();
                   if(!res.ok) throw new Error(data.error||"Import failed");
-                  alert(`${data.imported} imported, ${data.skipped} skipped` + (data.errors?.length? `\n${data.errors.slice(0,3).join("\n")}`:""));
+                  const hasErrors = data.errors && data.errors.length > 0;
+                  setImportResultDialog({
+                    open: true,
+                    title: hasErrors ? "Import Completed with Warnings" : "Import Successful",
+                    message: (
+                      <span>
+                        <span className="font-bold">{data.imported} imported, {data.skipped} skipped</span>
+                        {hasErrors && (
+                          <span className="block mt-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-left">
+                            {data.errors.slice(0,3).map((er:string,i:number)=><span key={i} className="block">• {er}</span>)}
+                            {data.errors.length>3 && <span className="block mt-1 text-scholar-500">+ {data.errors.length-3} more</span>}
+                          </span>
+                        )}
+                      </span>
+                    ),
+                    tone: hasErrors ? "warn" : "success",
+                  });
                   setImportOpen(false); fetchQuestions();
-                }catch(e:any){ alert(e.message)} finally{setImportSaving(false)}
+                }catch(e:any){
+                  setImportResultDialog({
+                    open: true,
+                    title: "Import Failed",
+                    message: e.message || "Failed to import questions",
+                    tone: "danger",
+                  });
+                } finally{setImportSaving(false)}
               }} className="flex-1 rounded-xl bg-scholar-600 text-white py-2 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1">{importSaving?<Loader2 size={14} className="animate-spin"/>:null} Bulk Import {importPreview.length}</button>
             </div>
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={importResultDialog.open}
+        onClose={() => setImportResultDialog((prev) => ({ ...prev, open: false }))}
+        onConfirm={() => setImportResultDialog((prev) => ({ ...prev, open: false }))}
+        title={importResultDialog.title}
+        message={importResultDialog.message}
+        confirmLabel="Yes"
+        cancelLabel="No"
+        tone={importResultDialog.tone}
+      />
     </Drawer>
   );
 }
