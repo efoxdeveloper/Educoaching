@@ -6,13 +6,9 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 
-import { encode as defaultEncode, decode as defaultDecode } from "@auth/core/jwt";
-
-// Session length handling for "Remember me":
-// - unchecked (default): 8-hour session + session cookie (cleared on browser close)
-// - checked: 30-day persistent session
-export const SESSION_MAX_AGE_DEFAULT = 8 * 60 * 60;
-export const SESSION_MAX_AGE_REMEMBERED = 30 * 24 * 60 * 60;
+// Single safety-net expiry for true session cookies (browser discards
+// cookie on close; 8h is fallback if OS/browser doesn't clean up).
+export const SESSION_SAFETY_MAX_AGE = 8 * 60 * 60;
 
 
 
@@ -80,7 +76,6 @@ export const authCallbacks = {
       token.billingCycle = (user as any).billingCycle ?? null;
       token.trialEndsAt = (user as any).trialEndsAt ?? null;
       token.currentPeriodEnd = (user as any).currentPeriodEnd ?? null;
-      token.remember = (user as any).remember === true;
       // Clear any stale impersonation on fresh login
       token.impersonatingBranchId = null;
       token.impersonationStartedAt = null;
@@ -136,18 +131,8 @@ export const authCallbacks = {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" as const, maxAge: SESSION_MAX_AGE_REMEMBERED },
-  jwt: {
-    maxAge: SESSION_MAX_AGE_REMEMBERED,
-    async encode(params: any) {
-      const remember = (params.token as any)?.remember === true;
-      const maxAge = remember ? SESSION_MAX_AGE_REMEMBERED : SESSION_MAX_AGE_DEFAULT;
-      return defaultEncode({ ...params, maxAge });
-    },
-    async decode(params: any) {
-      return defaultDecode(params);
-    },
-  },
+  session: { strategy: "jwt" as const, maxAge: SESSION_SAFETY_MAX_AGE },
+  jwt: { maxAge: SESSION_SAFETY_MAX_AGE },
   cookies: {
     sessionToken: {
       options: {
@@ -170,15 +155,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
         portal: { label: "Portal", type: "text" },
         loginType: { label: "LoginType", type: "text" },
-        remember: { label: "Remember me", type: "text" },
       },
       authorize: async (credentials) => {
         const input = (credentials?.email as string | undefined)?.trim();
         const password = credentials?.password as string | undefined;
         const portal = credentials?.portal as string | undefined;
         const loginType = (credentials?.loginType as string | undefined)?.toLowerCase();
-        const rememberRaw = (credentials as any)?.remember;
-        const remember = rememberRaw === "true" || rememberRaw === true;
 
         if (!input || !password) return null;
 
@@ -210,7 +192,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               instituteId: student.instituteId,
               branchId: student.branchId,
               isMainBranch: true,
-              remember,
             };
           }
 
@@ -308,7 +289,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           billingCycle: instituteBilling.billingCycle,
           trialEndsAt: instituteBilling.trialEndsAt,
           currentPeriodEnd: instituteBilling.currentPeriodEnd,
-          remember,
         };
       },
     }),
