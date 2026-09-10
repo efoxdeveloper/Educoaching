@@ -158,8 +158,8 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
         variant="outlined"
         sx={{ p: 2, borderRadius: "16px", borderColor: "#D6E0EB", boxShadow: "0 1px 2px rgba(13,26,42,0.04)", display: "flex", flexDirection: "column", gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}
       >
-        {/* Row 1: Course + Batch — fixed row */}
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { xs: "stretch", sm: "center" }, width: "100%" }}>
+        {/* Row 1: Course + Batch — responsive row */}
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: { xs: "stretch", sm: "center" }, width: "min(100%, 100%)", maxWidth: "100%", minWidth: 0, flexWrap: "wrap" }}>
           <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
             <InputLabel id="reports-course-label" sx={{ fontSize: "0.75rem" }}>Course</InputLabel>
             <Select
@@ -197,8 +197,8 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
           </FormControl>
         </Box>
 
-        {/* Row 2: timeframe preset pills — fixed row */}
-        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1, width: "100%", overflowX: "auto" }}>
+        {/* Row 2: timeframe preset pills — responsive row */}
+        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1, width: "min(100%, 100%)", maxWidth: "100%", minWidth: 0, overflowX: "auto", flexWrap: "nowrap" }}>
           <Typography variant="caption" sx={{ fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, whiteSpace: "nowrap" }}>
             <Calendar size={13} /> Timeframe:
           </Typography>
@@ -231,8 +231,8 @@ export function ReportsView({ initialData }: { initialData: ReportsData }) {
           </Paper>
         </Box>
 
-        {/* Row 3: custom Date from + Apply — fixed row */}
-        <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 0.75, width: "100%" }}>
+        {/* Row 3: custom Date from + Apply — responsive row */}
+        <Box component="form" onSubmit={handleCustomDateSubmit} sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: "center", gap: 0.75, width: "min(100%, 100%)", maxWidth: "100%", minWidth: 0, flexWrap: "wrap" }}>
           <TextField
             size="small"
             type="date"

@@ -284,8 +284,8 @@ export function StudentsTable({
         </Box>
 
         {!isMobile ? (
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none" }}>
-          <Table sx={{ minWidth: 880 }} size="small">
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "12px", borderColor: "#D6E0EB", boxShadow: "none", width: "min(100%, 880px)", maxWidth: "100%" }}>
+          <Table sx={{ minWidth: "min(100%, 880px)", width: "100%", maxWidth: "100%" }} size="small">
             <TableHead>
               <TableRow sx={{ "& th": { borderBottom: "1px solid #D6E0EB", py: 1.5, fontSize: "0.70rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "#7E9BBC", whiteSpace: "nowrap" } }}>
                 <TableCell>Student</TableCell>

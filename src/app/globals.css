@@ -4,6 +4,7 @@
 
 html {
   background: #F7F5F0;
+  font-size: clamp(14px, 0.75rem + 0.5vw, 18px);
 }
 
 body {

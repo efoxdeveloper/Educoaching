@@ -24,6 +24,8 @@ export function LoginForm() {
   const [studentPassword, setStudentPassword] = useState("");
   const [showStudentPassword, setShowStudentPassword] = useState(false);
 
+  const [rememberMe, setRememberMe] = useState(false);
+
   const [error, setError] = useState("");
   const [pendingNotice, setPendingNotice] = useState<{
     title: string;
@@ -59,6 +61,7 @@ export function LoginForm() {
       password: loginPassword,
       portal: portal ?? "",
       loginType: isStudent ? "student" : "staff",
+      remember: rememberMe ? "true" : "false",
       redirect: false,
     });
 
@@ -145,6 +148,7 @@ export function LoginForm() {
       password: studentPassword,
       portal: portal ?? "",
       loginType: "student",
+      remember: rememberMe ? "true" : "false",
       redirect: false,
     });
 
@@ -331,6 +335,16 @@ export function LoginForm() {
                 </div>
               </div>
 
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-scholar-200 text-scholar-600 focus:ring-scholar-500"
+                />
+                <span className="text-xs font-medium text-scholar-600">Remember me</span>
+              </label>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -405,6 +419,16 @@ export function LoginForm() {
                   </button>
                 </div>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-scholar-200 text-scholar-600 focus:ring-scholar-500"
+                />
+                <span className="text-xs font-medium text-scholar-600">Remember me</span>
+              </label>
 
               <button
                 type="submit"
