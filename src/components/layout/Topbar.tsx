@@ -134,19 +134,19 @@ export function Topbar({
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-scholar-100 bg-white px-4 lg:px-8">
-      <div className="flex items-center gap-3">
+    <header className="flex min-h-16 flex-col gap-2 border-b border-scholar-100 bg-white px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-0 lg:px-8">
+      <div className="flex min-w-0 w-full flex-1 items-center gap-3 sm:w-auto">
         <button
           onClick={onMenuClick}
-          className="rounded-lg p-2 text-scholar-500 hover:bg-scholar-50 lg:hidden"
+          className="shrink-0 rounded-lg p-2 text-scholar-500 hover:bg-scholar-50 lg:hidden"
           aria-label="Open menu"
         >
           <Menu size={20} />
         </button>
-        <h1 className="font-display text-lg font-bold text-ink sm:text-xl">{title}</h1>
+        <h1 className="min-w-0 flex-1 break-words font-display text-base font-bold leading-tight text-ink sm:text-lg sm:leading-tight lg:text-xl">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
         {canSwitchBranch ? (
           branches.length > 0 && (
             <div className="flex items-center gap-1.5 rounded-xl border border-scholar-200 bg-scholar-50/60 px-2.5 py-1">
