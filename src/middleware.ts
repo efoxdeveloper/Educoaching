@@ -32,6 +32,11 @@ export default auth((req) => {
 
   // If not logged in and accessing protected route:
   if (!req.auth) {
+    // "/" must remain public – page.tsx handles both logged-in (banner + LandingPage)
+    // and logged-out (LandingPage) cases. Don't force redirect to /login.
+    if (pathname === "/") {
+      return NextResponse.next();
+    }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
