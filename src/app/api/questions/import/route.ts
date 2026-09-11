@@ -28,6 +28,8 @@ function stripPdfFooterNoise(text: string): string {
   out = out.replace(/visit:\s*The Lucknow Classes[^\n]*\n?/gi, " ");
   out = out.replace(/Visit:[^\n]*Lucknow[^\n]*\n?/gi, " ");
   out = out.replace(/The Lucknow Classes[^\n]*\n?/gi, " ");
+  // ESTD watermark fragment (e.g. "ESTD 2024" diagonal) — remove wherever it appears, even mid-line
+  out = out.replace(/\bESTD\s*\d{4}\b/gi, " ");
   // Generic "Page" header/footer
   out = out.replace(/^\s*Page\s*\d+.*$/gim, " ");
   // Isolated "X of Y" when likely footer (surrounded by dashes/pipes or institute words nearby – conservative)
@@ -73,6 +75,7 @@ function removeRepeatingFooterLines(fullText: string, pages?: Array<{ text: stri
         /P\s*a\s*g\s*e/i.test(line) ||
         /\d+\s*of\s*\d+/i.test(line) ||
         /Lucknow Classes/i.test(line) ||
+        /ESTD\s*\d{4}/i.test(line) ||
         /For Latest Updates/i.test(line) ||
         /Current Affairs/i.test(line) ||
         /Visit:/i.test(line) ||
@@ -98,6 +101,7 @@ function sanitizeOptionText(text: string): string {
   t = t.replace(/--\s*\d+\s*of\s*\d+\s*--/gi, " ");
   t = t.replace(/\bP\s*a\s*g\s*e\b/gi, " ");
   t = t.replace(/\b\d+\s*\|\s*(?:P\s*a\s*g\s*e)?\b/gi, " ");
+  t = t.replace(/\bESTD\s*\d{4}\b/gi, " ");
   t = t.replace(/For Latest Updates[\s\S]*$/i, "");
   t = t.replace(/The Lucknow Classes.*$/i, "");
   t = t.replace(/Current Affairs.*$/i, "");
@@ -360,10 +364,10 @@ function parseTextQuestionsRegex(raw: string) {
     .replace(/\r\n/g, "\n")
     .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000\uFEFF]/g, " ")
     .replace(/\t/g, " ");
-  // Run BOTH split patterns unconditionally and pick whichever yields most blocks with all 4 option markers
-  const blocksBare = normalized.split(/(?=^\s*\d+[\.\)]\s+)/m).filter(b=>b.trim().length>20);
-  const blocksQ = normalized.split(/(?=Q\s*\d+[\.\)]?\s*)/i).filter(b=>b.trim().length>20);
-  console.log("[import:text] blocks bare", blocksBare.length, "blocks Q", blocksQ.length);
+  // Combined splitter: handles both bare "1." and "Q 1." / "Q1." in same document
+  const combinedPattern = /(?=^\s*(?:Q\s*)?\d+[\.\)]\s*)/im;
+  const blocksRaw = normalized.split(combinedPattern).filter(b=>b.trim().length>20);
+  console.log("[import:text] blocks combined raw", blocksRaw.length);
 
   const countGoodBlocks = (bks: string[]) => {
     let good = 0;
@@ -398,36 +402,42 @@ function parseTextQuestionsRegex(raw: string) {
     return good;
   };
 
-  const bareGood = countGoodBlocks(blocksBare);
-  const qGood = countGoodBlocks(blocksQ);
-  console.log("[import:text] good blocks bare", bareGood, "Q", qGood);
+  // Filter out non-question blocks BEFORE counting/scoring: headers with no options and no answer, short, or MCQs header pattern
+  const isHeaderNoise = (b: string) => {
+    const hasOption = /(?:^|\s)\(?\s*[A-D]\s*[\)\.\:\-–—]\s*/i.test(b);
+    const hasAnswer = /(?:Correct\s+Answer|Answer|Ans\.?)\s*[:\-–—\.=]/i.test(b);
+    const trimmed = b.trim();
+    const len = trimmed.length;
+    if (!hasOption && !hasAnswer && len < 150) return true;
+    if (!hasOption && !hasAnswer && len < 120) return true;
+    if (!hasOption && !hasAnswer && /MCQs?:|Top \d+|GK Questions|One-Liner|Part of/i.test(b) && len < 300) return true;
+    // Also discard pure header that is just a section title without question mark and without options
+    if (!hasOption && trimmed.split("\n").length <= 2 && len < 200 && !trimmed.includes("?")) return true;
+    return false;
+  };
 
-  let blocks: string[];
-  if (bareGood > qGood) {
-    blocks = blocksBare;
-    console.log("[import:text] picked bare split");
-  } else if (qGood > 0) {
-    blocks = blocksQ;
-    console.log("[import:text] picked Q split");
-  } else {
-    // No good blocks from either, fall back to raw length comparison
-    if (blocksBare.length > blocksQ.length) blocks = blocksBare;
-    else blocks = blocksQ;
-    console.log("[import:text] no good blocks, picked by raw length", blocks.length);
-  }
+  const blocksFiltered = blocksRaw.filter(b => !isHeaderNoise(b));
+  console.log("[import:text] blocks after header filter", blocksFiltered.length, "removed", blocksRaw.length - blocksFiltered.length);
 
+  let blocks: string[] = blocksFiltered;
+
+  // If after filtering we have few blocks, try fallback split on Answer boundaries (also with combined pattern)
   if (blocks.length <= 1) {
-    // fallback: split by "Answer" boundaries
-    const fallback = normalized.split(/\n\s*\d+[\.\)]/).filter(b=>b.trim().length>30);
+    const fallback = normalized.split(/\n\s*(?:Q\s*)?\d+[\.\)]/).filter(b=>b.trim().length>30);
     console.log("[import:text] blocks fallback", fallback.length);
     if (fallback.length > 1) {
-      const fallbackGood = countGoodBlocks(fallback);
-      if (fallbackGood > 0 || fallback.length > blocks.length) {
-        blocks = fallback.map((b,i)=> `${i+1}. ${b}`);
+      const fallbackFiltered = fallback.filter(b => !isHeaderNoise(b));
+      const fallbackGood = countGoodBlocks(fallbackFiltered);
+      const currentGood = countGoodBlocks(blocks);
+      if (fallbackGood > currentGood || fallbackFiltered.length > blocks.length) {
+        blocks = fallbackFiltered.map((b,i)=> `${i+1}. ${b}`);
         console.log("[import:text] using fallback blocks", blocks.length);
       }
     }
   }
+
+  // Log final block count for debugging
+  console.log("[import:text] final blocks for processing", blocks.length);
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
     if (!block.trim()) continue;
@@ -591,6 +601,16 @@ function parseTextQuestionsRegex(raw: string) {
         if (foundIdx !== -1 && foundIdx >=0 && foundIdx <=3) ansRaw = String(foundIdx);
       }
     }
+    // Detect one-liner bonus format: no options but has Answer line (e.g. "1. Which is...?" + "Answer: Pacific Ocean")
+    const hasAnyOptionMarker = markersBeforeTerminator.length > 0;
+    const hasAnswerLine = /(?:Correct\s+Answer|Answer|Ans\.?)\s*[:\-–—\.=]/i.test(block);
+    if (!hasAnyOptionMarker && hasAnswerLine) {
+      const snippet = block.slice(0,200).replace(/\n/g, " ").replace(/\s+/g, " ");
+      console.log("[import:text] block", i, "one-liner Q&A format detected, skipping as non-MCQ", { snippet });
+      errors.push(`Block ${i + 1}: one-liner Q&A format, no options — not imported as MCQ`);
+      continue;
+    }
+
     const expl = (block.match(/Explanation\s*[:\-–—\.=]*\s*([^\n]+)/i) || block.match(/Solution\s*[:\-–—\.=]*\s*([^\n]+)/i) || [])[1]?.trim() || null;
     if (!qText || !optA || !optB || !optC || !optD) {
       const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
