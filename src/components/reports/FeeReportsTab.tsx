@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, Download, CreditCard, AlertTriangle } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
@@ -34,6 +34,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Avatar from "@mui/material/Avatar";
+import Pagination from "@mui/material/Pagination";
 
 export function FeeReportsTab({ data }: { data: ReportsData }) {
   const { feeReport } = data;
@@ -41,23 +42,60 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [methodFilter, setMethodFilter] = useState("ALL");
 
-  // Filtered payments
-  const filteredPayments = useMemo(() => {
-    return feeReport.payments.filter((p) => {
-      if (searchTerm) {
-        const q = searchTerm.toLowerCase();
-        const matchName = p.studentName.toLowerCase().includes(q);
-        const matchMobile = p.studentMobile.includes(q);
-        const matchCourse = p.courseName.toLowerCase().includes(q);
-        const matchMethod = p.method.toLowerCase().includes(q);
-        if (!matchName && !matchMobile && !matchCourse && !matchMethod) return false;
+  // ——— Transactions sub-view: server-paginated via /api/reports/payments (20/page) ———
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(feeReport.payments.length);
+  const [txTotalPages, setTxTotalPages] = useState(Math.max(1, Math.ceil(feeReport.payments.length / 20)));
+  const [txResults, setTxResults] = useState<typeof feeReport.payments>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [debouncedSearchTx, setDebouncedSearchTx] = useState(searchTerm);
+
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedSearchTx(searchTerm), 350);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setTxPage(1);
+  }, [debouncedSearchTx, methodFilter]);
+
+  const fetchTransactions = useCallback(async () => {
+    if (subView !== "transactions") return;
+    setTxLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(txPage));
+      params.set("limit", "20");
+      if (debouncedSearchTx.trim()) params.set("q", debouncedSearchTx.trim());
+      if (methodFilter !== "ALL") params.set("method", methodFilter);
+      const res = await fetch(`/api/reports/payments?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch transactions");
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        setTxResults(json);
+        setTxTotal(json.length);
+        setTxTotalPages(1);
+      } else {
+        setTxResults(json.payments || []);
+        setTxTotal(json.total || 0);
+        setTxTotalPages(json.totalPages || 1);
       }
+    } catch (e) {
+      console.error("Transactions fetch failed", e);
+      setTxResults([]);
+      setTxTotal(0);
+      setTxTotalPages(1);
+    } finally {
+      setTxLoading(false);
+    }
+  }, [subView, txPage, debouncedSearchTx, methodFilter]);
 
-      if (methodFilter !== "ALL" && p.method !== methodFilter) return false;
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
-      return true;
-    });
-  }, [feeReport.payments, searchTerm, methodFilter]);
+  // Alias for table rendering (keeps existing JSX unchanged, but now paginated)
+  const filteredPayments = txResults;
 
   // Filtered dues
   const filteredDues = useMemo(() => {
@@ -285,7 +323,7 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
             }}
           >
             <Chip
-              label={`Payment Transactions (${feeReport.payments.length})`}
+              label={`Payment Transactions (${txTotal})`}
               onClick={() => setSubView("transactions")}
               size="small"
               sx={{
@@ -422,7 +460,13 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredPayments.length === 0 ? (
+                {txLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                      Loading transactions...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredPayments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No payment transactions found.
@@ -475,6 +519,27 @@ export function FeeReportsTab({ data }: { data: ReportsData }) {
               </TableBody>
             </Table>
           </TableContainer>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between", p: 2, borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              Showing {filteredPayments.length} of {txTotal} transactions {txTotalPages > 1 && `(Page ${txPage} of ${txTotalPages})`}
+            </Typography>
+            {txTotalPages > 1 && (
+              <Pagination
+                count={txTotalPages}
+                page={txPage}
+                onChange={(_, v) => setTxPage(v)}
+                size="small"
+                color="primary"
+                shape="rounded"
+                showFirstButton
+                showLastButton
+                sx={{
+                  "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                  "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                }}
+              />
+            )}
+          </Box>
         </Card>
       )}
 
