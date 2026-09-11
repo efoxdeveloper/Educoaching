@@ -17,10 +17,10 @@ interface LeadSectionTabsProps {
 }
 
 const tabs: { id: LeadSection; label: string; hint: string }[] = [
-  { id: "new", label: "New Leads", hint: "Abhi aaye hue inquiries" },
-  { id: "followups", label: "Follow-ups Due", hint: "Aaj ya overdue wale calls" },
-  { id: "converted", label: "Admitted", hint: "Enrolled ho chuke students" },
-  { id: "all", label: "All Leads", hint: "Sabhi inquiries ek jagah" },
+  { id: "new", label: "New Leads", hint: "Recently received inquiries" },
+  { id: "followups", label: "Follow-ups Due", hint: "Due today or overdue" },
+  { id: "converted", label: "Admitted", hint: "Students who have enrolled" },
+  { id: "all", label: "All Leads", hint: "All inquiries in one place" },
 ];
 
 export function LeadSectionTabs({ active, onChange, counts }: LeadSectionTabsProps) {
