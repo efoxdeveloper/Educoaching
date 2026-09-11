@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, Download, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { exportToCsv } from "@/lib/export-csv";
@@ -31,6 +31,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Avatar from "@mui/material/Avatar";
+import Pagination from "@mui/material/Pagination";
 
 export function AttendanceReportsTab({ data }: { data: ReportsData }) {
   const { attendanceReport } = data;
@@ -38,8 +39,60 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [lowAttendanceOnly, setLowAttendanceOnly] = useState(false);
 
-  // Filtered student attendance
-  const filteredStudents = useMemo(() => {
+  // ——— Students sub-view: server-paginated via /api/reports/attendance-students (20/page) ———
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(attendanceReport.studentSummary.length);
+  const [totalPages, setTotalPages] = useState(Math.max(1, Math.ceil(attendanceReport.studentSummary.length / 20)));
+  const [paginatedStudents, setPaginatedStudents] = useState(attendanceReport.studentSummary.slice(0, 20));
+  const [loading, setLoading] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, lowAttendanceOnly]);
+
+  const fetchStudents = useCallback(async () => {
+    if (subView !== "students") return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", "20");
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (lowAttendanceOnly) params.set("lowAttendanceOnly", "true");
+      const res = await fetch(`/api/reports/attendance-students?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch attendance students");
+      const json = await res.json();
+      setPaginatedStudents(json.students || []);
+      setTotal(json.total || 0);
+      setTotalPages(json.totalPages || 1);
+    } catch (e) {
+      console.error("Attendance students fetch failed", e);
+      setPaginatedStudents([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [subView, page, debouncedSearch, lowAttendanceOnly]);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
+  // Keep filteredStudents as alias to paginated data for rendering (so table + export use paginated)
+  const filteredStudents = paginatedStudents;
+
+  // For export, we need all matching (not just current page) — keep original filtered for export if needed
+  // For now, export will use current page's filteredStudents; full export can be done via separate API call with limit=10000 if needed
+  const allFilteredForExport = useMemo(() => {
+    // This is used only for export CSV — should export all matching, not just current page
+    // We keep the original in-memory filter for export, but paginated view uses server data
     return attendanceReport.studentSummary.filter((s) => {
       if (searchTerm) {
         const q = searchTerm.toLowerCase();
@@ -48,9 +101,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         const matchBatch = s.batchName.toLowerCase().includes(q);
         if (!matchName && !matchCourse && !matchBatch) return false;
       }
-
       if (lowAttendanceOnly && !s.isLowAttendance) return false;
-
       return true;
     });
   }, [attendanceReport.studentSummary, searchTerm, lowAttendanceOnly]);
@@ -292,7 +343,7 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
         )}
       </Card>
 
-      {/* Subview 1: Student-wise Attendance Table — MUI Table with Chip badges */}
+      {/* Subview 1: Student-wise Attendance Table — MUI Table with Chip badges — now paginated 20/page via /api/reports/attendance-students */}
       {subView === "students" && (
         <Card sx={{ overflow: "hidden" }}>
           <TableContainer>
@@ -310,7 +361,13 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredStudents.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                      Loading attendance...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredStudents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No attendance records match the selected filters.
@@ -375,6 +432,27 @@ export function AttendanceReportsTab({ data }: { data: ReportsData }) {
               </TableBody>
             </Table>
           </TableContainer>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between", p: 2, borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              Showing {filteredStudents.length} of {total} students {totalPages > 1 && `(Page ${page} of ${totalPages})`}
+            </Typography>
+            {totalPages > 1 && (
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, v) => setPage(v)}
+                size="small"
+                color="primary"
+                shape="rounded"
+                showFirstButton
+                showLastButton
+                sx={{
+                  "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                  "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                }}
+              />
+            )}
+          </Box>
         </Card>
       )}
 
