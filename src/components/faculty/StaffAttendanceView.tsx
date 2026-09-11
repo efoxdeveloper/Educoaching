@@ -14,6 +14,7 @@ import {
   Users,
   Search,
   CheckCheck,
+  AlertCircle,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -69,7 +70,7 @@ export function StaffAttendanceView({
   const [branchFilter, setBranchFilter] = useState("ALL");
   const [query, setQuery] = useState("");
 
-  const [marks, setMarks] = useState<Record<string, StaffStatus>>({});
+  const [marks, setMarks] = useState<Record<string, StaffStatus | null>>({});
   const [checkIns, setCheckIns] = useState<Record<string, string>>({});
   const [checkOuts, setCheckOuts] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -77,12 +78,14 @@ export function StaffAttendanceView({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Load attendance records when date changes
   useEffect(() => {
     if (!date) return;
     setLoading(true);
     setSaved(false);
+    setValidationError(null);
 
     fetch(`/api/faculty/attendance?date=${date}`)
       .then((res) => {
@@ -99,22 +102,15 @@ export function StaffAttendanceView({
             notes: string | null;
           }>
         ) => {
-          const statusMap: Record<string, StaffStatus> = {};
+          const statusMap: Record<string, StaffStatus | null> = {};
           const inMap: Record<string, string> = {};
           const outMap: Record<string, string> = {};
           const notesMap: Record<string, string> = {};
 
-          // Default everyone to PRESENT if not yet marked
-          for (const f of faculty) {
-            statusMap[f.id] = "PRESENT";
-            inMap[f.id] = "09:00";
-            outMap[f.id] = "17:00";
-            notesMap[f.id] = "";
-          }
-
-          // Apply saved records
+          // Do NOT default to PRESENT — leave unmarked as null until explicitly chosen
+          // Only apply saved records; staff without a record remain unmarked
           for (const r of records) {
-            statusMap[r.facultyId] = r.status || "PRESENT";
+            statusMap[r.facultyId] = r.status;
             if (r.checkIn) inMap[r.facultyId] = r.checkIn;
             if (r.checkOut) outMap[r.facultyId] = r.checkOut;
             if (r.notes) notesMap[r.facultyId] = r.notes;
@@ -161,10 +157,12 @@ export function StaffAttendanceView({
     let halfDay = 0;
     let onLeave = 0;
     let absent = 0;
+    let unmarked = 0;
 
     for (const f of list) {
-      const s = marks[f.id] || "PRESENT";
-      if (s === "PRESENT") present++;
+      const s = marks[f.id];
+      if (!s) unmarked++;
+      else if (s === "PRESENT") present++;
       else if (s === "HALF_DAY") halfDay++;
       else if (s === "ON_LEAVE") onLeave++;
       else if (s === "ABSENT") absent++;
@@ -172,21 +170,23 @@ export function StaffAttendanceView({
 
     const effectivePresent = present + halfDay * 0.5;
     const pct = total > 0 ? Math.round((effectivePresent / total) * 100) : 0;
-    return { total, present, halfDay, onLeave, absent, pct };
+    return { total, present, halfDay, onLeave, absent, unmarked, pct };
   }, [filteredFaculty, marks]);
 
   const setStatus = (facultyId: string, status: StaffStatus) => {
     setMarks((prev) => ({ ...prev, [facultyId]: status }));
     setSaved(false);
+    setValidationError(null);
   };
 
   const markAll = (status: StaffStatus) => {
-    const next: Record<string, StaffStatus> = { ...marks };
+    const next: Record<string, StaffStatus | null> = { ...marks };
     for (const f of filteredFaculty) {
       next[f.id] = status;
     }
     setMarks(next);
     setSaved(false);
+    setValidationError(null);
   };
 
   const handleDateShift = (deltaDays: number) => {
@@ -196,11 +196,18 @@ export function StaffAttendanceView({
   };
 
   const handleSave = async () => {
+    const unmarked = filteredFaculty.filter((f) => !marks[f.id]);
+    if (unmarked.length > 0) {
+      const names = unmarked.map((f) => f.name).join(", ");
+      setValidationError(`Please mark attendance for all staff before saving. ${unmarked.length} remaining: ${names}`);
+      return;
+    }
+    setValidationError(null);
     setSaving(true);
     try {
       const records = filteredFaculty.map((f) => ({
         facultyId: f.id,
-        status: marks[f.id] || "PRESENT",
+        status: marks[f.id] as StaffStatus,
         checkIn: checkIns[f.id] || null,
         checkOut: checkOuts[f.id] || null,
         notes: notes[f.id] || null,
@@ -212,10 +219,25 @@ export function StaffAttendanceView({
         body: JSON.stringify({ date, records }),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error) {
+          setValidationError(data.error);
+          throw new Error(data.error);
+        }
+        throw new Error();
+      }
       setSaved(true);
-    } catch {
-      alert("Failed to save staff attendance. Please try again.");
+    } catch (err: any) {
+      const msg = err?.message || "Failed to save staff attendance. Please try again.";
+      // If it's a validation error from backend, it's already set above; otherwise show inline if it contains our message
+      if (msg.includes("Please mark attendance")) {
+        setValidationError(msg);
+      } else if (msg !== "Failed to fetch" && !msg.includes("Please mark attendance")) {
+        // Only alert for non-validation errors and avoid duplicate alert when validationError already set
+        const isValidation = msg.toLowerCase().includes("remaining");
+        if (!isValidation) alert(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -273,7 +295,7 @@ export function StaffAttendanceView({
         </div>
 
         {/* Attendance Summary Strip */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5 border-t border-scholar-100 pt-5">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-6 border-t border-scholar-100 pt-5">
           <div className="flex items-center gap-3">
             <ProgressRing value={stats.pct} size={50} stroke={5} color="#059669" />
             <div>
@@ -301,7 +323,17 @@ export function StaffAttendanceView({
             <span className="text-[11px] font-semibold text-rose-700">Absent</span>
             <p className="text-lg font-bold text-rose-900">{stats.absent}</p>
           </div>
+
+          <div className={`rounded-xl border p-3 ${stats.unmarked > 0 ? "border-amber-300 bg-amber-50" : "border-scholar-100 bg-scholar-50/50"}`}>
+            <span className={`text-[11px] font-semibold ${stats.unmarked > 0 ? "text-amber-700" : "text-scholar-500"}`}>Not Marked</span>
+            <p className={`text-lg font-bold ${stats.unmarked > 0 ? "text-amber-900" : "text-scholar-700"}`}>{stats.unmarked}</p>
+          </div>
         </div>
+        {stats.unmarked > 0 && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+            {stats.unmarked} staff not yet marked — please mark all before saving.
+          </div>
+        )}
       </Card>
 
       {/* Toolbar & Filters */}
@@ -385,6 +417,12 @@ export function StaffAttendanceView({
             </button>
           </div>
         </div>
+        {validationError && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
       </Card>
 
       {/* Attendance Roster Table */}
@@ -411,7 +449,8 @@ export function StaffAttendanceView({
                 </tr>
               ) : (
                 filteredFaculty.map((f) => {
-                  const currentStatus = marks[f.id] || "PRESENT";
+                  const currentStatus = marks[f.id] as StaffStatus | undefined;
+                  const isUnmarked = !currentStatus;
                   const branchName = f.isAllBranches
                     ? "All Branches"
                     : f.branches && f.branches.length > 0
@@ -419,7 +458,10 @@ export function StaffAttendanceView({
                     : f.branch?.name || "Main Branch";
 
                   return (
-                    <tr key={f.id} className="hover:bg-scholar-50/40 transition-colors">
+                    <tr
+                      key={f.id}
+                      className={`transition-colors hover:bg-scholar-50/40 ${isUnmarked ? "bg-amber-50/40" : ""}`}
+                    >
                       {/* Name & Avatar */}
                       <td className="py-3 pl-2">
                         <div className="flex items-center gap-3">
@@ -452,7 +494,11 @@ export function StaffAttendanceView({
 
                       {/* Status Toggle Buttons */}
                       <td className="py-3 text-center">
-                        <div className="inline-flex rounded-xl border border-scholar-200 bg-paper p-0.5 gap-0.5 shadow-xs">
+                        <div
+                          className={`inline-flex rounded-xl border p-0.5 gap-0.5 shadow-xs ${
+                            isUnmarked ? "border-amber-300 bg-amber-50/50" : "border-scholar-200 bg-paper"
+                          }`}
+                        >
                           {(["PRESENT", "HALF_DAY", "ON_LEAVE", "ABSENT"] as StaffStatus[]).map((s) => {
                             const meta = statusMeta[s];
                             const isActive = currentStatus === s;
@@ -470,13 +516,16 @@ export function StaffAttendanceView({
                             );
                           })}
                         </div>
+                        {isUnmarked && (
+                          <div className="mt-1 text-[10px] font-bold text-amber-600">Not Marked</div>
+                        )}
                       </td>
 
                       {/* Check-In */}
                       <td className="py-3 text-center">
                         <input
                           type="time"
-                          value={checkIns[f.id] || "09:00"}
+                          value={checkIns[f.id] || ""}
                           onChange={(e) => {
                             setCheckIns((p) => ({ ...p, [f.id]: e.target.value }));
                             setSaved(false);
@@ -489,7 +538,7 @@ export function StaffAttendanceView({
                       <td className="py-3 text-center">
                         <input
                           type="time"
-                          value={checkOuts[f.id] || "17:00"}
+                          value={checkOuts[f.id] || ""}
                           onChange={(e) => {
                             setCheckOuts((p) => ({ ...p, [f.id]: e.target.value }));
                             setSaved(false);

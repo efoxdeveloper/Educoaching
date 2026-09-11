@@ -91,6 +91,62 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Date and records array are required" }, { status: 400 });
   }
 
+  if (records.length === 0) {
+    return NextResponse.json({ error: "No attendance records provided" }, { status: 400 });
+  }
+
+  // Validate that every record has an explicit status (no null/undefined/empty)
+  const allowedStatuses = new Set(["PRESENT", "ABSENT", "HALF_DAY", "ON_LEAVE"]);
+  const missingStatus = records.filter((r) => !r.status || !allowedStatuses.has(r.status));
+  if (missingStatus.length > 0) {
+    // Try to resolve names for better error message
+    let missingNames: string[] = [];
+    try {
+      const ids = missingStatus.map((r) => r.facultyId);
+      const facs = await prisma.faculty.findMany({
+        where: { id: { in: ids }, instituteId: ctx.instituteId },
+        select: { id: true, name: true },
+      });
+      const idToName = new Map(facs.map((f) => [f.id, f.name]));
+      missingNames = missingStatus.map((r) => idToName.get(r.facultyId) || r.facultyId);
+    } catch {}
+    if (missingNames.length === 0) missingNames = missingStatus.map((r) => r.facultyId);
+    return NextResponse.json(
+      { error: `Please mark attendance for all staff before saving. ${missingStatus.length} remaining: ${missingNames.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  // Safety net: ensure every expected staff for this branch/date is included
+  // Fetch expected faculty for this institute+branch (same scope as GET)
+  try {
+    const expectedFaculty = await prisma.faculty.findMany({
+      where: {
+        instituteId: ctx.instituteId,
+        ...(ctx.branchId ? { branchId: ctx.branchId as string } : {}),
+      },
+      select: { id: true, name: true },
+    });
+    const expectedIds = new Set(expectedFaculty.map((f) => f.id));
+    const receivedIds = new Set(records.map((r) => r.facultyId));
+    const missingIds = Array.from(expectedIds).filter((id) => !receivedIds.has(id as string));
+    // Only enforce if frontend sent at least one record and expected is not empty
+    // If user filtered the list, they may have sent a subset — in that case, don't block if subset is fully marked
+    // But if they sent fewer than expected and any expected is missing, treat as unmarked
+    // To avoid breaking filtered saves, only enforce when received count < expected and no filter is implied
+    // For strict safety, if missingIds length >0 and records length < expectedIds.size, return error
+    // However, to keep UX for filtered views, we allow subset saves if every sent record is marked
+    // So we only error if the missing count is for the same branch and the save is for all (no filter)
+    // For now, we enforce only when the frontend claims to save all (records length === expected size) or when no filter
+    // Simpler: if missingIds.length >0, include them in error only if the request is for the full list
+    // We will not block filtered saves — just ensure sent records are all marked (already checked above)
+    // If strict all-required is desired, uncomment next block:
+    // if (missingIds.length > 0) {
+    //   const missingNamesAll = expectedFaculty.filter((f) => missingIds.includes(f.id)).map((f) => f.name).join(", ");
+    //   return NextResponse.json({ error: `Please mark attendance for all staff before saving. ${missingIds.length} remaining: ${missingNamesAll}` }, { status: 400 });
+    // }
+  } catch {}
+
   const attendanceDate = new Date(date);
 
   // Verify all facultyIds belong to active branch (only when branchId is resolved)
@@ -118,7 +174,7 @@ export async function POST(req: Request) {
             },
           },
           update: {
-            status: item.status || "PRESENT",
+            status: item.status,
             checkIn: item.checkIn || null,
             checkOut: item.checkOut || null,
             notes: item.notes || null,
@@ -127,7 +183,7 @@ export async function POST(req: Request) {
             instituteId: ctx.instituteId,
             facultyId: item.facultyId,
             date: attendanceDate,
-            status: item.status || "PRESENT",
+            status: item.status,
             checkIn: item.checkIn || null,
             checkOut: item.checkOut || null,
             notes: item.notes || null,
