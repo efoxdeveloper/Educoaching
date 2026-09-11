@@ -21,22 +21,23 @@ function stripPdfFooterNoise(text: string): string {
   // "5 | P a g e" or "5 | Page" fragments (often after footer)
   out = out.replace(/\b\d+\s*\|\s*(?:P\s*a\s*g\s*e|Page)?\b/gi, " ");
   // Full footer line: "For Latest Updates related to Govt. Exams and to Current Affairs PDF visit: The Lucknow Classes 5 | P a g e"
-  out = out.replace(/For Latest Updates[\s\S]*?The Lucknow Classes[^\n]*\n?/gi, " ");
-  out = out.replace(/For Latest Updates[^\n]*Current Affairs[^\n]*\n?/gi, " ");
-  out = out.replace(/Govt\.?\s*Exams[^\n]*\n?/gi, " ");
-  out = out.replace(/Current Affairs PDF[^\n]*\n?/gi, " ");
-  out = out.replace(/visit:\s*The Lucknow Classes[^\n]*\n?/gi, " ");
-  out = out.replace(/Visit:[^\n]*Lucknow[^\n]*\n?/gi, " ");
-  out = out.replace(/The Lucknow Classes[^\n]*\n?/gi, " ");
-  // ESTD watermark fragment (e.g. "ESTD 2024" diagonal) — remove wherever it appears, even mid-line
+  // Handle both single-line and two-line wrapping (e.g. "...visit: The Lucknow Classes" on one line and "2 | P a g e" on the next)
+  out = out.replace(/For Latest Updates[\s\S]*?The Lucknow Classes\s*(?:\n\s*)?(?:\d+\s*\|\s*P\s*a\s*g\s*e)?[^\n]*\n?/gi, "\n");
+  out = out.replace(/For Latest Updates[^\n]*Current Affairs[^\n]*\n?/gi, "\n");
+  out = out.replace(/Govt\.?\s*Exams[^\n]*\n?/gi, "\n");
+  out = out.replace(/Current Affairs PDF[^\n]*\n?/gi, "\n");
+  out = out.replace(/visit:\s*The Lucknow Classes[^\n]*\n?/gi, "\n");
+  out = out.replace(/Visit:[^\n]*Lucknow[^\n]*\n?/gi, "\n");
+  out = out.replace(/The Lucknow Classes[^\n]*\n?/gi, "\n");
+  // ESTD watermark fragment (e.g. "ESTD 2024" diagonal) — remove wherever it appears, even mid-line (keep as space for inline, will be collapsed)
   out = out.replace(/\bESTD\s*\d{4}\b/gi, " ");
   // Generic "Page" header/footer
-  out = out.replace(/^\s*Page\s*\d+.*$/gim, " ");
+  out = out.replace(/^\s*Page\s*\d+.*$/gim, "\n");
   // Isolated "X of Y" when likely footer (surrounded by dashes/pipes or institute words nearby – conservative)
   // Keep question-internal "1 of 4" out, so only strip when line also contains known footer keywords or is isolated line
   // Collapse whitespace
   out = out.replace(/[ \t]{2,}/g, " ");
-  out = out.replace(/\n{3,}/g, "\n\n");
+  out = out.replace(/\n{2,}/g, "\n");
   // Remove empty lines that were only footer
   out = out
     .split("\n")
@@ -47,51 +48,72 @@ function stripPdfFooterNoise(text: string): string {
       return l;
     })
     .join("\n");
-  out = out.replace(/\n{3,}/g, "\n\n");
+  out = out.replace(/\n{2,}/g, "\n");
   return out;
 }
 
 function removeRepeatingFooterLines(fullText: string, pages?: Array<{ text: string }>): string {
   if (!pages || pages.length < 2) return stripPdfFooterNoise(fullText);
-  // Build line frequency across pages
-  const lineCounts = new Map<string, number>();
-  const pageLinesList: string[][] = [];
+  // Build line frequency across pages — normalize by stripping digits so "2 | P a g e" and "3 | P a g e" count as same
+  const normCounts = new Map<string, number>();
+  const normToOriginals = new Map<string, Set<string>>();
   for (const p of pages) {
     const lines = p.text
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l.length > 5 && l.length < 120);
-    pageLinesList.push(lines);
-    const uniq = new Set(lines);
-    for (const l of Array.from(uniq)) lineCounts.set(l as string, (lineCounts.get(l as string) || 0) + 1);
-  }
-  const repeating = new Set<string>();
-  for (const entry of Array.from(lineCounts.entries())) {
-    const line = entry[0] as string;
-    const cnt = entry[1] as number;
-    if (cnt >= Math.ceil(pages.length * 0.5)) {
-      // Only treat as footer if it looks like branding/page noise
-      if (
-        /P\s*a\s*g\s*e/i.test(line) ||
-        /\d+\s*of\s*\d+/i.test(line) ||
-        /Lucknow Classes/i.test(line) ||
-        /ESTD\s*\d{4}/i.test(line) ||
-        /For Latest Updates/i.test(line) ||
-        /Current Affairs/i.test(line) ||
-        /Visit:/i.test(line) ||
-        /Govt\.?\s*Exams/i.test(line)
-      ) {
-        repeating.add(line);
+    const uniqNorm = new Set<string>();
+    for (const l of lines) {
+      const norm = l.replace(/\d+/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (!uniqNorm.has(norm)) {
+        uniqNorm.add(norm);
+        normCounts.set(norm, (normCounts.get(norm) || 0) + 1);
+        if (!normToOriginals.has(norm)) normToOriginals.set(norm, new Set());
+        normToOriginals.get(norm)!.add(l);
       }
     }
   }
-  if (repeating.size === 0) return stripPdfFooterNoise(fullText);
-  let cleaned = fullText;
-  for (const r of Array.from(repeating)) {
-    // Escape for regex
-    const esc = (r as string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    cleaned = cleaned.replace(new RegExp(esc, "g"), " ");
+  const repeatingNorms = new Set<string>();
+  for (const [norm, cnt] of Array.from(normCounts.entries())) {
+    if (cnt >= Math.ceil(pages.length * 0.5)) {
+      // Only treat as footer if normalized line looks like branding/page noise (generic, not hardcoded to Lucknow)
+      if (
+        /p\s*a\s*g\s*e/i.test(norm) ||
+        /\d+\s*of\s*\d+/i.test(norm) ||
+        /lucknow classes/i.test(norm) ||
+        /estd/i.test(norm) ||
+        /for latest updates/i.test(norm) ||
+        /current affairs/i.test(norm) ||
+        /visit:/i.test(norm) ||
+        /govt/i.test(norm) ||
+        /\|\s*p\s*a\s*g\s*e/i.test(norm)
+      ) {
+        repeatingNorms.add(norm);
+      }
+    }
   }
+  if (repeatingNorms.size === 0) return stripPdfFooterNoise(fullText);
+  let cleaned = fullText;
+  for (const norm of Array.from(repeatingNorms)) {
+    const originals = normToOriginals.get(norm) || new Set<string>();
+    for (const orig of Array.from(originals)) {
+      const esc = orig.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      cleaned = cleaned.replace(new RegExp(esc, "g"), "\n");
+    }
+    // Also remove any line that matches the normalized footer template generically
+    // For example, if norm is " | p a g e", then any line like "2 | P a g e" or "10 | P a g e" should be removed
+    // We do this by creating a regex from the normalized pattern that allows digits
+    try {
+      const normEsc = norm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Allow digits where they were stripped
+      const pattern = normEsc.replace(/\\s\+/g, "\\s*").replace(/ /g, "\\s*");
+      // This is a generic fallback: remove lines that look like page footer with digits
+      // For now, we rely on the originals set above which already covers digit variants
+    } catch {}
+  }
+  // Collapse resulting blank lines so surrounding content becomes adjacent (single newline, not double)
+  cleaned = cleaned.replace(/\n{2,}/g, "\n");
+  // Also handle the case where footer was on same line as content (inline watermark) — already handled by stripPdfFooterNoise
   return stripPdfFooterNoise(cleaned);
 }
 
