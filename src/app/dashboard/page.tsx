@@ -14,14 +14,35 @@ import {
 import { Shell } from "@/components/layout/Shell";
 import { KpiCard, Card } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
-import {
-  CollectionChart,
-  AttendanceChart,
-  LeadFunnelChart,
-  LeadSourceBarChart,
-  AgingDonut,
-} from "@/components/dashboard/Charts";
+import dynamic from "next/dynamic";
 import { SpecialDiscountApprovals } from "@/components/dashboard/SpecialDiscountApprovals";
+
+const ChartSkeleton = () => (
+  <div className="animate-pulse rounded-2xl border border-scholar-100 bg-white p-5">
+    <div className="h-4 w-32 rounded bg-scholar-100" />
+    <div className="mt-4 h-[220px] rounded-lg bg-scholar-50" />
+  </div>
+);
+const CollectionChart = dynamic(
+  () => import("@/components/dashboard/Charts").then((m) => m.CollectionChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const AttendanceChart = dynamic(
+  () => import("@/components/dashboard/Charts").then((m) => m.AttendanceChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const LeadFunnelChart = dynamic(
+  () => import("@/components/dashboard/Charts").then((m) => m.LeadFunnelChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const LeadSourceBarChart = dynamic(
+  () => import("@/components/dashboard/Charts").then((m) => m.LeadSourceBarChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const AgingDonut = dynamic(
+  () => import("@/components/dashboard/Charts").then((m) => m.AgingDonut),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
