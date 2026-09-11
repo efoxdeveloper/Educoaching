@@ -187,8 +187,11 @@ function parseTextQuestions(raw: string) {
   if (preCleaned.length !== raw.length) {
     console.log("[import:text] pre-clean removed", raw.length - preCleaned.length, "chars of footer noise");
   }
-  // Normalize line endings
-  const normalized = preCleaned.replace(/\r\n/g, "\n");
+  // Normalize line endings and whitespace variations (NBSP, tabs, unicode spaces)
+  const normalized = preCleaned
+    .replace(/\r\n/g, "\n")
+    .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000\uFEFF]/g, " ")
+    .replace(/\t/g, " ");
   // Run BOTH split patterns unconditionally and pick whichever yields most blocks with all 4 option markers
   const blocksBare = normalized.split(/(?=^\s*\d+[\.\)]\s+)/m).filter(b=>b.trim().length>20);
   const blocksQ = normalized.split(/(?=Q\s*\d+[\.\)]?\s*)/i).filter(b=>b.trim().length>20);
@@ -198,23 +201,26 @@ function parseTextQuestions(raw: string) {
     let good = 0;
     for (const block of bks) {
       const terminatorIndices: number[] = [];
-      const answerMatch = block.match(/Answer\s*[:\-]\s*[A-Da-d1-4]/i);
-      if (answerMatch && answerMatch.index !== undefined) terminatorIndices.push(answerMatch.index);
-      const correctMatch = block.match(/Correct\s*[:\-]\s*[A-Da-d1-4]/i);
-      if (correctMatch && correctMatch.index !== undefined) terminatorIndices.push(correctMatch.index);
-      const explanationIdx = block.search(/Explanation\s*[:\-]/i);
-      if (explanationIdx !== -1) terminatorIndices.push(explanationIdx);
-      const solutionIdx = block.search(/Solution\s*[:\-]/i);
-      if (solutionIdx !== -1) terminatorIndices.push(solutionIdx);
+      const termPatterns: RegExp[] = [
+        /(?:Correct\s+Answer|Correct\s*Ans)\s*[:\-–—\.=]/i,
+        /Answer\s*[:\-–—\.=]/i,
+        /Ans\.?\s*[:\-–—\.=]/i,
+        /Correct\s*[:\-–—\.=]/i,
+        /Explanation\s*[:\-–—\.=]/i,
+        /Solution\s*[:\-–—\.=]/i,
+      ];
+      for (const pat of termPatterns) {
+        const idx = block.search(pat);
+        if (idx !== -1) terminatorIndices.push(idx);
+      }
       const terminatorStart = terminatorIndices.length ? Math.min(...terminatorIndices) : block.length;
-      const markerRegex = /(?:^|\s)([A-D])\s*[\.\)\:]\s*/gi;
+      const markerRegex = /(?:^|\s)\(?\s*([A-D])\s*[\)\.\:\-–—]\s*/gi;
       const found = new Set<string>();
       let mm: RegExpExecArray | null;
       markerRegex.lastIndex = 0;
       while ((mm = markerRegex.exec(block)) !== null) {
-        const full = mm[0];
         const letter = mm[1].toUpperCase();
-        const markerStart = mm.index + full.lastIndexOf(letter);
+        const markerStart = mm.index;
         if (markerStart >= terminatorStart) continue;
         found.add(letter);
         if (mm[0].length === 0) markerRegex.lastIndex++;
@@ -259,16 +265,15 @@ function parseTextQuestions(raw: string) {
     if (!block.trim()) continue;
 
     // Layout-independent option extraction: find marker positions by scanning whole block
-    const markerRegex = /(?:^|\s)([A-D])\s*[\.\)\:]\s*/gi;
+    // Flexible label: handles "A.", "A)", "A:", "A -", "(A)" with extra spacing/tabs/NBSP (normalized) and unicode dashes
+    const markerRegex = /(?:^|\s)\(?\s*([A-D])\s*[\)\.\:\-–—]\s*/gi;
     const markers: Array<{ letter: string; markerStart: number; matchEnd: number }> = [];
     let m: RegExpExecArray | null;
     // Need to reset lastIndex for each block
     markerRegex.lastIndex = 0;
     while ((m = markerRegex.exec(block)) !== null) {
-      const full = m[0];
       const letter = m[1].toUpperCase();
-      const letterIdxInMatch = full.lastIndexOf(letter);
-      const markerStart = m.index + letterIdxInMatch;
+      const markerStart = m.index;
       const matchEnd = markerRegex.lastIndex;
       // Avoid duplicate for same position (e.g., overlapping)
       if (markers.length === 0 || markerStart !== markers[markers.length-1].markerStart) {
@@ -278,16 +283,20 @@ function parseTextQuestions(raw: string) {
       if (m[0].length === 0) markerRegex.lastIndex++;
     }
 
-    // Also find where Answer/Correct/Explanation/Solution start, so last option ends there
+    // Also find where Answer/Ans/Correct Answer/Explanation/Solution start, so last option ends there
     const terminatorIndices: number[] = [];
-    const answerMatch = block.match(/Answer\s*[:\-]\s*[A-Da-d1-4]/i);
-    if (answerMatch && answerMatch.index !== undefined) terminatorIndices.push(answerMatch.index);
-    const correctMatch = block.match(/Correct\s*[:\-]\s*[A-Da-d1-4]/i);
-    if (correctMatch && correctMatch.index !== undefined) terminatorIndices.push(correctMatch.index);
-    const explanationIdx = block.search(/Explanation\s*[:\-]/i);
-    if (explanationIdx !== -1) terminatorIndices.push(explanationIdx);
-    const solutionIdx = block.search(/Solution\s*[:\-]/i);
-    if (solutionIdx !== -1) terminatorIndices.push(solutionIdx);
+    const termPatterns2: RegExp[] = [
+      /(?:Correct\s+Answer|Correct\s*Ans)\s*[:\-–—\.=]/i,
+      /Answer\s*[:\-–—\.=]/i,
+      /Ans\.?\s*[:\-–—\.=]/i,
+      /Correct\s*[:\-–—\.=]/i,
+      /Explanation\s*[:\-–—\.=]/i,
+      /Solution\s*[:\-–—\.=]/i,
+    ];
+    for (const pat of termPatterns2) {
+      const idx = block.search(pat);
+      if (idx !== -1) terminatorIndices.push(idx);
+    }
     const terminatorStart = terminatorIndices.length ? Math.min(...terminatorIndices) : block.length;
 
     // Ignore any option marker at or after the terminator (e.g. "B)" inside "Answer: B)")
@@ -310,8 +319,8 @@ function parseTextQuestions(raw: string) {
       const stripped = rawQ.replace(/^\s*(?:Q\s*)?\d+[\.\)]\s*/i, "").trim();
       qText = sanitizeOptionText(stripped.replace(/\s+/g, " "));
     } else {
-      // No markers — fallback to old behavior for question text
-      const qMatch = block.match(/^\s*\d+[\.\)]\s*([\s\S]*?)(?=(?:^|\s)[A-D]\s*[\.\)\:])/m);
+      // No markers — fallback to old behavior for question text (flexible marker)
+      const qMatch = block.match(/^\s*\d+[\.\)]\s*([\s\S]*?)(?=(?:^|\s)\(?\s*[A-D]\s*[\)\.\:\-–—])/m);
       qText = qMatch ? sanitizeOptionText(qMatch[1].trim().replace(/\s+/g, " ")) : sanitizeOptionText(block.slice(0, 300).trim().replace(/\n/g," "));
     }
 
@@ -339,12 +348,82 @@ function parseTextQuestions(raw: string) {
     const optC = getOpt("C");
     const optD = getOpt("D");
 
-    let ansRaw = (block.match(/Answer\s*[:\-]\s*([A-Da-d1-4])/i) || block.match(/Correct\s*[:\-]\s*([A-Da-d1-4])/i) || [])[1]?.trim();
+    // Flexible answer extraction: supports "Answer:", "Ans:", "Ans.", "Answer -", "Correct Answer:", case-insensitive,
+    // with letter, number, or full option text fallback
+    let ansRaw: string | undefined = undefined;
+    let rawAnsTextForFallback: string | undefined = undefined;
+    // Try to capture letter/number directly after answer keyword (handles "Answer: B", "Ans - C", "Correct Answer: D", "answer: a", "Ans. B", "Correct: A", etc.)
+    const letterMatch =
+      block.match(/(?:Correct\s+Answer|Correct\s*Ans)\s*[:\-–—\.=]*\s*\(?\s*([A-Da-d1-4])\s*\)?(?:[\.\)])?/i) ||
+      block.match(/Answer\s*[:\-–—\.=]*\s*\(?\s*([A-Da-d1-4])\s*\)?(?:[\.\)])?/i) ||
+      block.match(/Ans\.?\s*[:\-–—\.=]*\s*\(?\s*([A-Da-d1-4])\s*\)?(?:[\.\)])?/i) ||
+      block.match(/Correct\s*[:\-–—\.=]*\s*\(?\s*([A-Da-d1-4])\s*\)?(?:[\.\)])?/i);
+    if (letterMatch && letterMatch[1]) {
+      ansRaw = letterMatch[1].trim();
+    } else {
+      // No direct letter – capture whatever follows the answer keyword as potential full option text
+      // Require a delimiter ( : - = . ) after the keyword to avoid matching the word "answer" inside the question text itself (e.g. "Full text answer?")
+      const textMatch =
+        block.match(/(?:Correct\s+Answer|Correct\s*Ans)\s*[:\-–—\.=]+\s*([^\n]+)/i) ||
+        block.match(/Answer\s*[:\-–—\.=]+\s*([^\n]+)/i) ||
+        block.match(/Ans\.?\s*[:\-–—\.=]+\s*([^\n]+)/i) ||
+        block.match(/Correct\s*[:\-–—\.=]+\s*([^\n]+)/i);
+      if (textMatch && textMatch[1]) {
+        rawAnsTextForFallback = textMatch[1].trim().replace(/\s+/g, " ").replace(/^[\(\)\s\-\:\.]+|[\(\)\s\-\:\.]+$/g, "").trim();
+        // If that captured text is a single letter/number, treat as ansRaw
+        if (/^[A-Da-d]$/.test(rawAnsTextForFallback)) ansRaw = rawAnsTextForFallback;
+        else if (/^[1-4]$/.test(rawAnsTextForFallback)) ansRaw = rawAnsTextForFallback;
+        else {
+          // Check if it starts with "Option A" etc.
+          const optLetter = rawAnsTextForFallback.match(/option\s*([A-Da-d])/i);
+          if (optLetter) ansRaw = optLetter[1];
+          else {
+            // Keep for later fallback matching against option texts (full text answer)
+            // e.g., "Jupiter" should match option C "Jupiter"
+          }
+        }
+      }
+    }
     if (ansRaw) {
       if (/^[A-Da-d]$/.test(ansRaw)) ansRaw = String("ABCD".indexOf(ansRaw.toUpperCase()));
       else if (/^[1-4]$/.test(ansRaw)) ansRaw = String(Number(ansRaw) - 1);
+      // If ansRaw is something like "Option A" already handled, else if single letter lower etc.
+      if (ansRaw.toLowerCase().includes("option a")) ansRaw = "0";
+      else if (ansRaw.toLowerCase().includes("option b")) ansRaw = "1";
+      else if (ansRaw.toLowerCase().includes("option c")) ansRaw = "2";
+      else if (ansRaw.toLowerCase().includes("option d")) ansRaw = "3";
     }
-    const expl = (block.match(/Explanation\s*[:\-]\s*([^\n]+)/i) || block.match(/Solution\s*[:\-]\s*([^\n]+)/i) || [])[1]?.trim() || null;
+    // Fallback: if ansRaw still not resolved but we have rawAnsTextForFallback, try to match it against option texts (case-insensitive, normalized)
+    // This handles "Answer: Paris" where Paris is option B text, instead of "Answer: B"
+    if (!ansRaw || !["0","1","2","3"].includes(ansRaw)) {
+      // Defer: opts are already available at this point (optA-D defined above)
+      // Re-evaluate via helper inline
+      if (rawAnsTextForFallback) {
+        const optsTmp = [optA, optB, optC, optD];
+        const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim().replace(/^[\(\)\s\-\:\.\,]+|[\(\)\s\-\:\.\,]+$/g, "");
+        const nAns = norm(rawAnsTextForFallback);
+        let foundIdx = -1;
+        for (let idx = 0; idx < 4; idx++) {
+          const o = optsTmp[idx];
+          if (!o) continue;
+          if (norm(o) === nAns) { foundIdx = idx; break; }
+        }
+        if (foundIdx === -1) {
+          for (let idx = 0; idx < 4; idx++) {
+            const o = optsTmp[idx];
+            if (!o) continue;
+            const nOpt = norm(o);
+            if (nOpt && nAns && (nAns.includes(nOpt) || nOpt.includes(nAns)) && nOpt.length > 2 && nAns.length > 2) { foundIdx = idx; break; }
+          }
+        }
+        if (foundIdx === -1) {
+          const leading = nAns.match(/^\s*\(?\s*([a-d])\s*[\)\.\:\-–—]/i);
+          if (leading) foundIdx = "ABCD".indexOf(leading[1].toUpperCase());
+        }
+        if (foundIdx !== -1 && foundIdx >=0 && foundIdx <=3) ansRaw = String(foundIdx);
+      }
+    }
+    const expl = (block.match(/Explanation\s*[:\-–—\.=]*\s*([^\n]+)/i) || block.match(/Solution\s*[:\-–—\.=]*\s*([^\n]+)/i) || [])[1]?.trim() || null;
     if (!qText || !optA || !optB || !optC || !optD) {
       const snippet = block.slice(0,150).replace(/\n/g, " ").replace(/\s+/g, " ");
       console.log("[import:text] block", i, "failed q/opt missing", { qText: !!qText, optA: !!optA, optB: !!optB, optC: !!optC, optD: !!optD, snippet });
