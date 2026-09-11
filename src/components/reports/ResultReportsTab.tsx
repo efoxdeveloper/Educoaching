@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Download, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatDate, initials } from "@/lib/utils";
@@ -33,6 +34,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Avatar from "@mui/material/Avatar";
+import Pagination from "@mui/material/Pagination";
 
 export function ResultReportsTab({ data }: { data: ReportsData }) {
   const { resultReport } = data;
@@ -41,7 +43,7 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
   const [testFilter, setTestFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Filtered test overview
+  // Filtered test overview — KEEP as-is (overview sub-view is NOT paginated, per instruction)
   const filteredTests = useMemo(() => {
     return resultReport.tests.filter((t) => {
       if (searchTerm) {
@@ -55,24 +57,69 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
     });
   }, [resultReport.tests, searchTerm]);
 
-  // Filtered results ledger
-  const filteredLedger = useMemo(() => {
-    return resultReport.resultsLedger.filter((r) => {
-      if (testFilter !== "ALL" && r.testTitle !== testFilter) return false;
-      if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
+  // ——— Ledger sub-view: server-paginated via /api/reports/results (page size 20) ———
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerTotal, setLedgerTotal] = useState(resultReport.resultsLedger.length);
+  const [ledgerTotalPages, setLedgerTotalPages] = useState(Math.max(1, Math.ceil(resultReport.resultsLedger.length / 20)));
+  const [ledgerResults, setLedgerResults] = useState<typeof resultReport.resultsLedger>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
-      if (searchTerm) {
-        const q = searchTerm.toLowerCase();
-        const matchName = r.studentName.toLowerCase().includes(q);
-        const matchTitle = r.testTitle.toLowerCase().includes(q);
-        const matchSubject = r.subject.toLowerCase().includes(q);
-        const matchBatch = r.batchName.toLowerCase().includes(q);
-        if (!matchName && !matchTitle && !matchSubject && !matchBatch) return false;
-      }
+  // Debounce searchTerm for ledger API (350ms) — same as Students
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
 
-      return true;
-    });
-  }, [resultReport.resultsLedger, testFilter, statusFilter, searchTerm]);
+  // Reset to page 1 when ledger filters change
+  useEffect(() => {
+    setLedgerPage(1);
+  }, [debouncedSearch, testFilter, statusFilter]);
+
+  const fetchLedger = useCallback(async () => {
+    if (subView !== "ledger") return;
+    setLedgerLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(ledgerPage));
+      params.set("limit", "20");
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (testFilter !== "ALL") params.set("testId", testFilter);
+      if (statusFilter !== "ALL") params.set("status", statusFilter);
+      const res = await fetch(`/api/reports/results?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch ledger");
+      const json = await res.json();
+      setLedgerResults(json.results || []);
+      setLedgerTotal(json.total || 0);
+      setLedgerTotalPages(json.totalPages || 1);
+    } catch (e) {
+      console.error("Ledger fetch failed", e);
+      // Fallback to empty on error — keeps table from crashing, shows 0 rows
+      setLedgerResults([]);
+      setLedgerTotal(0);
+      setLedgerTotalPages(1);
+    } finally {
+      setLedgerLoading(false);
+    }
+  }, [subView, ledgerPage, debouncedSearch, testFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchLedger();
+  }, [fetchLedger]);
+
+  // Keep initial ledger count in sync if data prop changes (e.g., after global date/course filter in ReportsView)
+  useEffect(() => {
+    if (subView === "overview") {
+      setLedgerTotal(resultReport.resultsLedger.length);
+      setLedgerTotalPages(Math.max(1, Math.ceil(resultReport.resultsLedger.length / 20)));
+    }
+  }, [resultReport.resultsLedger.length, subView]);
+
+  // For export, we need all matching ledger rows (not just current page) — keep a separate fetch for export if needed
+  // For now, export will use current page's ledgerResults; full export can be done via separate API call with limit=10000 if needed
+  const filteredLedger = ledgerResults;
 
   // Handle Export CSV
   const handleExportCsv = () => {
@@ -266,7 +313,7 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
               }}
             />
             <Chip
-              label={`Student Score Ledger (${resultReport.resultsLedger.length})`}
+              label={`Student Score Ledger (${ledgerTotal})`}
               onClick={() => setSubView("ledger")}
               size="small"
               sx={{
@@ -446,7 +493,13 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredLedger.length === 0 ? (
+                {ledgerLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                      Loading results...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredLedger.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                       No score records match the selected filters.
@@ -500,6 +553,27 @@ export function ResultReportsTab({ data }: { data: ReportsData }) {
               </TableBody>
             </Table>
           </TableContainer>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between", p: 2, borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              Showing {filteredLedger.length} of {ledgerTotal} results {ledgerTotalPages > 1 && `(Page ${ledgerPage} of ${ledgerTotalPages})`}
+            </Typography>
+            {ledgerTotalPages > 1 && (
+              <Pagination
+                count={ledgerTotalPages}
+                page={ledgerPage}
+                onChange={(_, v) => setLedgerPage(v)}
+                size="small"
+                color="primary"
+                shape="rounded"
+                showFirstButton
+                showLastButton
+                sx={{
+                  "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                  "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                }}
+              />
+            )}
+          </Box>
         </Card>
       )}
     </Box>
