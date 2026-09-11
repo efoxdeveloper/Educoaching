@@ -17,14 +17,40 @@ import {
 } from "lucide-react";
 import { format, subDays, startOfYear } from "date-fns";
 import type { ReportsData } from "@/lib/reports-data";
-import { OverviewTab } from "./OverviewTab";
 import { StudentReportsTab } from "./StudentReportsTab";
-import { BatchReportsTab } from "./BatchReportsTab";
 import { AdmissionReportsTab } from "./AdmissionReportsTab";
-import { FeeReportsTab } from "./FeeReportsTab";
-import { ProfitLossReportsTab } from "./ProfitLossReportsTab";
-import { AttendanceReportsTab } from "./AttendanceReportsTab";
-import { ResultReportsTab } from "./ResultReportsTab";
+import dynamic from "next/dynamic";
+
+const ChartTabSkeleton = () => (
+  <div className="animate-pulse rounded-2xl border border-scholar-100 bg-white p-5">
+    <div className="h-4 w-40 rounded bg-scholar-100" />
+    <div className="mt-4 h-[260px] rounded-lg bg-scholar-50" />
+  </div>
+);
+const OverviewTab = dynamic(() => import("./OverviewTab").then((m) => m.OverviewTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
+const FeeReportsTab = dynamic(() => import("./FeeReportsTab").then((m) => m.FeeReportsTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
+const AttendanceReportsTab = dynamic(() => import("./AttendanceReportsTab").then((m) => m.AttendanceReportsTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
+const BatchReportsTab = dynamic(() => import("./BatchReportsTab").then((m) => m.BatchReportsTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
+const ProfitLossReportsTab = dynamic(() => import("./ProfitLossReportsTab").then((m) => m.ProfitLossReportsTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
+const ResultReportsTab = dynamic(() => import("./ResultReportsTab").then((m) => m.ResultReportsTab), {
+  ssr: false,
+  loading: () => <ChartTabSkeleton />,
+});
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
