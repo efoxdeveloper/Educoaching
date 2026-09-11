@@ -108,6 +108,174 @@ function sanitizeOptionText(text: string): string {
   return t;
 }
 
+// ── AI-based extraction (Anthropic) ──────────────────────────────────────
+const AI_SYSTEM_PROMPT = `You are an expert MCQ extractor for bulk question import.
+Extract structured multiple-choice questions from raw text extracted from PDFs/DOCs.
+
+Rules:
+- Handle any reasonable MCQ format: numbered (1., 2), lettered, bulleted, Q1/Q 1, inconsistent spacing, tabs, non-breaking spaces, line-breaks between question and options, and option labels like "A.", "A)", "A -", "A:", "(A)", "A -", "a)", etc.
+- Handle answer markings like "Answer:", "Ans:", "Ans.", "Answer -", "Correct:", "Correct Answer:", case-insensitive, answer as letter (A-D), number (1-4), or full option text. Map to correctAnswerIndex 0-3.
+- Each question must have exactly 4 options. If a block genuinely is not a valid MCQ (missing question or fewer than 4 options and cannot be inferred), skip it — do NOT guess.
+- Return ONLY valid JSON — no extra text, no explanation, no markdown. The JSON must be an array of objects with this exact schema:
+[
+  {
+    "questionText": "string",
+    "options": ["string","string","string","string"],
+    "correctAnswerIndex": 0,
+    "category": "General",
+    "difficulty": "MEDIUM"
+  }
+]
+- questionText: plain text, trimmed, no leading numbers like "1." or "Q1".
+- options: exactly 4 strings, trimmed, no label prefix.
+- correctAnswerIndex: integer 0-3 (0=A,1=B,2=C,3=D). If inferable category/difficulty else null.
+- If you cannot confidently extract a block, omit it from the array — the caller will treat omitted blocks as warnings.
+`;
+
+// Reasonable chunk size to stay within model context/token limits (~7000 chars ≈ 1500-2000 tokens)
+const AI_CHUNK_MAX_CHARS = 7000;
+const AI_MAX_TOKENS = 4000;
+const AI_MODEL_FALLBACK = "claude-3-5-sonnet-20241022";
+
+function chunkText(text: string, maxChars = AI_CHUNK_MAX_CHARS): string[] {
+  if (!text || text.length <= maxChars) return [text];
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = Math.min(start + maxChars, text.length);
+    if (end < text.length) {
+      // Prefer to split at double newline, then single newline, to avoid cutting a question in half
+      const doubleNl = text.lastIndexOf("\n\n", end);
+      if (doubleNl > start + maxChars * 0.5) end = doubleNl;
+      else {
+        const singleNl = text.lastIndexOf("\n", end);
+        if (singleNl > start + maxChars * 0.5) end = singleNl;
+      }
+    }
+    const chunk = text.slice(start, end).trim();
+    if (chunk) chunks.push(chunk);
+    start = end;
+    // Avoid infinite loop on zero-length
+    if (chunks.length > 50) break;
+  }
+  return chunks.length ? chunks : [text];
+}
+
+function chunkByPagesOrSize(rawText: string, pages?: Array<{ text: string }>): string[] {
+  if (pages && pages.length > 1) {
+    // Use per-page text but merge small pages until we reach maxChars to reduce API calls
+    const pageChunks: string[] = [];
+    let acc = "";
+    for (const p of pages) {
+      const pageText = (p.text || "").trim();
+      if (!pageText) continue;
+      if (acc.length + pageText.length + 2 > AI_CHUNK_MAX_CHARS && acc) {
+        pageChunks.push(acc);
+        acc = pageText;
+      } else {
+        acc = acc ? acc + "\n\n" + pageText : pageText;
+      }
+    }
+    if (acc) pageChunks.push(acc);
+    // Apply footer cleaning to each page chunk? Already done globally, but keep as-is
+    if (pageChunks.length) return pageChunks;
+  }
+  return chunkText(rawText);
+}
+
+function stripMarkdownFences(s: string): string {
+  let t = s.trim();
+  // Remove ```json ... ``` or ``` ... ```
+  if (t.startsWith("```")) {
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  }
+  return t;
+}
+
+function safeParseAIJson(raw: string): any[] | null {
+  const stripped = stripMarkdownFences(raw);
+  try {
+    const parsed = JSON.parse(stripped);
+    if (Array.isArray(parsed)) return parsed;
+    // Sometimes model wraps in {questions:[...]} or {data:[...]}
+    if (parsed && typeof parsed === "object") {
+      if (Array.isArray((parsed as any).questions)) return (parsed as any).questions;
+      if (Array.isArray((parsed as any).data)) return (parsed as any).data;
+      if (Array.isArray((parsed as any).result)) return (parsed as any).result;
+    }
+    return null;
+  } catch {
+    // Try to extract JSON array substring if model added extra text
+    const match = stripped.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        const parsed2 = JSON.parse(match[0]);
+        if (Array.isArray(parsed2)) return parsed2;
+      } catch {}
+    }
+    return null;
+  }
+}
+
+async function callAnthropicChunk(chunk: string, attempt = 0): Promise<any[] | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  const model = process.env.ANTHROPIC_MODEL || AI_MODEL_FALLBACK;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    console.log(`[import:ai] calling Anthropic chunk len=${chunk.length} attempt=${attempt+1} model=${model}`);
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        max_tokens: AI_MAX_TOKENS,
+        system: AI_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: `Extract all valid MCQs from the following raw text chunk. Return ONLY a JSON array with the schema described in system prompt. If the chunk contains no valid MCQ, return [].
+
+Raw text chunk:
+---
+${chunk}
+---
+`,
+          },
+        ],
+      }),
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Anthropic ${res.status}: ${errText.slice(0, 500)}`);
+    }
+    const data: any = await res.json();
+    const text = data?.content?.[0]?.text || "";
+    console.log(`[import:ai] raw response len=${text.length} preview=${text.slice(0, 200)}`);
+    const parsed = safeParseAIJson(text);
+    if (!parsed) {
+      throw new Error("Failed to parse AI JSON response");
+    }
+    return parsed;
+  } catch (e: any) {
+    clearTimeout(timeout);
+    console.error(`[import:ai] chunk failed attempt ${attempt+1}:`, e?.message);
+    if (attempt === 0) {
+      // retry once
+      await new Promise((r) => setTimeout(r, 800));
+      return callAnthropicChunk(chunk, 1);
+    }
+    return null;
+  }
+}
+
 function parseXlsxBuffer(buffer: Buffer) {
   console.log("[import:xlsx] buffer length", buffer.length);
   const XLSX = require("xlsx");
@@ -178,14 +346,14 @@ function parseXlsxBuffer(buffer: Buffer) {
   return { questions, errors };
 }
 
-function parseTextQuestions(raw: string) {
-  console.log("[import:text] raw length", raw.length, "preview", raw.slice(0, 200));
+function parseTextQuestionsRegex(raw: string) {
+  console.log("[import:text:regex] raw length", raw.length, "preview", raw.slice(0, 200));
   const questions: any[] = [];
   const errors: string[] = [];
   // Pre-clean per-page footers/watermarks before any splitting (also handles docx/pdf)
   const preCleaned = stripPdfFooterNoise(raw);
   if (preCleaned.length !== raw.length) {
-    console.log("[import:text] pre-clean removed", raw.length - preCleaned.length, "chars of footer noise");
+    console.log("[import:text:regex] pre-clean removed", raw.length - preCleaned.length, "chars of footer noise");
   }
   // Normalize line endings and whitespace variations (NBSP, tabs, unicode spaces)
   const normalized = preCleaned
@@ -444,8 +612,166 @@ function parseTextQuestions(raw: string) {
     }
     questions.push({ questionText: qText, options: [optA, optB, optC, optD], correctAnswer: ansRaw, explanation: expl, marks: 4, negativeMarks: 1, subject: "General", topic: null, difficulty: "MEDIUM" });
   }
-  console.log("[import:text] parsed", questions.length, "errors", errors.length);
+  console.log("[import:text:regex] parsed", questions.length, "errors", errors.length);
   return { questions, errors };
+}
+
+// AI-based extraction wrapper — uses Anthropic, falls back to regex on failure/no key
+async function parseTextQuestions(
+  raw: string,
+  pages?: Array<{ text: string }>,
+  subjectParam: string = "General"
+): Promise<{ questions: any[]; errors: string[] }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.log("[import:ai] no ANTHROPIC_API_KEY set — falling back to regex parser");
+    return parseTextQuestionsRegex(raw);
+  }
+
+  // Pre-clean similar to regex path (footer noise) before chunking
+  const preCleaned = stripPdfFooterNoise(raw);
+  const chunks = chunkByPagesOrSize(preCleaned, pages);
+  console.log(`[import:ai] chunking raw len=${raw.length} cleaned len=${preCleaned.length} into ${chunks.length} chunk(s)`);
+
+  const allQuestions: any[] = [];
+  const allErrors: string[] = [];
+  let globalBlockIdx = 0;
+
+  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+    const chunk = chunks[chunkIdx];
+    if (!chunk.trim()) continue;
+    // Estimate expected blocks in this chunk for error reporting (heuristic)
+    const estimatedBlocks = (() => {
+      const m1 = chunk.match(/^\s*\d+[\.\)]\s+/gm);
+      const m2 = chunk.match(/Q\s*\d+[\.\)]?\s*/gi);
+      const c = Math.max(m1 ? m1.length : 0, m2 ? m2.length : 0);
+      return c > 0 ? c : Math.max(1, Math.floor(chunk.length / 600));
+    })();
+
+    let aiData: any[] | null = null;
+    try {
+      aiData = await callAnthropicChunk(chunk);
+    } catch (e: any) {
+      console.error(`[import:ai] chunk ${chunkIdx} exception`, e?.message);
+      aiData = null;
+    }
+
+    if (aiData && Array.isArray(aiData) && aiData.length > 0) {
+      console.log(`[import:ai] chunk ${chunkIdx} returned ${aiData.length} question(s)`);
+      for (let i = 0; i < aiData.length; i++) {
+        const item: any = aiData[i];
+        const qTextRaw = String(item.questionText || item.question || "").trim();
+        const optsRaw = Array.isArray(item.options) ? item.options : [];
+        let correctIdx: any = item.correctAnswerIndex;
+        if (correctIdx === undefined || correctIdx === null) {
+          // Support alternative field names
+          correctIdx = item.correctAnswer ?? item.answerIndex ?? item.correct;
+        }
+        const category = item.category || item.subject || null;
+        const difficultyRaw = item.difficulty || null;
+
+        const qText = sanitizeOptionText(qTextRaw.replace(/\s+/g, " "));
+        const opts = optsRaw.map((o: any) => sanitizeOptionText(String(o || "").replace(/\s+/g, " ").trim()));
+        // Validate
+        const has4Opts = opts.length === 4 && opts.every((o: string) => o && o.length > 0);
+        const correctNum = Number(correctIdx);
+        const hasValidCorrect = Number.isInteger(correctNum) && correctNum >= 0 && correctNum <= 3;
+
+        if (!qText || !has4Opts) {
+          globalBlockIdx++;
+          allErrors.push(`Block ${globalBlockIdx}: could not parse options — check A) B) C) D) formatting`);
+          console.log(`[import:ai] chunk ${chunkIdx} item ${i} invalid options/qText`, { qText: !!qText, opts });
+          continue;
+        }
+        if (!hasValidCorrect) {
+          globalBlockIdx++;
+          allErrors.push(`Block ${globalBlockIdx}: missing correct answer (add "Answer: A/B/C/D")`);
+          console.log(`[import:ai] chunk ${chunkIdx} item ${i} missing correctAnswerIndex`, { correctIdx });
+          continue;
+        }
+        globalBlockIdx++;
+        allQuestions.push({
+          questionText: qText,
+          options: opts,
+          correctAnswer: String(correctNum),
+          explanation: item.explanation ? String(item.explanation).trim() : null,
+          marks: 4,
+          negativeMarks: 1,
+          subject: category ? String(category).trim() || subjectParam : subjectParam,
+          topic: null,
+          difficulty: difficultyRaw ? String(difficultyRaw).trim().toUpperCase() : "MEDIUM",
+        });
+      }
+      // If AI returned fewer than estimated, generate warnings for the gap (keep UX consistent)
+      if (aiData.length < estimatedBlocks) {
+        const missing = estimatedBlocks - aiData.length;
+        console.log(`[import:ai] chunk ${chunkIdx} estimated ${estimatedBlocks} but AI returned ${aiData.length}, adding ${missing} parse warnings`);
+        for (let m = 0; m < missing; m++) {
+          globalBlockIdx++;
+          // Only add warning if chunk still looks like it contains MCQs (has option markers)
+          if (/[A-D]\s*[\.\)\:\-]/i.test(chunk)) {
+            allErrors.push(`Block ${globalBlockIdx}: could not parse options — check A) B) C) D) formatting`);
+          }
+        }
+      }
+    } else {
+      // AI returned null/empty or failed — fallback to regex for this chunk to keep per-block signal
+      console.log(`[import:ai] chunk ${chunkIdx} fallback to regex (aiData=${aiData ? aiData.length : "null"}) estimatedBlocks=${estimatedBlocks}`);
+      const fallback = parseTextQuestionsRegex(chunk);
+      // Adjust block numbers to be global
+      for (const q of fallback.questions) {
+        // Ensure subject override
+        allQuestions.push({ ...q, subject: subjectParam });
+      }
+      for (const e of fallback.errors) {
+        // Re-number errors to global index: original errors are "Block N: ..."
+        // Extract the local block number and map to global
+        const localMatch = e.match(/Block\s+(\d+):/);
+        if (localMatch) {
+          const localNum = Number(localMatch[1]);
+          const globalNum = globalBlockIdx + localNum;
+          allErrors.push(e.replace(/Block\s+\d+:/, `Block ${globalNum}:`));
+        } else {
+          globalBlockIdx++;
+          allErrors.push(`Block ${globalBlockIdx}: ${e}`);
+        }
+      }
+      // Update global counter by max of returned questions + errors' implied blocks
+      // For simplicity, increment by estimatedBlocks so next chunk's numbering continues
+      const fallbackBlockCount = Math.max(fallback.questions.length + fallback.errors.length, estimatedBlocks);
+      if (fallback.questions.length === 0 && fallback.errors.length === 0) {
+        // No fallback blocks either, but chunk looked like MCQs — add generic warnings
+        if (/[A-D]\s*[\.\)\:\-]/i.test(chunk) && chunk.length > 80) {
+          for (let m = 0; m < Math.min(estimatedBlocks, 2); m++) {
+            globalBlockIdx++;
+            allErrors.push(`Block ${globalBlockIdx}: could not parse options — check A) B) C) D) formatting`);
+          }
+        }
+      } else {
+        globalBlockIdx += fallbackBlockCount;
+        // Correct double counting: fallback.errors already accounted, but globalBlockIdx was incremented by fallbackBlockCount which includes them
+        // To avoid double, we set globalBlockIdx to previous + fallbackBlockCount
+        // However we already pushed errors with adjusted numbers, so we need to not double increment
+        // Adjust: globalBlockIdx already increased, but we also pushed errors — keep as is for next chunk
+        // The above increment already moves globalBlockIdx forward correctly
+      }
+      // If fallbackBlockCount was estimatedBlocks but we already used globalBlockIdx + localNum mapping, we need to ensure no overlap
+      // Simpler: just set globalBlockIdx to allQuestions.length + allErrors.length
+      globalBlockIdx = allQuestions.length + allErrors.length;
+    }
+  }
+
+  // If AI path produced no questions and no errors (e.g., empty input), fallback to regex fully
+  if (allQuestions.length === 0 && allErrors.length === 0) {
+    const trimmed = raw.trim();
+    if (trimmed.length > 30) {
+      console.log("[import:ai] no results from AI, falling back to full regex");
+      return parseTextQuestionsRegex(raw);
+    }
+  }
+
+  console.log(`[import:ai] final parsed ${allQuestions.length} questions, ${allErrors.length} errors`);
+  return { questions: allQuestions, errors: allErrors };
 }
 
 export async function POST(req: Request) {
@@ -525,8 +851,9 @@ export async function POST(req: Request) {
         console.error("[import:docx] no text extracted");
         return NextResponse.json({ error: "No text extracted from docx — file may be scanned image" }, { status: 400 });
       }
-      const res = parseTextQuestions(text);
-      questions = res.questions.map((q: any) => ({ ...q, subject: subjectParam }));
+      // Use AI-based extraction with regex fallback (keeps same preview/bulk-insert flow)
+      const res = await parseTextQuestions(text, undefined, subjectParam);
+      questions = res.questions;
       parseErrors = res.errors;
     } else if (ext === "pdf" || mime === "application/pdf") {
       console.log("[import] routing to pdf parser (v2)");
@@ -572,8 +899,9 @@ export async function POST(req: Request) {
           console.error("[import:pdf] no text extracted after footer cleaning");
           return NextResponse.json({ error: "No text extracted from PDF — may be scanned image" }, { status: 400 });
         }
-        const res = parseTextQuestions(text);
-        questions = res.questions.map((q: any) => ({ ...q, subject: subjectParam }));
+        // Use AI-based extraction (chunked per page) with regex fallback — keep PDF extraction as-is
+        const res = await parseTextQuestions(text, (result as any).pages as Array<{ text: string }> | undefined, subjectParam);
+        questions = res.questions;
         parseErrors = res.errors;
       } catch (e: any) {
         console.error("[import:pdf] pdf-parse v2 execution failed", e?.message, e?.stack);
