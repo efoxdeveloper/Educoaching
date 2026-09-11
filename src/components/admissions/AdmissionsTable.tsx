@@ -199,10 +199,10 @@ export function AdmissionsTable({
           matchesToday = false;
         } else {
           const d = new Date(a.nextFollowUpDate);
-          matchesToday =
-            d.getDate() === today.getDate() &&
-            d.getMonth() === today.getMonth() &&
-            d.getFullYear() === today.getFullYear();
+          d.setHours(0, 0, 0, 0);
+          const t2 = new Date();
+          t2.setHours(0, 0, 0, 0);
+          matchesToday = d <= t2 && a.stage !== "ENROLLED" && a.stage !== "LOST";
         }
       }
 
@@ -247,11 +247,19 @@ export function AdmissionsTable({
 
   const handleSectionChange = (section: LeadSection) => {
     setActiveSection(section);
-    // When switching to follow-ups, also clear stage filter to avoid confusion
-    if (section === "followups") setStageFilter("");
-    if (section === "new") setStageFilter("NEW");
-    if (section === "converted") setStageFilter("ENROLLED");
-    if (section === "all") setStageFilter("");
+    if (section === "followups") {
+      setStageFilter("");
+      setTodayFollowUpOnly(true);
+    } else if (section === "new") {
+      setStageFilter("NEW");
+      setTodayFollowUpOnly(false);
+    } else if (section === "converted") {
+      setStageFilter("ENROLLED");
+      setTodayFollowUpOnly(false);
+    } else if (section === "all") {
+      setStageFilter("");
+      setTodayFollowUpOnly(false);
+    }
   };
 
   return (
@@ -420,9 +428,14 @@ export function AdmissionsTable({
                 {/* Today's Follow-ups Toggle — prominent */}
                 <button
                   type="button"
-                  onClick={() => setTodayFollowUpOnly(!todayFollowUpOnly)}
+                  onClick={() => {
+                    const next = !todayFollowUpOnly;
+                    setTodayFollowUpOnly(next);
+                    setActiveSection(next ? "followups" : "all");
+                    if (next) setStageFilter("");
+                  }}
                   className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition-all shadow-sm ${
-                    todayFollowUpOnly
+                    todayFollowUpOnly || activeSection === "followups"
                       ? "border-amber-500 bg-amber-500 text-white"
                       : "border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
                   }`}
@@ -431,7 +444,7 @@ export function AdmissionsTable({
                   <span className="hidden sm:inline">Today&apos;s Follow-ups</span>
                   <span className="sm:hidden">Today</span>
                   {todayDueCount > 0 && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${todayFollowUpOnly ? "bg-white text-amber-800" : "bg-amber-500 text-white"}`}>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${todayFollowUpOnly || activeSection === "followups" ? "bg-white text-amber-800" : "bg-amber-500 text-white"}`}>
                       {todayDueCount}
                     </span>
                   )}
@@ -489,12 +502,16 @@ export function AdmissionsTable({
               <span className="mr-1 text-[11px] font-semibold text-scholar-400">Quick filter:</span>
               <button
                 type="button"
-                onClick={() => setStageFilter("")}
+                onClick={() => {
+                  setStageFilter("");
+                  setActiveSection("all");
+                  setTodayFollowUpOnly(false);
+                }}
                 className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border transition-all ${
-                  stageFilter === "" ? "bg-scholar-800 text-white border-scholar-800" : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
+                  stageFilter === "" && activeSection === "all" && !todayFollowUpOnly ? "bg-scholar-800 text-white border-scholar-800" : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
                 }`}
               >
-                All Stages <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${stageFilter === "" ? "bg-white/20 text-white" : "bg-scholar-100 text-scholar-700"}`}>{admissions.length}</span>
+                All Stages <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${stageFilter === "" && activeSection === "all" && !todayFollowUpOnly ? "bg-white/20 text-white" : "bg-scholar-100 text-scholar-700"}`}>{admissions.length}</span>
               </button>
               {STAGES.map((s) => {
                 const count = stageCounts[s.value] || 0;
@@ -503,13 +520,21 @@ export function AdmissionsTable({
                   <button
                     key={s.value}
                     type="button"
-                    onClick={() => setStageFilter(isSelected ? "" : s.value)}
+                    onClick={() => {
+                      const next = isSelected ? "" : s.value;
+                      setStageFilter(next);
+                      if (next === "NEW") setActiveSection("new");
+                      else if (next === "ENROLLED") setActiveSection("converted");
+                      else if (next === "") setActiveSection("all");
+                      else setActiveSection("all");
+                      setTodayFollowUpOnly(false);
+                    }}
                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition-all ${
-                      isSelected ? "bg-scholar-800 text-white border-scholar-800" : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
+                      isSelected && activeSection !== "followups" && !todayFollowUpOnly ? "bg-scholar-800 text-white border-scholar-800" : "bg-white text-scholar-700 border-scholar-200 hover:bg-scholar-50"
                     }`}
                   >
                     {s.label}
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${isSelected ? "bg-white/20 text-white" : "bg-scholar-100 text-scholar-700"}`}>{count}</span>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${isSelected && activeSection !== "followups" && !todayFollowUpOnly ? "bg-white/20 text-white" : "bg-scholar-100 text-scholar-700"}`}>{count}</span>
                   </button>
                 );
               })}
