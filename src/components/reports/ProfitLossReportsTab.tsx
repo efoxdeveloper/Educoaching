@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { TrendingUp, TrendingDown, Receipt, Search, Download, Wallet } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -33,6 +33,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import Pagination from "@mui/material/Pagination";
 
 export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
   const { profitLossReport } = data;
@@ -43,7 +44,20 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
   const { kpis, monthlyTrend, incomeCategoryBreakdown, expenseCategoryBreakdown, incomes, expenses } =
     profitLossReport;
 
-  // Filtered incomes
+  // ——— Income & Expenses ledgers: server-paginated via /api/reports/profit-loss-entries (20/page, isolated) ———
+  const [incomePage, setIncomePage] = useState(1);
+  const [incomeTotal, setIncomeTotal] = useState(incomes.length);
+  const [incomeTotalPages, setIncomeTotalPages] = useState(Math.max(1, Math.ceil(incomes.length / 20)));
+  const [incomeResults, setIncomeResults] = useState(incomes.slice(0, 20));
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [expensePage, setExpensePage] = useState(1);
+  const [expenseTotal, setExpenseTotal] = useState(expenses.length);
+  const [expenseTotalPages, setExpenseTotalPages] = useState(Math.max(1, Math.ceil(expenses.length / 20)));
+  const [expenseResults, setExpenseResults] = useState(expenses.slice(0, 20));
+  const [expenseLoading, setExpenseLoading] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+
+  // Keep filtered arrays for export (full, not paginated) — preserve original in-memory filter for CSV export
   const filteredIncomes = useMemo(() => {
     return incomes.filter((i) => {
       if (searchTerm) {
@@ -59,7 +73,6 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
     });
   }, [incomes, searchTerm, categoryFilter]);
 
-  // Filtered expenses
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       if (searchTerm) {
@@ -74,6 +87,81 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
       return true;
     });
   }, [expenses, searchTerm, categoryFilter]);
+
+  // Paginated results for table rendering (separate from export)
+  const paginatedIncomes = incomeResults;
+  const paginatedExpenses = expenseResults;
+
+  // Debounce search for API
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setIncomePage(1);
+    setExpensePage(1);
+  }, [debouncedSearch, categoryFilter]);
+
+  const fetchIncomes = useCallback(async () => {
+    if (subView !== "income") return;
+    setIncomeLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("type", "income");
+      params.set("page", String(incomePage));
+      params.set("limit", "20");
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (categoryFilter !== "ALL") params.set("category", categoryFilter);
+      const res = await fetch(`/api/reports/profit-loss-entries?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch incomes");
+      const json = await res.json();
+      setIncomeResults(json.entries || []);
+      setIncomeTotal(json.total || 0);
+      setIncomeTotalPages(json.totalPages || 1);
+    } catch (e) {
+      console.error("Incomes fetch failed", e);
+      setIncomeResults([]);
+      setIncomeTotal(0);
+      setIncomeTotalPages(1);
+    } finally {
+      setIncomeLoading(false);
+    }
+  }, [subView, incomePage, debouncedSearch, categoryFilter]);
+
+  const fetchExpenses = useCallback(async () => {
+    if (subView !== "expenses") return;
+    setExpenseLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("type", "expense");
+      params.set("page", String(expensePage));
+      params.set("limit", "20");
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (categoryFilter !== "ALL") params.set("category", categoryFilter);
+      const res = await fetch(`/api/reports/profit-loss-entries?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch expenses");
+      const json = await res.json();
+      setExpenseResults(json.entries || []);
+      setExpenseTotal(json.total || 0);
+      setExpenseTotalPages(json.totalPages || 1);
+    } catch (e) {
+      console.error("Expenses fetch failed", e);
+      setExpenseResults([]);
+      setExpenseTotal(0);
+      setExpenseTotalPages(1);
+    } finally {
+      setExpenseLoading(false);
+    }
+  }, [subView, expensePage, debouncedSearch, categoryFilter]);
+
+  useEffect(() => {
+    fetchIncomes();
+  }, [fetchIncomes]);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   // CSV Exporters
   const handleExportStatement = () => {
@@ -490,14 +578,20 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredIncomes.length === 0 ? (
+                  {incomeLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                        Loading incomes...
+                      </TableCell>
+                    </TableRow>
+                  ) : paginatedIncomes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                         No extra income records found matching your filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredIncomes.map((i) => (
+                    paginatedIncomes.map((i) => (
                       <TableRow key={i.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75 } }}>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>
@@ -536,6 +630,27 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                 </TableBody>
               </Table>
             </TableContainer>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between", p: 2, borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Showing {paginatedIncomes.length} of {incomeTotal} incomes {incomeTotalPages > 1 && `(Page ${incomePage} of ${incomeTotalPages})`}
+              </Typography>
+              {incomeTotalPages > 1 && (
+                <Pagination
+                  count={incomeTotalPages}
+                  page={incomePage}
+                  onChange={(_, v) => setIncomePage(v)}
+                  size="small"
+                  color="primary"
+                  shape="rounded"
+                  showFirstButton
+                  showLastButton
+                  sx={{
+                    "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                    "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                  }}
+                />
+              )}
+            </Box>
           </Card>
         </Box>
       )}
@@ -597,14 +712,20 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredExpenses.length === 0 ? (
+                  {expenseLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#7E9BBC", fontSize: "0.875rem" }}>
+                        Loading expenses...
+                      </TableCell>
+                    </TableRow>
+                  ) : paginatedExpenses.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#94A3B8", fontSize: "0.875rem" }}>
                         No expense records found matching your filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredExpenses.map((e) => (
+                    paginatedExpenses.map((e) => (
                       <TableRow key={e.id} hover sx={{ "& td": { borderBottom: "1px solid #F1F5F9", py: 1.75 } }}>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "#171A21", fontSize: "0.80rem" }}>
@@ -643,6 +764,27 @@ export function ProfitLossReportsTab({ data }: { data: ReportsData }) {
                 </TableBody>
               </Table>
             </TableContainer>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between", p: 2, borderTop: "1px solid #D6E0EB", bgcolor: "rgba(238,242,247,0.3)" }}>
+              <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Showing {paginatedExpenses.length} of {expenseTotal} expenses {expenseTotalPages > 1 && `(Page ${expensePage} of ${expenseTotalPages})`}
+              </Typography>
+              {expenseTotalPages > 1 && (
+                <Pagination
+                  count={expenseTotalPages}
+                  page={expensePage}
+                  onChange={(_, v) => setExpensePage(v)}
+                  size="small"
+                  color="primary"
+                  shape="rounded"
+                  showFirstButton
+                  showLastButton
+                  sx={{
+                    "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                    "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                  }}
+                />
+              )}
+            </Box>
           </Card>
         </Box>
       )}
