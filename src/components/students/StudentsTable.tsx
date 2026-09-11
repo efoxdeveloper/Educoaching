@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Plus, Phone, FileText, Eye, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import dynamic from "next/dynamic";
@@ -55,6 +55,7 @@ import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
+import Pagination from "@mui/material/Pagination";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -96,11 +97,29 @@ type Student = {
 
 export function StudentsTable({
   students,
+  total,
+  page,
+  totalPages,
+  limit,
+  initialQuery,
+  initialCourseFilter,
+  initialStatusFilter,
+  statusCounts,
+  courseCounts,
   courses,
   batches,
   branches = [],
 }: {
   students: Student[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+  initialQuery: string;
+  initialCourseFilter: string;
+  initialStatusFilter: string;
+  statusCounts: Record<string, number>;
+  courseCounts: { name: string; count: number }[];
   courses: {
     id: string;
     name: string;
@@ -125,9 +144,8 @@ export function StudentsTable({
   }[];
 }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [courseFilter, setCourseFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const searchParams = useSearchParams();
+  const [queryInput, setQueryInput] = useState(initialQuery);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [docsStudent, setDocsStudent] = useState<Student | null>(null);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
@@ -135,30 +153,59 @@ export function StudentsTable({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const filtered = useMemo(() => {
-    return students.filter((s) => {
-      const matchesQuery =
-        query.trim() === "" ||
-        s.name.toLowerCase().includes(query.toLowerCase()) ||
-        s.mobile.includes(query);
+  // Sync local input when URL changes (back/forward)
+  useEffect(() => {
+    setQueryInput(initialQuery);
+  }, [initialQuery]);
 
-      const matchesCourse =
-        !courseFilter || s.course.id === courseFilter;
+  // Debounced search — 350ms before pushing to URL
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const currentQ = searchParams.get("q") || "";
+      if (queryInput !== currentQ) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (queryInput.trim()) params.set("q", queryInput.trim());
+        else params.delete("q");
+        params.set("page", "1");
+        router.push(`/students?${params.toString()}`);
+      }
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [queryInput, searchParams, router]);
 
-      const matchesStatus =
-        !statusFilter || s.status === statusFilter;
+  const handleCourseChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("courseId", value);
+    else params.delete("courseId");
+    params.set("page", "1");
+    router.push(`/students?${params.toString()}`);
+  };
 
-      return (
-        matchesQuery &&
-        matchesCourse &&
-        matchesStatus
-      );
-    });
-  }, [students, query, courseFilter, statusFilter]);
+  const handleStatusChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("status", value);
+    else params.delete("status");
+    params.set("page", "1");
+    router.push(`/students?${params.toString()}`);
+  };
+
+  const handlePageChange = (_: any, value: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(value));
+    router.push(`/students?${params.toString()}`);
+  };
+
+  const handleAddSuccess = () => {
+    // After adding, go to first page to see the newest student
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    router.push(`/students?${params.toString()}`);
+    router.refresh();
+  };
 
   return (
     <>
-      <StudentsDistributionCharts students={students} />
+      <StudentsDistributionCharts statusCounts={statusCounts} courseCounts={courseCounts} total={total} />
 
       <Card sx={{ p: 2.5 }}>
         <Box sx={{ mb: 2.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}>
@@ -166,8 +213,8 @@ export function StudentsTable({
             <TextField
               size="small"
               placeholder="Search by name or mobile"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -185,8 +232,8 @@ export function StudentsTable({
               <Select
                 labelId="students-course-label"
                 label="Course"
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
+                value={initialCourseFilter}
+                onChange={(e) => handleCourseChange(e.target.value)}
                 sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
               >
                 <MenuItem value="">All courses</MenuItem>
@@ -201,8 +248,8 @@ export function StudentsTable({
               <Select
                 labelId="students-status-label"
                 label="Status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                value={initialStatusFilter}
+                onChange={(e) => handleStatusChange(e.target.value)}
                 sx={{ borderRadius: "12px", bgcolor: "#F7F5F0", fontSize: "0.75rem", fontWeight: 600 }}
               >
                 <MenuItem value="">All statuses</MenuItem>
@@ -240,7 +287,7 @@ export function StudentsTable({
             </TableHead>
 
             <TableBody>
-              {filtered.map((s) => {
+              {students.map((s) => {
                 const dueDate = s.dueDate ? new Date(s.dueDate) : null;
                 const fee = computeFeeStatus(Number(s.totalFee), Number(s.paidFee), dueDate);
                 return (
@@ -355,10 +402,10 @@ export function StudentsTable({
                 );
               })}
 
-              {filtered.length === 0 && (
+              {students.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} align="center" sx={{ py: 5, color: "#94A3B8", fontSize: "0.875rem" }}>
-                    No students match your search or filters.
+                    {total === 0 ? "No students found. Add your first student to get started." : "No students match your search or filters. Try adjusting your search."}
                   </TableCell>
                 </TableRow>
               )}
@@ -367,7 +414,7 @@ export function StudentsTable({
         </TableContainer>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            {filtered.map((s) => {
+            {students.map((s) => {
               const dueDate = s.dueDate ? new Date(s.dueDate) : null;
               const fee = computeFeeStatus(Number(s.totalFee), Number(s.paidFee), dueDate);
               return (
@@ -420,29 +467,35 @@ export function StudentsTable({
                 </Card>
               );
             })}
-            {filtered.length === 0 && (
+            {students.length === 0 && (
               <Typography variant="body2" sx={{ py: 3, textAlign: "center", color: "#94A3B8", fontSize: "0.875rem" }}>
-                No students match your search or filters.
+                {total === 0 ? "No students found. Add your first student to get started." : "No students match your search or filters. Try adjusting your search."}
               </Typography>
             )}
           </Box>
         )}
 
-        <Typography variant="caption" sx={{ mt: 1.5, display: "block", fontSize: "0.75rem", color: "#94A3B8" }} className="tabular-nums">
-          Showing {filtered.length} of {students.length} students. Total fee outstanding:{" "}
-          {formatCurrency(
-            students.reduce(
-              (sum, s) =>
-                sum +
-                Math.max(
-                  Number(s.totalFee) -
-                    Number(s.paidFee),
-                  0
-                ),
-              0
-            )
+        <Box sx={{ mt: 2, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#94A3B8" }} className="tabular-nums">
+            Showing {students.length} of {total} students {totalPages > 1 && `(Page ${page} of ${totalPages})`}
+          </Typography>
+          {totalPages > 1 && (
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              size="small"
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+              sx={{
+                "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+              }}
+            />
           )}
-        </Typography>
+        </Box>
       </Card>
 
       <AddStudentDrawer

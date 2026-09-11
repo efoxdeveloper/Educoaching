@@ -8,16 +8,80 @@ import { applyPaymentToInstallments, type FeeInstallment } from "@/lib/installme
 import { sendEnrollmentEmail, sendParentWelcomeEmail } from "@/lib/email";
 import type { SubscriptionPlan } from "@prisma/client";
 
-export async function GET() {
+export async function GET(req: Request) {
   const ctx = await requireInstitute();
   if ("error" in ctx) return ctx.error;
 
-  const students = await prisma.student.findMany({
-    where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
-    include: { course: true, batch: true },
-    orderBy: { createdAt: "desc" },
+  const { searchParams } = new URL(req.url);
+  const pageParam = searchParams.get("page");
+  const limitParam = searchParams.get("limit");
+  const q = searchParams.get("q")?.trim() || "";
+  const courseId = searchParams.get("courseId") || "";
+  const status = searchParams.get("status") || "";
+
+  // Backward compat: if no pagination/filter params, return all students as before (existing callers expect array)
+  if (!pageParam && !limitParam && !q && !courseId && !status) {
+    const students = await prisma.student.findMany({
+      where: { instituteId: ctx.instituteId, branchId: ctx.branchId as string },
+      include: { course: true, batch: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(students);
+  }
+
+  const page = Math.max(1, Number(pageParam) || 1);
+  const limit = Math.min(100, Math.max(1, Number(limitParam) || 20));
+  const where: any = { instituteId: ctx.instituteId, branchId: ctx.branchId as string };
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" as const } },
+      { mobile: { contains: q } },
+    ];
+  }
+  if (courseId) where.courseId = courseId;
+  if (status) where.status = status;
+
+  const [students, total] = await Promise.all([
+    prisma.student.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        mobile: true,
+        email: true,
+        photoUrl: true,
+        parentMobile: true,
+        status: true,
+        admissionDate: true,
+        totalFee: true,
+        paidFee: true,
+        dueDate: true,
+        plan: true,
+        courseDuration: true,
+        quarterlyAmount: true,
+        registrationFee: true,
+        isSeatBooked: true,
+        discountPercent: true,
+        discountApprovalStatus: true,
+        branchId: true,
+        branch: { select: { id: true, name: true, city: true } },
+        course: { select: { id: true, name: true } },
+        batch: { select: { id: true, name: true, timing: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.student.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    students,
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
   });
-  return NextResponse.json(students);
 }
 
 export async function POST(req: Request) {

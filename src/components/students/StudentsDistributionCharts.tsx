@@ -12,26 +12,19 @@ type StudentLite = {
   course: { name: string };
 };
 
-export function StudentsDistributionCharts({ students }: { students: StudentLite[] }) {
-  const statusCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const s of students) map[s.status] = (map[s.status] || 0) + 1;
-    return map;
-  }, [students]);
-
+export function StudentsDistributionCharts({
+  statusCounts,
+  courseCounts,
+  total,
+}: {
+  statusCounts: Record<string, number>;
+  courseCounts: { name: string; count: number }[];
+  total: number;
+}) {
   const statusDonutData = useMemo(() => {
     const colors: Record<string, string> = { ACTIVE: "#059669", ON_HOLD: "#F59E0B", INACTIVE: "#94A3B8" };
     return Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace("_", " "), value, color: colors[name] || "#1E3A5F" }));
   }, [statusCounts]);
-
-  const courseCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const s of students) map[s.course.name] = (map[s.course.name] || 0) + 1;
-    return Object.entries(map)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  }, [students]);
 
   return (
     <Box sx={{ mb: 2, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 2 }}>
@@ -78,7 +71,7 @@ export function StudentsDistributionCharts({ students }: { students: StudentLite
           ))}
         </Box>
         <Typography variant="caption" sx={{ mt: 1, textAlign: "center", fontSize: "11px", color: "#7E9BBC" }}>
-          Total: {students.length} students
+          Total: {total} students
         </Typography>
       </Card>
 
