@@ -6,7 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { getInstituteId, getBranchImpersonationState } from "@/lib/tenant";
 import { hasPermission } from "@/lib/permissions";
 
-export default async function FeesPage() {
+export default async function FeesPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
   const session = await auth();
   const instituteId = await getInstituteId();
   const { branchId } = await getBranchImpersonationState();
@@ -34,12 +38,35 @@ export default async function FeesPage() {
     redirect("/dashboard");
   }
 
-  const [students, courses, batches] = await Promise.all([
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+  const limit = 20;
+  const skip = (page - 1) * limit;
+
+  const [paginatedStudents, total, courses, batches] = await Promise.all([
     prisma.student.findMany({
       where: { instituteId, branchId },
-      include: { course: true },
+      select: {
+        id: true,
+        name: true,
+        totalFee: true,
+        paidFee: true,
+        dueDate: true,
+        courseId: true,
+        batchId: true,
+        plan: true,
+        subscriptionStatus: true,
+        demoExpiresAt: true,
+        currentPeriodEnd: true,
+        monthlyAmount: true,
+        quarterlyAmount: true,
+        installmentPlan: true,
+        course: { select: { name: true } },
+      },
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     }),
+    prisma.student.count({ where: { instituteId, branchId } }),
     prisma.course.findMany({
       where: { instituteId },
       select: { id: true, name: true },
@@ -52,7 +79,10 @@ export default async function FeesPage() {
     }),
   ]);
 
-  const serialized = students.map((s) => ({
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(page, totalPages);
+
+  const serialized = paginatedStudents.map((s) => ({
     id: s.id,
     name: s.name,
     totalFee: s.totalFee.toString(),
@@ -72,7 +102,7 @@ export default async function FeesPage() {
 
   return (
     <Shell title="Fee & Collection" userName={session?.user?.name ?? undefined}>
-      <FeesView students={serialized} courses={courses} batches={batches} />
+      <FeesView students={serialized} courses={courses} batches={batches} total={total} page={safePage} totalPages={totalPages} limit={limit} />
     </Shell>
   );
 }

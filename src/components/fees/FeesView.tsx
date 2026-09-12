@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, RefreshCw, Bell, ShieldCheck, RotateCcw } from "lucide-react";
 import { Card, KpiCard } from "@/components/ui/Card";
 import { Badge, feeStatusTone } from "@/components/ui/Badge";
@@ -31,6 +32,7 @@ import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
+import Pagination from "@mui/material/Pagination";
 
 type Student = {
   id: string;
@@ -60,8 +62,27 @@ const planTone: Record<ComputedPlanStatus, "success" | "warn" | "danger" | "neut
   SUBSCRIPTION_EXPIRED: "danger",
 };
 
-export function FeesView({ students, courses = [], batches = [] }: { students: Student[]; courses?: CourseOpt[]; batches?: BatchOpt[] }) {
+export function FeesView({
+  students,
+  courses = [],
+  batches = [],
+  total,
+  page,
+  totalPages,
+  limit,
+}: {
+  students: Student[];
+  courses?: CourseOpt[];
+  batches?: BatchOpt[];
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  limit?: number;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [statusFilter, setStatusFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
@@ -99,13 +120,19 @@ export function FeesView({ students, courses = [], batches = [] }: { students: S
   }, [batches, courseFilter]);
 
   const filtered = rows.filter((s) => {
-    const matchesQuery = query.trim() === "" || s.name.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = deferredQuery.trim() === "" || s.name.toLowerCase().includes(deferredQuery.toLowerCase());
     const matchesStatus = !statusFilter || s.status === statusFilter;
     const matchesPlan = !planFilter || s.plan === planFilter;
     const matchesCourse = !courseFilter || s.courseId === courseFilter;
     const matchesBatch = !batchFilter || s.batchId === batchFilter;
     return matchesQuery && matchesStatus && matchesPlan && matchesCourse && matchesBatch;
   });
+
+  const handlePageChange = (_: unknown, value: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(value));
+    router.push(`/fees?${params.toString()}`);
+  };
 
   const totalCollected = rows.reduce((sum, s) => sum + Number(s.paidFee), 0);
   const totalPending = rows.reduce((sum, s) => sum + s.pending, 0);
@@ -431,6 +458,29 @@ export function FeesView({ students, courses = [], batches = [] }: { students: S
           </Table>
         </TableContainer>
           </Box>
+        {typeof total === "number" && typeof totalPages === "number" && typeof page === "number" && (
+          <Box sx={{ mt: 2, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "#94a3b8" }} className="tabular-nums">
+              Showing {students.length} of {total} students {totalPages > 1 && `(Page ${page} of ${totalPages})`}
+            </Typography>
+            {totalPages > 1 && (
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                size="small"
+                color="primary"
+                shape="rounded"
+                showFirstButton
+                showLastButton
+                sx={{
+                  "& .MuiPaginationItem-root": { fontSize: "0.75rem", fontWeight: 600, borderRadius: "8px" },
+                  "& .Mui-selected": { bgcolor: "#1E3A5F !important", color: "white" },
+                }}
+              />
+            )}
+          </Box>
+        )}
       </Card>
 
       <RecordPaymentDrawer
