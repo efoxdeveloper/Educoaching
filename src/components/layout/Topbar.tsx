@@ -11,17 +11,43 @@ export function Topbar({
   title,
   userName,
   showSearch = true,
+  initialBranches,
+  initialImpersonation,
 }: {
   onMenuClick: () => void;
   title: string;
   userName?: string;
   showSearch?: boolean;
+  initialBranches?: Array<{ id: string; name: string; isMainBranch?: boolean }>;
+  initialImpersonation?: { isImpersonating: boolean; branchId: string | null };
 }) {
-  const [branches, setBranches] = useState<Array<{ id: string; name: string; isMainBranch?: boolean }>>([]);
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [branches, setBranches] = useState<Array<{ id: string; name: string; isMainBranch?: boolean }>>(
+    initialBranches ?? []
+  );
+  const [selectedBranch, setSelectedBranch] = useState(() => {
+    if (initialBranches && initialBranches.length > 0) {
+      if (initialImpersonation?.isImpersonating && initialImpersonation.branchId) {
+        const found = initialBranches.find((b) => b.id === initialImpersonation.branchId);
+        if (found) return found.id;
+      }
+      const main = initialBranches.find((b) => b.isMainBranch) || initialBranches[0];
+      return main?.id ?? "";
+    }
+    return "";
+  });
+  const [isImpersonating, setIsImpersonating] = useState(() => Boolean(initialImpersonation?.isImpersonating));
 
   useEffect(() => {
+    if (initialBranches && initialBranches.length > 0) {
+      // Already initialized from server props — still sync impersonation if provided
+      if (initialImpersonation) {
+        setIsImpersonating(Boolean(initialImpersonation.isImpersonating));
+        if (initialImpersonation.isImpersonating && initialImpersonation.branchId) {
+          setSelectedBranch(initialImpersonation.branchId);
+        }
+      }
+      return;
+    }
     fetch("/api/branches")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
@@ -48,7 +74,7 @@ export function Topbar({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialBranches, initialImpersonation]);
 
   const { data: session, update } = useSession();
 

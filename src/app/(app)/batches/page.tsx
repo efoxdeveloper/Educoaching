@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { Shell } from "@/components/layout/Shell";
 import { BatchesView } from "@/components/batches/BatchesView";
+import { TitleSetter } from "@/components/layout/TitleContext";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInstituteId, getBranchImpersonationState, getSubBranches } from "@/lib/tenant";
@@ -77,7 +77,8 @@ export default async function BatchesPage() {
   }));
 
   return (
-    <Shell title="Batch Management" userName={session?.user?.name ?? undefined}>
+    <>
+      <TitleSetter title="Batch Management" />
       <BatchesView
         batches={serializedBatches}
         courses={courses}
@@ -85,6 +86,6 @@ export default async function BatchesPage() {
         canEdit={canEdit}
         userRole={userRole}
       />
-    </Shell>
+    </>
   );
 }

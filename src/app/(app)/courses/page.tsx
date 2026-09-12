@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { Shell } from "@/components/layout/Shell";
 import { CoursesTable } from "@/components/courses/CoursesTable";
+import { TitleSetter } from "@/components/layout/TitleContext";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInstituteId, getSubBranches } from "@/lib/tenant";
@@ -40,8 +40,9 @@ export default async function CoursesPage() {
   }));
 
   return (
-    <Shell title="Courses & Programs" userName={session?.user?.name ?? undefined}>
+    <>
+      <TitleSetter title="Courses & Programs" />
       <CoursesTable courses={serialized} availableBranches={branches} />
-    </Shell>
+    </>
   );
 }

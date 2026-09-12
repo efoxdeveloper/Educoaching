@@ -153,11 +153,21 @@ const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
   ],
 };
 
-export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function Sidebar({
+  open,
+  onClose,
+  initialFeatures,
+  initialPermissions,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialFeatures?: FeatureFlags;
+  initialPermissions?: string[];
+}) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [features, setFeatures] = useState<FeatureFlags>(DEFAULT_FEATURE_FLAGS);
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [features, setFeatures] = useState<FeatureFlags>(initialFeatures ?? DEFAULT_FEATURE_FLAGS);
+  const [userPermissions, setUserPermissions] = useState<string[]>(initialPermissions ?? []);
 
   const rawRole = (session?.user as { role?: string } | undefined)?.role || "OWNER";
   const userRole = String(rawRole).toUpperCase();
@@ -176,6 +186,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const effectiveRole = userRole === "PLATFORM_ADMIN" ? "OWNER" : userRole;
 
   useEffect(() => {
+    if (initialFeatures && initialPermissions !== undefined) return;
     fetch("/api/institutes/features")
       .then((res) => res.json())
       .then((data) => {
@@ -183,7 +194,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         if (Array.isArray(data.permissions)) setUserPermissions(data.permissions);
       })
       .catch(() => {});
-  }, []);
+  }, [initialFeatures, initialPermissions]);
 
   const sessionPermissions = (session?.user as any)?.permissions || [];
   const effectivePermissions = userPermissions.length > 0 ? userPermissions : sessionPermissions;
