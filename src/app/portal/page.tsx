@@ -4,6 +4,7 @@ import { StudentPortalView } from "@/components/portal/StudentPortalView";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInstituteId } from "@/lib/tenant";
+import { canPreviewPortal } from "@/lib/permissions";
 
 export default async function StudentPortalPage({
   searchParams,
@@ -67,7 +68,7 @@ export default async function StudentPortalPage({
       linkedIds.push(...matchingStudents.map((s) => s.id));
     }
     studentFilter = { id: { in: linkedIds } as any };
-  } else if (userRole === "OWNER" || userRole === "ADMIN" || userRole === "STAFF" || userRole === "PLATFORM_ADMIN") {
+  } else if (canPreviewPortal(userRole) || userRole === "PLATFORM_ADMIN") {
     // Admins and staff can preview a specific student's portal within their institute
     if (searchParams?.studentId) {
       studentFilter = { id: searchParams.studentId };

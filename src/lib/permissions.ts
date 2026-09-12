@@ -226,6 +226,13 @@ const ROLE_PERMISSIONS: Record<InstituteRole, Set<Permission>> = {
   PARENT: new Set<Permission>([]),
 };
 
+export const PORTAL_PREVIEW_ROLES = new Set<InstituteRole>(["OWNER", "ADMIN", "STAFF"] as InstituteRole[]);
+
+export function canPreviewPortal(role: string | null | undefined): boolean {
+  if (!role) return false;
+  return PORTAL_PREVIEW_ROLES.has(role.toUpperCase() as InstituteRole);
+}
+
 export type UserPermissionContext = {
   role?: string | null;
   permissions?: string[] | null;

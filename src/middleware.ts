@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { isInstituteSubscriptionExpired, isRouteRestrictedBySubscription } from "@/lib/subscription";
+import { canPreviewPortal } from "@/lib/permissions";
+import { INSTITUTE_STAFF_ROLES } from "@/lib/subscription";
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
@@ -61,17 +63,9 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/portal", req.url));
   }
 
-  // If staff/admin role accesses /portal, redirect them away to their dashboard
-  if (
-    (role === "OWNER" ||
-      role === "ADMIN" ||
-      role === "STAFF" ||
-      role === "FACULTY" ||
-      role === "ACCOUNTANT" ||
-      role === "COUNSELLOR" ||
-      role === "TECHNICIAN") &&
-    pathname.startsWith("/portal")
-  ) {
+  // If staff role accesses /portal but is not allowed to preview it, redirect to dashboard
+  // Allowed preview roles are defined in PORTAL_PREVIEW_ROLES (OWNER, ADMIN, STAFF) via canPreviewPortal()
+  if (pathname.startsWith("/portal") && !canPreviewPortal(role) && INSTITUTE_STAFF_ROLES.has(role as any)) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
