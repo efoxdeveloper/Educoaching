@@ -4,7 +4,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    optimizePackageImports: ["@mui/material"],
+    optimizePackageImports: ["@mui/material", "lucide-react", "recharts", "date-fns"],
     serverComponentsExternalPackages: ["pdf-parse"],
   },
 };
