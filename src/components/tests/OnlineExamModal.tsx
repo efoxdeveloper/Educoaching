@@ -141,7 +141,7 @@ export function OnlineExamModal({
 
   // Countdown timer
   useEffect(() => {
-    if (!open || completedResult || loading || secondsRemaining <= 0) return;
+    if (!open || completedResult || loading || secondsRemaining <= 0 || questions.length === 0) return;
 
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
@@ -155,7 +155,7 @@ export function OnlineExamModal({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [open, completedResult, loading, secondsRemaining, handleSubmit]);
+  }, [open, completedResult, loading, secondsRemaining, questions.length, handleSubmit]);
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -211,7 +211,7 @@ export function OnlineExamModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scholar-900/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-scholar-900/60 p-4 backdrop-blur-sm">
       <div className="flex h-[92vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-scholar-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-scholar-100 bg-scholar-50 px-6 py-3">
@@ -228,7 +228,7 @@ export function OnlineExamModal({
           </div>
 
           <div className="flex items-center gap-4">
-            {!completedResult && (
+            {!completedResult && !loading && questions.length > 0 && (
               <div
                 className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-mono text-sm font-bold shadow-sm ${
                   secondsRemaining < 300
