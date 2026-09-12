@@ -427,6 +427,7 @@ model Student {
 
   @@index([instituteId])
   @@index([branchId])
+  @@index([instituteId, branchId])
 }
 
 model ParentStudentLink {
@@ -510,6 +511,7 @@ model Admission {
   @@index([courseId])
   @@index([batchId])
   @@index([assignedToId])
+  @@index([instituteId, branchId, stage])
 }
 
 model LeadFollowUp {
@@ -547,6 +549,7 @@ model Attendance {
   @@index([instituteId])
   @@index([branchId])
   @@index([batchId])
+  @@index([instituteId, branchId, date])
 }
 
 model AttendanceCorrectionRequest {
@@ -590,6 +593,7 @@ model StaffAttendance {
 
   @@unique([facultyId, date])
   @@index([instituteId])
+  @@index([instituteId, date])
 }
 
 model Payment {
@@ -618,6 +622,7 @@ model Payment {
   @@index([studentId])
   @@index([razorpayOrderId])
   @@index([razorpayPaymentId])
+  @@index([instituteId, paidAt])
 }
 
 model Renewal {
@@ -931,6 +936,7 @@ model Expense {
   @@index([branchId])
   @@index([category])
   @@index([expenseDate])
+  @@index([instituteId, branchId, expenseDate])
 }
 
 model Income {
@@ -956,6 +962,7 @@ model Income {
   @@index([branchId])
   @@index([category])
   @@index([incomeDate])
+  @@index([instituteId, branchId, incomeDate])
 }
 
 model BulkCommunication {
