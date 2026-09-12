@@ -89,14 +89,13 @@ export function StudentsDistributionCharts({
         </Typography>
         <Box sx={{ height: 180, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={courseCounts} margin={{ left: -10, right: 16, top: 4, bottom: 4 }}>
+            <BarChart data={courseCounts} margin={{ left: -10, right: 16, top: 4, bottom: 0 }}>
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 10, fill: "#4E6E93" } as any}
+                tickFormatter={(val: string) => (val && val.length > 14 ? `${val.slice(0, 13)}…` : val)}
                 interval={0}
-                angle={-14}
-                textAnchor="end"
-                height={50}
+                height={28}
                 axisLine={false}
                 tickLine={false}
               />
