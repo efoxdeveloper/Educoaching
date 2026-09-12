@@ -512,9 +512,9 @@ export function StudentPortalView({
     }
   };
 
-  if (!student) {
-    if (isPreview && students.length > 1 && !selectedStudentId) {
-      return (
+  return (
+    <>
+      {isPreview && students.length > 1 && !selectedStudentId ? (
         <Stack spacing={3}>
           <Paper
             elevation={0}
@@ -544,17 +544,12 @@ export function StudentPortalView({
             </Typography>
           </Paper>
         </Stack>
-      );
-    }
-    return (
-      <Box sx={{ py: 6, textAlign: "center", color: "text.secondary", fontSize: "0.875rem" }}>
-        No enrolled student found for your credentials.
-      </Box>
-    );
-  }
-
-  return (
-    <Stack spacing={3}>
+      ) : !student ? (
+        <Box sx={{ py: 6, textAlign: "center", color: "text.secondary", fontSize: "0.875rem" }}>
+          No enrolled student found for your credentials.
+        </Box>
+      ) : (
+        <Stack spacing={3}>
       {/* ── Student / Parent Profile Switcher — MUI (branch credentials locked) ── */}
       <Paper
         elevation={0}
@@ -2353,7 +2348,10 @@ export function StudentPortalView({
         </div>
       )}
 
-      {/* Search & Switch Student Modal */}
+
+    </Stack>
+      )}
+      {/* Search & Switch Student Modal — always mounted */}
       {switcherModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-scholar-100 animate-in fade-in zoom-in-95 duration-150">
@@ -2558,6 +2556,6 @@ export function StudentPortalView({
           </div>
         </div>
       )}
-    </Stack>
+    </>
   );
 }
