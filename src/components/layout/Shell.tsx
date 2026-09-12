@@ -31,11 +31,11 @@ export function Shell({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", bgcolor: "background.paper", width: "100%", maxWidth: "100%" }}>
-      <ImpersonationBanner />
-      <BranchImpersonationBanner />
       <Box sx={{ display: "flex", flex: 1, height: "100vh", overflow: "hidden", width: "100%", minWidth: 0 }}>
         {renderSidebar()}
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh", overflow: "hidden", width: "100%" }}>
+          <ImpersonationBanner />
+          <BranchImpersonationBanner />
           <Topbar onMenuClick={() => setOpen(true)} title={title} userName={userName} />
           <Box component="main" sx={{ flex: 1, overflowY: "auto", minWidth: 0, width: "100%", px: { xs: 2, lg: 4 }, py: 3 }}>
             {children}
