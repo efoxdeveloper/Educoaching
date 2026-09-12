@@ -133,9 +133,10 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
   const thisMonthExpenses = Number(thisMonthExpensesAgg._sum.amount || 0);
   const netOperatingCashFlow = thisMonthCollection - thisMonthExpenses;
 
-  // Attendance
+  // Attendance — select only status to avoid over-fetching
   const todaysAttendanceRecords = await prisma.attendance.findMany({
     where: { instituteId, ...(branchId ? { branchId } : {}), date: todayStart },
+    select: { status: true },
   });
   const todaysPresent = todaysAttendanceRecords.filter((r) => r.status === "PRESENT").length;
   const todaysAttendancePct =
@@ -143,29 +144,41 @@ export async function getDashboardData(instituteId: string, branchId?: string | 
       ? Math.round((todaysPresent / todaysAttendanceRecords.length) * 100)
       : 0;
 
-  // Last 7 days trends
+  // Last 7 days trends — collapsed from 14 per-day queries into 2 ranged queries with JS bucketing
   const days = Array.from({ length: 7 }).map((_, i) => subDays(today, 6 - i));
+  const trendStart = startOfDay(days[0]);
+  const trendEnd = endOfDay(days[days.length - 1]);
 
-  const collectionTrend = await Promise.all(
-    days.map(async (d) => {
-      const sum = await prisma.payment.aggregate({
-        _sum: { amount: true },
-        where: { instituteId, ...(branchId ? { student: { branchId } } : {}), paidAt: { gte: startOfDay(d), lte: endOfDay(d) } },
-      });
-      return { day: format(d, "EEE"), amount: Number(sum._sum.amount || 0) };
-    })
-  );
+  const [paymentsInRange, attendanceInRange] = await Promise.all([
+    prisma.payment.findMany({
+      where: { instituteId, ...(branchId ? { student: { branchId } } : {}), paidAt: { gte: trendStart, lte: trendEnd } },
+      select: { amount: true, paidAt: true },
+    }),
+    prisma.attendance.findMany({
+      where: { instituteId, ...(branchId ? { branchId } : {}), date: { gte: trendStart, lte: trendEnd } },
+      select: { status: true, date: true },
+    }),
+  ]);
 
-  const attendanceTrend = await Promise.all(
-    days.map(async (d) => {
-      const records = await prisma.attendance.findMany({
-        where: { instituteId, ...(branchId ? { branchId } : {}), date: startOfDay(d) },
-      });
-      const present = records.filter((r) => r.status === "PRESENT").length;
-      const percent = records.length > 0 ? Math.round((present / records.length) * 100) : 0;
-      return { day: format(d, "EEE"), percent };
-    })
-  );
+  const collectionTrend = days.map((d) => {
+    const dStart = startOfDay(d).getTime();
+    const dEnd = endOfDay(d).getTime();
+    const sum = paymentsInRange
+      .filter((p) => {
+        const t = new Date(p.paidAt).getTime();
+        return t >= dStart && t <= dEnd;
+      })
+      .reduce((acc, p) => acc + Number(p.amount || 0), 0);
+    return { day: format(d, "EEE"), amount: sum };
+  });
+
+  const attendanceTrend = days.map((d) => {
+    const dKey = startOfDay(d).getTime();
+    const dayRecords = attendanceInRange.filter((r) => new Date(r.date).getTime() === dKey);
+    const present = dayRecords.filter((r) => r.status === "PRESENT").length;
+    const percent = dayRecords.length > 0 ? Math.round((present / dayRecords.length) * 100) : 0;
+    return { day: format(d, "EEE"), percent };
+  });
 
   // CRM Pipeline & Funnel
   const totalLeads = admissions.length;
