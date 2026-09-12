@@ -31,6 +31,7 @@ import {
   Search,
   Users,
   ArrowLeftRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -897,6 +898,39 @@ export function StudentPortalView({
               >
                 Search & Switch
               </Button>
+              {isPreview && selectedStudentId && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ArrowLeft size={13} />}
+                  onClick={() => {
+                    try {
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete("child");
+                      url.searchParams.delete("studentId");
+                      window.history.replaceState({}, "", url.toString());
+                    } catch {}
+                    try {
+                      localStorage.removeItem("parentSelectedChildId");
+                    } catch {}
+                    setSelectedStudentId("");
+                  }}
+                  sx={{
+                    borderColor: "rgba(255,255,255,0.35)",
+                    bgcolor: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.9)",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    textTransform: "none",
+                    borderRadius: "12px",
+                    height: 32,
+                    px: 1.8,
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.5)" },
+                  }}
+                >
+                  Back to overview
+                </Button>
+              )}
             </Stack>
           )}
         </Stack>
