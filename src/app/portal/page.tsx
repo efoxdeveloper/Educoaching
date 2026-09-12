@@ -313,7 +313,13 @@ export default async function StudentPortalPage({
         materials={materials}
         assignments={assignments}
         liveClasses={liveClasses}
-        viewerRole={userRole === "PARENT" ? "PARENT" : "STUDENT"}
+        viewerRole={
+          userRole === "PARENT"
+            ? "PARENT"
+            : canPreviewPortal(userRole) || userRole === "PLATFORM_ADMIN"
+              ? (userRole as "OWNER" | "ADMIN" | "STAFF" | "PLATFORM_ADMIN")
+              : "STUDENT"
+        }
       />
     </Shell>
   );

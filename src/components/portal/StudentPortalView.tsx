@@ -192,9 +192,21 @@ export function StudentPortalView({
   materials: StudyMaterial[];
   assignments: Assignment[];
   liveClasses?: LiveClassPortalItem[];
-  viewerRole?: "STUDENT" | "PARENT" | "STAFF" | "OWNER" | "ADMIN";
+  viewerRole?: "STUDENT" | "PARENT" | "STAFF" | "OWNER" | "ADMIN" | "PLATFORM_ADMIN";
 }) {
-  const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id || "");
+  const isPreview = (["OWNER", "ADMIN", "STAFF", "PLATFORM_ADMIN"] as const).includes(viewerRole as any);
+  const [selectedStudentId, setSelectedStudentId] = useState(() => {
+    if (isPreview && students.length > 1) {
+      if (typeof window !== "undefined") {
+        const child = new URLSearchParams(window.location.search).get("child");
+        if (child && students.some((s) => s.id === child)) return child;
+        const stored = localStorage.getItem("parentSelectedChildId");
+        if (stored && students.some((s) => s.id === stored)) return stored;
+      }
+      return "";
+    }
+    return students[0]?.id || "";
+  });
   const [activeTab, setActiveTab] = useState<
     "batch" | "live-classes" | "certificates" | "exams" | "materials" | "assignments" | "fees" | "doubts" | "help"
   >("batch");
@@ -266,6 +278,7 @@ export function StudentPortalView({
   };
 
   const handleSavePhoto = async () => {
+    if (!student) return;
     if (!newPhotoUrl) return;
     setIsUploadingPhoto(true);
     setPhotoUploadError("");
@@ -298,6 +311,7 @@ export function StudentPortalView({
   const [passwordErrorMsg, setPasswordErrorMsg] = useState("");
 
   const handleRequestPasswordChange = async () => {
+    if (!student) return;
     setRequestingPassword(true);
     setPasswordErrorMsg("");
     setPasswordSuccessMsg("");
@@ -397,7 +411,7 @@ export function StudentPortalView({
     setSwitcherModalOpen(false);
   };
 
-  const student = students.find((s) => s.id === selectedStudentId) || students[0];
+  const student = students.find((s) => s.id === selectedStudentId) || (isPreview && !selectedStudentId ? undefined : students[0]);
 
   // Per-child scoping for materials/assignments — same pattern as filteredLiveClasses (:1130) and studentExams.filter (:1305)
   // Preserves branch-wide behavior: batchId=null => show to all children
@@ -408,6 +422,7 @@ export function StudentPortalView({
   );
 
   const handleStudentSubmitWork = async (assignmentId: string) => {
+    if (!student) return;
     if (!submissionUrl.trim()) return;
     setIsSubmittingWork(true);
     try {
@@ -458,6 +473,7 @@ export function StudentPortalView({
   };
 
   const handlePayFee = async (e: React.FormEvent) => {
+    if (!student) return;
     e.preventDefault();
     setPayError("");
     setPaySuccessMsg("");
@@ -497,6 +513,39 @@ export function StudentPortalView({
   };
 
   if (!student) {
+    if (isPreview && students.length > 1 && !selectedStudentId) {
+      return (
+        <Stack spacing={3}>
+          <Paper
+            elevation={0}
+            sx={{ p: 4, borderRadius: "16px", border: "1px solid #D6E0EB", textAlign: "center", bgcolor: "white" }}
+          >
+            <Box sx={{ mx: "auto", width: 56, height: 56, borderRadius: "14px", bgcolor: "#EEF2F7", display: "flex", alignItems: "center", justifyContent: "center", mb: 2 }}>
+              <Users size={28} style={{ color: "#4E6E93" }} />
+            </Box>
+            <Typography variant="h6" sx={{ fontFamily: "var(--font-sora)", fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+              Select a student to preview
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem", mt: 0.5, maxWidth: 420, mx: "auto" }}>
+              You are in preview mode. Choose a student from the switcher to view their full portal — batch, fees, exams, materials and more.
+            </Typography>
+            <Box sx={{ mt: 2.5, display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                startIcon={<Search size={14} />}
+                onClick={() => setSwitcherModalOpen(true)}
+                sx={{ bgcolor: "#1E3A5F", color: "white", fontWeight: 700, fontSize: "0.75rem", textTransform: "none", borderRadius: "12px", px: 2.5 }}
+              >
+                Search & Switch
+              </Button>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "11px", mt: 1.5, display: "block" }}>
+              {students.length} students • All Courses • All Batches
+            </Typography>
+          </Paper>
+        </Stack>
+      );
+    }
     return (
       <Box sx={{ py: 6, textAlign: "center", color: "text.secondary", fontSize: "0.875rem" }}>
         No enrolled student found for your credentials.
